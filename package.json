@@ -1,0 +1,6 @@
+{
+    "dependencies": {
+        "adm-zip": "^0",
+        "node-fetch": "^2.6.5"
+    }
+}
