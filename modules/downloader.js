@@ -21,7 +21,7 @@ if (cluster.isWorker) {
                 if (o.sha1) {
 
                 }
-                if (stats.size == o.size) {
+                if (o.size && stats.size == o.size) {
                     process.send({ cmd: processCMD, key: o.key });
                     return;
                 }
@@ -58,14 +58,13 @@ if (cluster.isWorker) {
         });
     });
 } else {
-    const os = require("os");
     const config = require("./config");
     const defEvents = config.eventManager;
     const files = config.files;
-    const arch = os.arch();
+    const os = require("os")
     const OS = os.platform();
     const AdmZip = require("adm-zip")
-    if (OS == "win32") OS = "windows";
+    if (OS == "win32" || OS == "win64") OS = "windows";
     if (OS == "darwin") OS = "osx"
     cluster.setupMaster({
         exec: __filename
@@ -149,6 +148,59 @@ if (cluster.isWorker) {
         const onTimeOut = (iter) => this.assets(file, events, iter);
         return await this.downloader(arr, events, onDone, onTimeOut, r, keys.length);
     }
+
+
+    module.exports.runtime = async () => {
+        const runtime = files.runtimes;
+        const meta = path.join(runtime, "meta");
+        if (!fs.existsSync(meta)) { fs.mkdirSync(meta); }
+        var gamecore
+        var manifest
+        try {
+            const r = await Fetch("https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json");
+            if (r.status != 200) throw "Not 200";
+            const data = await r.text();
+            fs.writeFileSync(path.join(meta, "all.json"), data);
+            manifest = JSON.parse(data);
+            gamecore = Object.keys(manifest.gamecore);
+        } catch {
+            var data = fs.readFileSync(path.join(meta, "all.json"));
+            manifest = JSON.parse(data);
+            gamecore = Object.keys(manifest.gamecore);
+        }
+        var platform;
+
+        switch (OS) {
+            case ("osx"):
+                platform = "mac-os"; break
+            case ("linux"):
+                platform = os.arch() == "x64" ? "linux" : "linux-i386"; break;
+            case ("windows"):
+                platform = os.arch() == "x64" ? "windows-x64" : "windows-x86"; break;
+            default: throw ("Unsupported operating system");
+        }
+        for (var id = 0; id < gamecore.length; id++) {
+            const e = gamecore[id]
+            const root = path.join(runtime, e);
+            if (!fs.existsSync(root)) fs.mkdirSync(root);
+            console.log(manifest)
+            console.log(manifest[platform])
+            console.log(e)
+            const libs = manifest[platform][e];
+            if (libs.length < 1) continue;
+            const lib = libs[0];
+            const libjsonfile = path.join(meta, e + ".json");
+
+
+            if (!fs.existsSync(libjsonfile) || fs.statSync(libjsonfile).size != lib.manifest.size) {
+                const r = await Fetch(lib.manifest.url);
+                if (r.status != 200) continue;
+                const j = await r.text();
+                fs.writeFileSync(libjsonfile, j);
+            }
+        }
+
+    }
     /**
      * @param  {{libraries:Array<GMLL.libFiles>,id:string,assets:string}} versionJSON 
      * @param {*} events 
@@ -180,7 +232,7 @@ if (cluster.isWorker) {
                     if (e.downloads.classifiers && e.natives && e.natives[OS] && e.downloads.classifiers[e.natives[OS]]) {
                         const obj = e.downloads.classifiers[e.natives[OS]];
                         LibFiles[obj.path] = obj;
-                            toUnzip.push(obj);
+                        toUnzip.push(obj);
                     }
                     LibFiles[e.downloads.artifact.path] = (e.downloads.artifact);
                 } else if (e.url) {
@@ -217,7 +269,7 @@ if (cluster.isWorker) {
         }
         load().then(() => {
             toUnzip.forEach(e => {
-              
+
                 const filePat = e.path;
                 const filz = filePat.split("/");
                 const file = path.join(files.natives, versionJSON.assets || versionJSON.id);

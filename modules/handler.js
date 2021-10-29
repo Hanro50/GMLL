@@ -136,5 +136,6 @@ if (!fs.existsSync(launcherFiles.latest) || !fs.existsSync(launcherFiles.version
 const v = new version("1.17.1");
 v.getManifest()
 v.getJson().catch(console.log)
-v.chkLibs();
+//v.chkLibs();
 //v.chkAssets();
+downloader.runtime()
