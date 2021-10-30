@@ -1,4 +1,46 @@
 namespace GMLL {
+    export type update = "fabric" | "vanilla" | "files" | "runtime";
+    export interface config {
+        files?: {
+            minecraft?: string,
+            instances?: string,
+            assets?: string,
+            versions?: string,
+            natives?: string,
+            launcher?: string,
+            runtimes?: string,
+            libraries?: string,
+            patch?: string
+        },
+        launcherFiles?: {
+            versions?: string,
+            latest?: string
+        },
+        update?: [update],
+        events?: EventListener
+
+    }
+    export interface config_Impl {
+        files: {
+            minecraft: string,
+            instances: string,
+            assets: string,
+            versions: string,
+            natives: string,
+            launcher: string,
+            runtimes: string,
+            libraries: string,
+            patch: string
+        },
+        update: [update],
+        events: EventListener,
+        metaFiles: {
+            latest: string,
+            vanilla: string,
+            fabric: string,
+            runtime: string
+        }
+    }
     export namespace profile {
         export interface paths {
             folder?: string;
@@ -30,7 +72,6 @@ namespace GMLL {
             "name": "osx" | "windows" | "linux",
             "arch": "x86"
         }
-
     }
     export interface artifact {
         path: string,

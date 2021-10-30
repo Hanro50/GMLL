@@ -1,18 +1,18 @@
-const p = require("path")
-var latest = require("../dynamic/var.json").release;
-var handler = require("handler")
-module.exports = class {
+import { join } from "path";
+import { release as latest } from "../dynamic/var.json";
+import handler from "handler.js";
+export default class {
     /**
      * @param {GMLL.profile.options} opt 
      */
     constructor(opt) {
         this.version = opt.version || latest;
         this.paths = {
-            folder: p.join("instances", this.version),
+            folder: join("instances", this.version),
             java: "java",
-            version: p.join(".minecraft", "versions", this.version),
-            assets: p.join(".minecraft", "assets"),
-            natives: p.join(".minecraft", "libraries")
+            version: join(".minecraft", "versions", this.version),
+            assets: join(".minecraft", "assets"),
+            natives: join(".minecraft", "libraries")
         };
         if (opt.paths) {
             Object.keys(opt.paths).forEach(e => {

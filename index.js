@@ -1,13 +1,6 @@
 
-const c = require("./modules/handler");
-const fs = require("fs");
-const p = require("path")
-const handler = require("./modules/handler")
-async function loadme() {
-    handler.update();
-}
-loadme();
+import {getConfig} from "./modules/config.js";
+import {} from "./modules/handler.js"
 
-module.exports = {
-    reload: loadme
-}
+
+console.log(await getConfig())
