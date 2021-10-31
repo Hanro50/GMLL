@@ -2,7 +2,7 @@ import { existsSync, readSync, mkdirSync, readdirSync, readFileSync, writeFileSy
 import EventEmitter from 'events';
 import { join } from "path";
 import Fetch from "node-fetch"
-var metaFiles = { latest: "latest.json", vanilla: "vanilla.json", fabric: "fabric.json", runtime: "runtime.json" }
+var metaFiles = { instances: "instances.json", latest: "latest.json", vanilla: "vanilla.json", fabric: "fabric.json", runtime: "runtime.json" }
 const defEvents = new EventEmitter()
 //Download Manager
 defEvents.on('download.setup', (cores) => console.log("[GMLL]: Dividing out work to " + cores + " cores"))
@@ -62,7 +62,8 @@ export async function reload() {
         latest: join(mainConfig.files.launcher, "latest.json"),
         vanilla: join(mainConfig.files.patch, "vanilla.json"),
         fabric: join(mainConfig.files.patch, "fabric.json"),
-        runtime: join(mainConfig.files.launcher, "runtime.json")
+        runtime: join(mainConfig.files.launcher, "runtime.json"),
+        instances: join(mainConfig.files.launcher, "instances.json")
     }
     Object.keys(mainConfig.files).forEach(e => {
         if (!existsSync((mainConfig.files[e])))

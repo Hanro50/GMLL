@@ -1,5 +1,12 @@
 namespace GMLL {
     export type update = "fabric" | "vanilla" | "files" | "runtime";
+
+    export interface instance_Opt {
+        name?:string;
+        version?:string;
+        path?:string;
+    }
+
     export interface config {
         files?: {
             minecraft?: string,
@@ -39,19 +46,6 @@ namespace GMLL {
             vanilla: string,
             fabric: string,
             runtime: string
-        }
-    }
-    export namespace profile {
-        export interface paths {
-            folder?: string;
-            java?: string;
-            version?: string;
-            assets?: string;
-            natives?: string;
-        }
-        export interface options {
-            version?: string;
-            paths?: paths;
         }
     }
     export interface version {
