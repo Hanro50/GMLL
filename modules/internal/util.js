@@ -70,9 +70,9 @@ export function parseArguments(val = {}, args = defJVM) {
     var out = ""
     args.forEach(e => {
         if (typeof e == "string")
-            out += " " + e;
+            out += " " + e.trim().replace(/\s/g,"");
         else if (lawyer(e, val))
-            out += " " + (e instanceof Array ? e.join(" ") : e);
+            out += " " + (e instanceof Array ? e.join("\t") : e);
     })
     return out
 

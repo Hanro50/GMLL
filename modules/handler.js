@@ -7,6 +7,40 @@ import { libs, assets as assetDownloader, runtime } from "./downloader.js";
 import { mkdir } from "./internal/util.js"
 const config = await getConfig();
 
+function combine(ob1, ob2) {
+    Object.keys(ob2).forEach(e => {
+        if (!ob1[e]) {
+            ob1[e] = ob2[e]
+        }
+        else if (typeof ob1[e] == typeof ob2[e]) {
+            if (ob1[e] instanceof Array) {
+              
+                
+                ob1[e] = [...ob2[e], ...ob1[e]]
+              
+            }
+            else if (typeof ob1[e]=="string") {
+                ob1[e] = ob2[e];
+            }
+            else if (ob1[e] instanceof Object) {
+                ob1[e] = combine(ob1[e], ob2[e]);
+            }
+        }
+        
+       
+    })
+    return ob1;
+}
+
+async function inheratanceCheck(json) {
+    if (json.inheritsFrom) {
+        const j2 = await (new chronicle(json.inheritsFrom)).getJson();
+        const j3 = combine(j2, json);
+        console.log(j3)
+        return j3;
+    }
+    return json;
+}
 class chronicle {
     constructor(version) {
         this.version = version.toLocaleLowerCase();
@@ -26,15 +60,19 @@ class chronicle {
             var shasum = createHash('sha1');
             shasum.update(text);
             if (!this.manifest || !this.manifest.sha1 || shasum.digest('hex') == this.manifest.sha1) {
-                return JSON.parse(text);
+                return await inheratanceCheck(JSON.parse(text));
             }
         }
         if (!this.manifest) { console.error("[GMLL]: Version " + this.version + " does not exist!"); return; };
         const r = await FETCH(this.manifest.url);
         if (r.status != 200) { console.error("[GMLL]: Version " + this.version + " cannot be downloaded"); return; };
         const text = await r.text();
-        writeFileSync(jsonManifest, text)
-        return JSON.parse(text);
+        writeFileSync(jsonManifest, text);
+        /**@type {GMLL.version.structure} */
+        const json = JSON.parse(text);
+        console.log(json.inheritsFrom)
+
+        return await inheratanceCheck(json)
 
     }
     async chkLibs() {

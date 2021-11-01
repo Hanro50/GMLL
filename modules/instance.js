@@ -11,7 +11,7 @@ const defArgs = [
     "-Xms${ram}G",
     "-Xmx${ram}G",
    // { "rules": [{ "action": "allow", "os": { "arch": "x64" } }], "value": "-d64" },
-    "-Xmn384m",
+ //   "-Xmn384m",
  //   "-XX:+ParallelRefProcEnabled",
  //   "-XX:+PerfDisableSharedMem",
  //   "-XX:+UseCompressedOops",
@@ -107,7 +107,7 @@ export default class {
 
         var launchCom = jvmArgs + " " + vjson.mainClass + gameArgs;
 
-        console.log(jvmArgs)
+        console.log(javaPath)
         Object.keys(args).forEach(key => {
             const regex = new RegExp(`\\\$\{${key}\}`, "g")
             launchCom = launchCom.replace(regex, args[key])

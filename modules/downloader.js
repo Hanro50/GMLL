@@ -249,7 +249,8 @@ export async function libs(versionJSON, events = defEvents, r = 1) {
             //Maven repo
             const namespec = e.name.split(":")
             const path = namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + ".jar";
-            const r = await fetch(path + ".sha1")
+          console.log(e.url +path)
+            const r = await Fetch(e.url +path + ".sha1")
             /**@type {GMLL.artifact} */
             var artifact = { path: path, sha1: await r.text(), url: e.url + path }
             LibFiles[path] = (artifact);
