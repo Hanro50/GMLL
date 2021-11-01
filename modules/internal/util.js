@@ -1,10 +1,19 @@
 import { existsSync, mkdirSync } from "fs";
 import { platform, version, arch, type } from "os";
 //import { GMLL } from "../../@types";
-
-const OS = platform();
-if (OS == "win32" || OS == "win64") OS = "windows";
-if (OS == "darwin") OS = "osx";
+export function getOS() {
+    const OS = platform();
+    switch (OS) {
+        case ("win32"):
+        case ("win64"):
+            return "windows";
+        case ("darwin"):
+            return "osx"
+        default:
+            return "linux";
+    }
+}
+const OS = getOS();
 
 /**
  * 

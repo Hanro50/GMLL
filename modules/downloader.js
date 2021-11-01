@@ -5,7 +5,7 @@ import { cpus } from 'os';
 import { existsSync, mkdirSync, writeFileSync, readFileSync, statSync, unlinkSync, symlinkSync } from 'fs';
 import { join } from 'path';
 import { platform as _platform, arch } from "os";
-import { mkdir, lawyer } from "./internal/util.js";
+import { mkdir, lawyer, getOS } from "./internal/util.js";
 
 import Fetch from 'node-fetch';
 const processCMD = "download.progress";
@@ -18,9 +18,7 @@ if (isWorker) { throw "This file can only run on the root thread" }
 
 const defEvents = config.events;
 const files = config.files;
-const OS = _platform();
-if (OS == "win32" || OS == "win64") OS = "windows";
-if (OS == "darwin") OS = "osx"
+const OS = getOS()
 setupMaster({
     exec: join(".", "modules", "internal", "rapid.js")
 });
