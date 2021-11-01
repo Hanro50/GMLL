@@ -7,18 +7,26 @@ import { cmd as _cmd } from '7zip-min';
 const processCMD = "download.progress";
 const failCMD = "download.fail";
 import { createHash } from "crypto";
+import { type } from 'os';
+import { execSync } from 'child_process';
+
+
+
 /**
  * @param {{objects:{[key: string]:{hash:string,size:number}}}} file 
  */
 if (isWorker) {
     const keys = JSON.parse(process.env.data);
-
+    function chmod(dir) {
+        if (type() != "Windows_NT")
+        execSync('chmod +x ' + dir)
+    }
     async function mutator(o) {
         try {
             var loc = o.location;
             if (!existsSync(loc)) {
                 console.log("Does not exist", loc);
-               return;
+                return;
             }
             if (o.extract) {
                 if (o.extract.path) {
@@ -38,30 +46,30 @@ if (isWorker) {
                 }
             }
             if (o.executable) {
-                chmodSync(loc, 777);
+                chmod(loc);
                 console.log(loc)
-            } 
+            }
         } catch (e) { }
 
     }
     keys.forEach(o => {
         var retry = 0;
-        function chk(){
-            
-                if (!existsSync(o.location)) return false;
-                var stats = statSync(o.location);
-                if (!o.size || stats.size != o.size) {
-                    if (stats.size > 0) console.log("[GMLL]: " + stats.size + " vs " + o.size + " : " + o.key);
-                    return false;
+        function chk() {
+
+            if (!existsSync(o.location)) return false;
+            var stats = statSync(o.location);
+            if (!o.size || stats.size != o.size) {
+                if (stats.size > 0) console.log("[GMLL]: " + stats.size + " vs " + o.size + " : " + o.key);
+                return false;
+            }
+            if (o.sha1) {
+                const sha1 = createHash('sha1').update(readFileSync(o.location)).digest("hex");
+                if (o.sha1 != sha1) {
+                    console.log("[GMLL]: " + sha1 + " vs " + o.sha1 + " : " + o.key); return false;
                 }
-                if (o.sha1) {
-                    const sha1 = createHash('sha1').update(readFileSync(o.location)).digest("hex");
-                    if (o.sha1 != sha1) {
-                        console.log("[GMLL]: " + sha1 + " vs " + o.sha1 + " : " + o.key); return false;
-                    }
-                }
-                return true;
-            
+            }
+            return true;
+
         }
         async function load() {
             if (chk()) {

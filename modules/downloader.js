@@ -5,6 +5,7 @@ import { cpus } from 'os';
 import { existsSync, mkdirSync, writeFileSync, readFileSync, statSync, unlinkSync, symlinkSync } from 'fs';
 import { join } from 'path';
 import { platform as _platform, arch } from "os";
+import { mkdir, lawyer } from "./internal/util.js";
 
 import Fetch from 'node-fetch';
 const processCMD = "download.progress";
@@ -21,7 +22,7 @@ const OS = _platform();
 if (OS == "win32" || OS == "win64") OS = "windows";
 if (OS == "darwin") OS = "osx"
 setupMaster({
-    exec: join(".","modules","internal", "rapid.js")
+    exec: join(".", "modules", "internal", "rapid.js")
 });
 /**
 * 
@@ -44,7 +45,7 @@ export function downloader(data, events, onDone, onTimeOut, iterations, totalIte
         for (let i = i3; i < data.length; i += numCPUs) iCpu.push(data[i]);
         arr.push(iCpu);
     }
-    return new Promise( res => {
+    return new Promise(res => {
         /**@type {Array<cluster.Worker>} */
         const workers = [];
         const fire = () => workers.forEach(w => w.process.kill());
@@ -79,34 +80,57 @@ export function downloader(data, events, onDone, onTimeOut, iterations, totalIte
 }
 export async function assets(file, events = defEvents, r = 1) {
     const basepath = files.assets;
+    if (file.map_to_resources) {
+        resources = config.metaFiles.assets.resources;
+        const merge = new Map([
+            ["icons/icon_16x16.png", { "hash": "bdf48ef6b5d0d23bbb02e17d04865216179f510a", "size": 3665 }],
+            ["icons/icon_32x32.png", { "hash": "92750c5f93c312ba9ab413d546f32190c56d6f1f", "size": 5362 }],
+            ["icons/minecraft.icns", { "hash": "991b421dfd401f115241601b2b373140a8d78572", "size": 114786 }]
+        ])
+        merge.forEach((v,k)=>{
+            file.objects[k]= v;
+        })
+        file.virtual = true;
+    } else if (file.virtual) {
+        resources = config.metaFiles.assets.virtual;
+    } else
+        resources = join(basepath, "objects");
+
     const object = file.objects;
-    const objectPath = join(basepath, "objects");
-    if (!existsSync(basepath)) { mkdirSync(basepath); }
-    if (!existsSync(objectPath)) { mkdirSync(objectPath); }
-    Object.values(object).forEach(o => {
-        const folder = join(objectPath, o.hash.substring(0, 2));
-        if (!existsSync(folder)) { mkdirSync(folder); }
-    })
     const keys = Object.keys(object);
     const arr = [];
+    mkdir(basepath);
+    var resources
+    //https://launchermeta.mojang.com/v1/packages/770572e819335b6c0a053f8378ad88eda189fc14/legacy.json
+    
+    const objectPath = resources;
+
+    mkdir(objectPath)
     for (let i = 0; i < keys.length; i++) {
         const o = object[keys[i]]
+
+        const root = file.virtual ? keys[i].split("/") : [o.hash.substring(0, 2), o.hash]
+        const d = root.pop()
+
+        const location = join(objectPath, ...root);
+        mkdir(location);
+
         const resource = "http://resources.download.minecraft.net/" + o.hash.substring(0, 2) + "/" + o.hash;
-        const location = join(join(objectPath, o.hash.substring(0, 2)), o.hash);
-        arr.push({ size: o.size, location: location, url: resource, key: keys[i] });
+        arr.push({ size: o.size, location: join(location, d), url: resource, key: keys[i] });
     }
+
     const onDone = (key) => { delete file.objects[key]; return Object.keys(file.objects).length; };
-    const onTimeOut = (iter) => this.assets(file, events, iter);
+    const onTimeOut = (iter) => assets(file, events, iter);
     return await downloader(arr, events, onDone, onTimeOut, r, keys.length);
 }
 
 export async function runtime(events = defEvents) {
     const runtime = files.runtimes;
     const meta = join(runtime, "meta");
-    if (!existsSync(meta)) { mkdirSync(meta); }
+    mkdir(meta);
 
     const downloadFolder = join(runtime, "lzma");
-    if (!existsSync(downloadFolder)) { mkdirSync(downloadFolder); }
+    mkdir(downloadFolder);
 
     const manifest = getRuntime();
     const gamecore = Object.keys(manifest.gamecore);
@@ -127,7 +151,7 @@ export async function runtime(events = defEvents) {
         const e = gamecore[id]
         grandManifest[e] = {};
         const root = join(runtime, e);
-        if (!existsSync(root)) mkdirSync(root);
+        mkdir(root);
         const libs = manifest[platform][e];
         if (libs.length < 1) continue;
         const lib = libs[0];
@@ -147,16 +171,16 @@ export async function runtime(events = defEvents) {
             const file = join(...rawPath);
             switch (todoobj.type) {
                 case ("directory"):
-                    if (!existsSync(file)) mkdirSync(file); break;
+                    mkdir(file); break;
                 case ("file"):
                     if (todoobj.downloads.lzma) {
                         const fn = rawPath.pop()
                         const container = join(...rawPath);
                         const hash = todoobj.downloads.lzma.sha1;
-                        const loc1 = join(downloadFolder, hash.substring(0, 2));
-                        if (!existsSync(loc1)) mkdirSync(loc1);
-                        const loc2 = join(loc1, hash.substring(2));
-                        if (!existsSync(loc2)) mkdirSync(loc2);
+                        // const loc1 = join(downloadFolder, hash.substring(0, 2));
+                        // mkdir(loc1);
+                        const loc2 = join(join(downloadFolder, hash.substring(0, 2)), hash.substring(2));
+                        mkdir(loc2);
                         toDownLoad[e + ":" + rmk] = {
                             extract: { path: container, file: fn },
                             executable: todoobj.executable,
@@ -194,7 +218,7 @@ export async function runtime(events = defEvents) {
     await ddload();
 }
 /**
- * @param  {{libraries:Array<GMLL.libFiles>,id:string,assets:string}} versionJSON 
+ * @param  {GMLL.version.structure} versionJSON 
  * @param {*} events 
  * @param {*} r 
  */
@@ -203,70 +227,64 @@ export async function libs(versionJSON, events = defEvents, r = 1) {
     /**@type {Array<GMLL.artifact>} */
     var LibFiles = {};
     console.log("Checking rules");
-    var nativeFolder = join(files.natives, versionJSON.assets || versionJSON.id)
+    var nativeFolder = join(files.natives, versionJSON.id)
 
-    if (!existsSync(nativeFolder)) mkdirSync(nativeFolder);
+    mkdir(nativeFolder);
     for (var key = 0; key < libArray.length; key++) {
-        rule: {
-            const e = libArray[key]
-            if (e.rules) {
-                for (var i = 0; i < e.rules.length; i++) {
-                    if (e.rules[i].action == "disallow" && (!e.rules[i].os || e.rules[i].os == OS)) {
-                        console.log(e.rules)
-                        break  rule;
-                    }
-                    else if (e.rules[i].action == "allow" && e.rules[i].os && e.rules[i].os != OS) {
-                        console.log(e.rules)
-                        break  rule;
-                    }
-                }
+
+        const e = libArray[key]
+        if (e.rules) {
+            if (!lawyer(e.rules)) continue;
+        }
+        if (e.downloads) {
+            if (e.downloads.classifiers && e.natives && e.natives[OS] && e.downloads.classifiers[e.natives[OS]]) {
+                const obj = e.downloads.classifiers[e.natives[OS]];
+                obj.extract = e.extract || {};
+                obj.extract.path = nativeFolder
+                LibFiles[obj.path] = obj;
+
             }
-            if (e.downloads) {
-                if (e.downloads.classifiers && e.natives && e.natives[OS] && e.downloads.classifiers[e.natives[OS]]) {
-                    const obj = e.downloads.classifiers[e.natives[OS]];
-                    obj.extract = e.extract || {};
-
-                    obj.extract.path = nativeFolder
-
-                    LibFiles[obj.path] = obj;
-
-                }
+            if (e.downloads.artifact)
                 LibFiles[e.downloads.artifact.path] = (e.downloads.artifact);
-            } else if (e.url) {
-                //Maven repo
-                const namespec = e.name.split(":")
-                const path = namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + ".jar";
-                const r = await fetch(path + ".sha1")
-                /**@type {GMLL.artifact} */
-                var artifact = { path: path, sha1: await r.text(), url: e.url + path }
-                LibFiles[path] = (artifact);
-            } else {
-                console.log(e)
-            }
+
+        } else if (e.url) {
+            //Maven repo
+            const namespec = e.name.split(":")
+            const path = namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + ".jar";
+            const r = await fetch(path + ".sha1")
+            /**@type {GMLL.artifact} */
+            var artifact = { path: path, sha1: await r.text(), url: e.url + path }
+            LibFiles[path] = (artifact);
+        } else {
+            console.log(e)
         }
     }
 
-    console.log("Checking rules");
 
+    const libIndex = []
     function load() {
         const arr = []
         Object.values(LibFiles).forEach(e => {
             var file = files.libraries;
             const filz = String(e.path).split("/");
             //console.log(path.join(file, ...filz));
-            var art = { extract: e.extract, size: e.size, location: join(file, ...filz), url: e.url, key: e.path, sha: e.sha1 }
-
+            const locPath = join(file, ...filz);
+            var art = { extract: e.extract, size: e.size, location: locPath, url: e.url, key: e.path, sha: e.sha1 }
+            libIndex.push(locPath)
             arr.push(art)
             for (var fff = 0; fff < filz.length - 1; fff++) {
                 file = join(file, filz[fff]);
                 //  console.log(file);
-                if (!existsSync(file)) mkdirSync(file);
+                mkdir(file);
             }
         })
         const onDone = (key) => { delete LibFiles[key]; return Object.keys(LibFiles).length; };
         return downloader(arr, events, onDone, load, 2, Object.keys(LibFiles).length);
     }
     await load();
+    mkdir(config.metaFiles.launcher.libIndex);
+    const indexFiles = join(config.metaFiles.launcher.libIndex, versionJSON.id + ".json");
+    writeFileSync(indexFiles, JSON.stringify(libIndex));
 }
 
 

@@ -1,21 +1,24 @@
 import { join } from "path";
-import { existsSync, mkdirSync, readFileSync, writeFileSync, readSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, createWriteStream, statSync } from "fs";
 import { createHash } from "crypto";
 import { getConfig, getVersions } from "./config.js";
 import FETCH from "node-fetch";
 import { libs, assets as assetDownloader, runtime } from "./downloader.js";
-
+import { mkdir } from "./internal/util.js"
 const config = await getConfig();
 
-class version {
+class chronicle {
     constructor(version) {
         this.version = version.toLocaleLowerCase();
         this.files = { "json": join(config.files.versions, this.version) }
-        this.manifest = getVersions().find(e => e.id.toLocaleLowerCase() == this.version.toLocaleLowerCase()) || {};
+        this.manifest = getVersions().find(e => e.id.toLocaleLowerCase() == this.version) || {};
         this.path = join(config.files.versions, this.version);
-        if (!existsSync(this.path)) mkdirSync(this.path);
+        mkdir(this.path);
     }
-
+    /**
+     * 
+     * @returns {Promise<GMLL.version.structure>}
+     */
     async getJson() {
         const jsonManifest = join(this.path, this.version + ".json")
         if (existsSync(jsonManifest)) {
@@ -66,23 +69,58 @@ class version {
         await assetDownloader(result);
         return result;
     }
-    async setup() {
-        await this.getJson();
+    async install(type) {
+        const json = await this.getJson();
+        /**@type {GMLL.version.downloadable} */
+        var client = json.downloads[type];
+        const apath = this.getJar(json);
+        if (existsSync(apath)) {
+            if (statSync(apath).size == client.size && createHash('sha1').update(readFileSync(apath)).digest('hex') == client.sha1) {
+                return;
+            }
+            else {
+                console.log(statSync(apath).size + "vs" + client.size)
+                console.log(createHash('sha1').update(readFileSync(apath)).digest('hex') + "vs" + client.sha1)
+
+            }
+        }
+        const file = createWriteStream(apath);
+
+        console.log(apath)
+        const r = await FETCH(client.url);
+
+        console.log("Downloading client Jar");
+        await new Promise(res => { r.body.pipe(file); r.body.on('close', res) });
+    }
+    /**
+     * 
+     * @param {GMLL.version.structure} json 
+     * @returns 
+     */
+    getJar(json = { id: this.version }) {
+        const ID = (json.inheritsFrom || json.id);
+        return join(config.files.versions, ID, ID + ".jar");
+    }
+    /**
+     * @param {GMLL.jarTypes} type 
+     */
+    async setup(type = "client") {
+        await this.install(type);
         await runtime();
-        
         await this.chkLibs();
         await this.chkAssets();
+
+
     }
 };
 
 /**
  * 
  * @param {string} version 
- * @returns {version}
+ * @returns {chronicle}
  */
-export function getVersion(version) {
-    return new version(version);
+export function getChronicle(version) {
+    return new chronicle(version);
 }
 
-const v = new version("1.17.1");
-v.setup();
+
