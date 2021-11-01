@@ -106,4 +106,4 @@ dist
 # GMLL Project files
 .minecraft/
 package-lock.json
-yarn-lock.json
+yarn.lock
