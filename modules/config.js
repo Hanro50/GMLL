@@ -68,6 +68,7 @@ export async function reload() {
             latest: join(mainConfig.files.launcher, "manifest", "latest.json"),
             vanilla: join(mainConfig.files.launcher, "manifest", "vanilla.json"),
             fabric: join(mainConfig.files.launcher, "manifest", "fabric.json"),
+            forge: join(mainConfig.files.launcher, "manifest", "forge.json"),
         },
         launcher: {
             runtime: join(mainConfig.files.launcher, "runtime.json"),
@@ -84,6 +85,8 @@ export async function reload() {
     Object.keys(mainConfig.files).forEach(e => {
         mkdir(mainConfig.files[e]);
     })
+
+    writeFileSync(join(mainConfig.files.minecraft, "launcher_profiles.json"), JSON.stringify({ "clientToken": "Dummy file!", "launcherVersion": { "format": 21, "profilesFormat": 2 }, "profiles": {}, "settings": {} }))
     mkdir(metaFiles.version.folder);
     if (mainConfig.update.includes("vanilla")) {
         const r = await Fetch("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json");
@@ -117,7 +120,7 @@ export async function reload() {
             })
             writeFileSync(metaFiles.version.fabric, JSON.stringify(result, "\n", "\t"));
         }
-    }
+    }//forge
     if (mainConfig.update.includes("runtime")) {
         const r = await Fetch("https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json");
         if (r.status == 200) {

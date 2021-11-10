@@ -10,6 +10,7 @@
         //These two fields are for modded version jsons 
         base?: string,
         stable?: boolean,
+        overrides?: Partial<GMLL.version.structure>
     }
  
 }

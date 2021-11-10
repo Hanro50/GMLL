@@ -14,30 +14,38 @@ function combine(ob1, ob2) {
         }
         else if (typeof ob1[e] == typeof ob2[e]) {
             if (ob1[e] instanceof Array) {
-              
-                
+
+
                 ob1[e] = [...ob2[e], ...ob1[e]]
-              
+
             }
-            else if (typeof ob1[e]=="string") {
+            else if (typeof ob1[e] == "string") {
                 ob1[e] = ob2[e];
             }
             else if (ob1[e] instanceof Object) {
                 ob1[e] = combine(ob1[e], ob2[e]);
             }
+        } else {
+            ob1[e] = ob2[e];
         }
-        
-       
     })
     return ob1;
 }
-
-async function inheratanceCheck(json) {
+/**
+ * 
+ * @param {GMLL.version.structure} json 
+ * @param {GMLL.manifests.version} manifest 
+ * @returns 
+ */
+async function inheratanceCheck(json, manifest) {
+    var Org
+    if (manifest && manifest.overrides) {
+        console.log(manifest.overrides)
+        Org = combine(json, manifest.overrides);
+    } else Org = json
     if (json.inheritsFrom) {
         const j2 = await (new chronicle(json.inheritsFrom)).getJson();
-        const j3 = combine(j2, json);
-        console.log(j3)
-        return j3;
+        return combine(j2, Org);;
     }
     return json;
 }
@@ -59,8 +67,9 @@ class chronicle {
             const text = readFileSync(jsonManifest);
             var shasum = createHash('sha1');
             shasum.update(text);
+
             if (!this.manifest || !this.manifest.sha1 || shasum.digest('hex') == this.manifest.sha1) {
-                return await inheratanceCheck(JSON.parse(text));
+                return await inheratanceCheck(JSON.parse(text), this.manifest);
             }
         }
         if (!this.manifest) { console.error("[GMLL]: Version " + this.version + " does not exist!"); return; };
@@ -72,12 +81,15 @@ class chronicle {
         const json = JSON.parse(text);
         console.log(json.inheritsFrom)
 
-        return await inheratanceCheck(json)
+        return await inheratanceCheck(json, this.manifest)
 
     }
     async chkLibs() {
 
         const json = await this.getJson();
+        if (json.mavenFiles) {
+          json.libraries.push(...json.mavenFiles)
+        }
         await libs(json);
     }
     async chkAssets() {

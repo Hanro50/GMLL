@@ -6,20 +6,31 @@ import { getChronicle } from "./handler.js";
 import { fsSanitiser, mkdir, parseArguments } from "./internal/util.js";
 import { cpus, type } from "os";
 const config = await getConfig();
-
+/**
+ * 
+ * @param { string |{component:string}} javaPath 
+ * @returns 
+ */
+export function getJavaPath(javaPath = "jre-legacy") {
+    console.log(javaPath)
+    if (typeof javaPath != "string")
+        javaPath = javaPath.component;
+    
+    return join(config.files.runtimes, javaPath, "bin", type() == "Windows_NT" ? "java.exe" : "java")
+}
 const defArgs = [
     "-Xms${ram}G",
     "-Xmx${ram}G",
-   // { "rules": [{ "action": "allow", "os": { "arch": "x64" } }], "value": "-d64" },
- //   "-Xmn384m",
- //   "-XX:+ParallelRefProcEnabled",
- //   "-XX:+PerfDisableSharedMem",
- //   "-XX:+UseCompressedOops",
- //   "-XX:-UsePerfData",
- //   "-XX:MaxGCPauseMillis=200",
- //   "-XX:ParallelGCThreads=${cores}",
- //   "-XX:ConcGCThreads=2",
- //   "-XX:+UseG1GC",
+    // { "rules": [{ "action": "allow", "os": { "arch": "x64" } }], "value": "-d64" },
+    //   "-Xmn384m",
+    //   "-XX:+ParallelRefProcEnabled",
+    //   "-XX:+PerfDisableSharedMem",
+    //   "-XX:+UseCompressedOops",
+    //   "-XX:-UsePerfData",
+    //   "-XX:MaxGCPauseMillis=200",
+    //   "-XX:ParallelGCThreads=${cores}",
+    //   "-XX:ConcGCThreads=2",
+    //   "-XX:+UseG1GC",
 ]
 /**@type {GMLL.instance.instance} */
 export default class {
@@ -84,7 +95,7 @@ export default class {
             resolution_height: resolution ? resolution.height : "",
 
             auth_player_name: player.name,
-            version_name: vjson.id,
+            version_name: vjson.inheritsFrom || vjson.id,
             game_directory: this.path,
 
             assets_root: AssetRoot,
@@ -99,11 +110,16 @@ export default class {
             launcher_version: launcher_version,
             classpath: classPath,
             auth_session: player.session,
-            game_assets: AssetRoot
+            game_assets: AssetRoot,
+
+            classpath_separator: type() == "Windows_NT" ? ";" : ":",
+            library_directory: config.files.libraries
         }
-        var javaPath = join(config.files.runtimes, vjson.javaVersion ? vjson.javaVersion.component : "jre-legacy", "bin", type() == "Windows_NT" ? "java.exe" : "java")
-        var jvmArgs = parseArguments(args,defArgs)+ (vjson.arguments ? parseArguments(args, vjson.arguments.jvm) : parseArguments(args));
-        var gameArgs = vjson.arguments ? parseArguments(args, vjson.arguments.game) : " " + vjson.minecraftArguments;
+        var javaPath = getJavaPath(vjson.javaVersion);
+        var jvmArgs = parseArguments(args, defArgs) + (vjson.arguments ? parseArguments(args, vjson.arguments.jvm) : parseArguments(args));
+
+        var gameArgs = vjson.arguments ? parseArguments(args, vjson.arguments.game) : "";
+        gameArgs += vjson.minecraftArguments ? " " + vjson.minecraftArguments : "";
 
         var launchCom = jvmArgs + " " + vjson.mainClass + gameArgs;
 

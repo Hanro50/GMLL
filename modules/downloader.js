@@ -85,8 +85,8 @@ export async function assets(file, events = defEvents, r = 1) {
             ["icons/icon_32x32.png", { "hash": "92750c5f93c312ba9ab413d546f32190c56d6f1f", "size": 5362 }],
             ["icons/minecraft.icns", { "hash": "991b421dfd401f115241601b2b373140a8d78572", "size": 114786 }]
         ])
-        merge.forEach((v,k)=>{
-            file.objects[k]= v;
+        merge.forEach((v, k) => {
+            file.objects[k] = v;
         })
         file.virtual = true;
     } else if (file.virtual) {
@@ -100,7 +100,7 @@ export async function assets(file, events = defEvents, r = 1) {
     mkdir(basepath);
     var resources
     //https://launchermeta.mojang.com/v1/packages/770572e819335b6c0a053f8378ad88eda189fc14/legacy.json
-    
+
     const objectPath = resources;
 
     mkdir(objectPath)
@@ -242,15 +242,21 @@ export async function libs(versionJSON, events = defEvents, r = 1) {
                 LibFiles[obj.path] = obj;
 
             }
-            if (e.downloads.artifact)
+           
+            if (e.downloads.artifact){
+                if (!e.downloads.artifact.path) {
+                    const namespec = e.name.split(":")
+                    const path = namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + ".jar";
+                    e.downloads.artifact.path = path;
+                }
                 LibFiles[e.downloads.artifact.path] = (e.downloads.artifact);
-
+            }
         } else if (e.url) {
             //Maven repo
             const namespec = e.name.split(":")
             const path = namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + ".jar";
-          console.log(e.url +path)
-            const r = await Fetch(e.url +path + ".sha1")
+            console.log(path)
+            const r = await Fetch(e.url + path + ".sha1")
             /**@type {GMLL.artifact} */
             var artifact = { path: path, sha1: await r.text(), url: e.url + path }
             LibFiles[path] = (artifact);

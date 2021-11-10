@@ -6,6 +6,7 @@ namespace GMLL.config {
             latest: string,
             vanilla: string,
             fabric: string,
+            forge:string
         },
         launcher: {
             runtime: string,

@@ -43,7 +43,10 @@ namespace GMLL.version {
         classpath: string,
 
         game_assets: string,
-        auth_session: string
+        auth_session: string,
+
+        library_directory:string,
+        classpath_separator:string
     }
     export interface rules {
         "action": "allow" | "disallow",
