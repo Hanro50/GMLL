@@ -7,10 +7,8 @@ import { createWriteStream, existsSync, readFileSync } from "fs";
 import { getJavaPath } from "./instance.js";
 import { spawn } from "child_process";
 const config = await getConfig();
-const forgiacURL = "https://github.com/Hanro50/Forgiac/releases/download/1.0.3-SNAPSHOT/Forgiac-basic-1.0.3-SNAPSHOT.jar"
-const forgiacSHA = "https://github.com/Hanro50/Forgiac/releases/download/1.0.3-SNAPSHOT/Forgiac-basic-1.0.3-SNAPSHOT.jar.sha1"
-
-
+const forgiacURL = "https://github.com/Hanro50/Forgiac/releases/download/1.7-SNAPSHOT/Forgiac-basic-1.7-SNAPSHOT.jar"
+const forgiacSHA = "https://github.com/Hanro50/Forgiac/releases/download/1.7-SNAPSHOT/Forgiac-basic-1.7-SNAPSHOT.jar.sha1"
 
 async function build() {
     var libzFolder = join(config.files.libraries, "za", "net", "hanro50", "forgiac", "basic")
@@ -42,7 +40,6 @@ async function build() {
         file.on("close", e);
 
     });
-
 
     return libs;
 }

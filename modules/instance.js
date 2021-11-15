@@ -21,16 +21,6 @@ export function getJavaPath(javaPath = "jre-legacy") {
 const defArgs = [
     "-Xms${ram}G",
     "-Xmx${ram}G",
-    // { "rules": [{ "action": "allow", "os": { "arch": "x64" } }], "value": "-d64" },
-    //   "-Xmn384m",
-    //   "-XX:+ParallelRefProcEnabled",
-    //   "-XX:+PerfDisableSharedMem",
-    //   "-XX:+UseCompressedOops",
-    //   "-XX:-UsePerfData",
-    //   "-XX:MaxGCPauseMillis=200",
-    //   "-XX:ParallelGCThreads=${cores}",
-    //   "-XX:ConcGCThreads=2",
-    //   "-XX:+UseG1GC",
 ]
 /**@type {GMLL.instance.instance} */
 export default class {
