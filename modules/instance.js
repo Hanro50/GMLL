@@ -24,6 +24,12 @@ const defArgs = [
 ]
 /**@type {GMLL.instance.instance} */
 export default class {
+
+    static get(name){
+        const json = JSON.parse(readFileSync(join(config.metaFiles.profile, fsSanitiser(name+ ".json"))));
+        return new this(json);
+
+    }
     /**
      * 
      * @param {GMLL.instance.options} opt 

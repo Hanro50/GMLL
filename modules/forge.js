@@ -10,7 +10,7 @@ const config = await getConfig();
 const forgiacURL = "https://github.com/Hanro50/Forgiac/releases/download/1.7-SNAPSHOT/Forgiac-basic-1.7-SNAPSHOT.jar"
 const forgiacSHA = "https://github.com/Hanro50/Forgiac/releases/download/1.7-SNAPSHOT/Forgiac-basic-1.7-SNAPSHOT.jar.sha1"
 
-async function build() {
+export async function build() {
     var libzFolder = join(config.files.libraries, "za", "net", "hanro50", "forgiac", "basic")
     mkdir(libzFolder);
     var libs = join(libzFolder, "forgiac.jar");

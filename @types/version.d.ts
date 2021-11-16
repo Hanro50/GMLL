@@ -1,25 +1,5 @@
 
 namespace GMLL.version {
-    /**
-     *  "--username",
-                "${auth_player_name}",
-                "--version",
-                "${version_name}",
-                "--gameDir",
-                "${game_directory}",
-                "--assetsDir",
-                "${assets_root}",
-                "--assetIndex",
-                "${assets_index_name}",
-                "--uuid",
-                "${auth_uuid}",
-                "--accessToken",
-                "${auth_access_token}",
-                "--userType",
-                "${user_type}",
-                "--versionType",
-                "${version_type}"
-     */
     export interface args {
         is_demo_user: boolean,
 
@@ -45,8 +25,8 @@ namespace GMLL.version {
         game_assets: string,
         auth_session: string,
 
-        library_directory:string,
-        classpath_separator:string
+        library_directory: string,
+        classpath_separator: string
     }
     export interface rules {
         "action": "allow" | "disallow",
@@ -130,6 +110,19 @@ namespace GMLL.version {
         time: string,
         type: version_type,
         inheritsFrom?: String,
+    }
+
+    export interface assets {
+        "objects": [{ "hash": string, "size": Number }],
+        map_to_resources?: boolean,
+        virtual?: boolean
+    }
+
+    export class chronicle {
+        constructor(version: string);
+        getJson(): structure;
+        chkLibs(): Promise<void>;
+        chkAssets(): assets;
     }
 
 }
