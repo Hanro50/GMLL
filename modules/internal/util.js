@@ -20,7 +20,7 @@ const OS = getOS();
  * @param {string} text 
  */
 export function fsSanitiser(text) {
-    return text.normalize("NFKC").trim().toLowerCase().replace(/[\,\!\@\#\$\%\^\&\*\(\)\[\]\{\}\;\:\"\<\>\\\/\?\~\`\'\|\=\+/s/t]/g, "_")
+    return text.normalize("NFKC").trim().toLowerCase().replace(/[\,\!\@\#\$\%\^\&\*\(\)\[\]\{\}\;\:\"\<\>\\\/\?\~\`\'\|\=\+\s\t]/g, "_")
 }
 
 export function mkdir(test) {

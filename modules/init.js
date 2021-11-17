@@ -1,16 +1,18 @@
 
-import * as _config from "./modules/config.js";
-import * as  _forge from "./modules/forge.js";
-import * as  _handler from "./modules/handler.js"
-import _profile from "./modules/instance.js";
-
+import * as _config from "./config.js";
+import * as  _forge from "./forge.js";
+import * as  _handler from "./handler.js"
+import _profile from "./instance.js";
+import { fsSanitiser } from "./internal/util.js";
 
 /**
  * First time setup. 
  */
 export async function setup() {
-    let chron = new _profile().getChronicle();
+    let prof =  new _profile({name:"default"});
+    let chron =prof.getChronicle();
     await chron.setup();
+    prof.save();
     await _forge.build();
 }
 
@@ -20,7 +22,7 @@ export function getChronicle(version) {
 
 export const instance = {
     make(opt) { return new _profile(opt) },
-    get(name) { return _profile.get(name) }
+    get(name = "default") { return _profile.get(name) }
 }
 
 /**
@@ -41,6 +43,5 @@ export function getVersions(){
     return _config.getVersions();
 }
 
-export function setConfig(conf){
-    return _config.setConfig(conf)
+export function writeManifest(manifests,fileID){
 }

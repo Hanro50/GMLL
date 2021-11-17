@@ -8,6 +8,7 @@ import { platform as _platform, arch } from "os";
 import { mkdir, lawyer, getOS } from "./internal/util.js";
 
 import Fetch from 'node-fetch';
+import { setup } from "../index.js";
 const processCMD = "download.progress";
 const failCMD = "download.fail";
 const config = await getConfig();
@@ -122,7 +123,7 @@ export async function assets(file, events = defEvents, r = 1) {
     return await downloader(arr, events, onDone, onTimeOut, r, keys.length);
 }
 
-export async function runtime(events = defEvents) {
+export async function runtime( runtimeName = "all",events = defEvents) {
     const runtime = files.runtimes;
     const meta = join(runtime, "meta");
     mkdir(meta);
@@ -145,19 +146,20 @@ export async function runtime(events = defEvents) {
     }
     const toDownLoad = {}
     const grandManifest = {};
-    for (var id = 0; id < gamecore.length; id++) {
-        const e = gamecore[id]
+
+    //Sets up runtime downloader
+    const setup = async (e) => {
         grandManifest[e] = {};
         const root = join(runtime, e);
         mkdir(root);
         const libs = manifest[platform][e];
-        if (libs.length < 1) continue;
+        if (libs.length < 1) return;
         const lib = libs[0];
         const libjsonfile = join(meta, e + ".json");
         var runManifest
         if (!existsSync(libjsonfile) || statSync(libjsonfile).size != lib.manifest.size) {
             const ljf = await Fetch(lib.manifest.url);
-            if (ljf.status != 200) continue;
+            if (ljf.status != 200) return;
             const ljff = await ljf.text();
             writeFileSync(libjsonfile, ljff);
             runManifest = JSON.parse(ljff).files;
@@ -209,6 +211,10 @@ export async function runtime(events = defEvents) {
             }
         })
     }
+    if (gamecore.includes(runtimeName)) await setup(runtimeName)
+    else for (var id = 0; id < gamecore.length; id++) await setup(gamecore[id]);
+
+
     async function ddload(r = 3) {
         const onDone = (key) => { delete toDownLoad[key]; return Object.keys(toDownLoad).length; };
         await downloader(Object.values(toDownLoad), events, onDone, ddload, r, Object.keys(toDownLoad).length);
@@ -242,8 +248,8 @@ export async function libs(versionJSON, events = defEvents, r = 1) {
                 LibFiles[obj.path] = obj;
 
             }
-           
-            if (e.downloads.artifact){
+
+            if (e.downloads.artifact) {
                 if (!e.downloads.artifact.path) {
                     const namespec = e.name.split(":")
                     const path = namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + ".jar";

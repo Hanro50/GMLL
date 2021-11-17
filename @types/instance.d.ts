@@ -18,7 +18,7 @@ namespace GMLL.instance {
         version: version
         constructor(opt: options)
         save(): void
-        launch(player: player, resolution: { width: string, height: string }): any
+        launch(player: player, resolution?: { width: string, height: string }): any
     }
 
     export interface player {

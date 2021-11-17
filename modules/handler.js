@@ -141,6 +141,8 @@ class chronicle {
 
         console.log("Downloading client Jar");
         await new Promise(res => { r.body.pipe(file); r.body.on('close', res) });
+
+       
     }
     /**
      * 
@@ -151,12 +153,17 @@ class chronicle {
         const ID = (json.inheritsFrom || json.id);
         return join(config.files.versions, ID, ID + ".jar");
     }
+
+    async installRuntime(){
+        const json = await this.getJson();
+        await runtime(json.javaVersion?json.javaVersion.component:"jre-legacy");
+    }
     /**
      * @param {GMLL.jarTypes} type 
      */
     async setup(type = "client") {
+        await this.installRuntime();
         await this.install(type);
-        await runtime();
         await this.chkLibs();
         await this.chkAssets();
 

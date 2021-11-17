@@ -48,7 +48,7 @@ export default class {
     }
     save() {
         mkdir(config.metaFiles.profile);
-        writeFileSync(join(config.metaFiles.profile, fsSanitiser(this.name + ".json")), JSON.stringify(this));
+        writeFileSync(join(config.metaFiles.profile, fsSanitiser(this.name) + ".json"), JSON.stringify(this));
     }
 
     /**
@@ -65,7 +65,7 @@ export default class {
         var AssetRoot = config.files.assets
         const index = JSON.parse(readFileSync(join(config.metaFiles.assets.indexes, vjson.assets + ".json")))
 
-        if (index.virtual) AssetRoot = config.metaFiles.assets.virtual;
+        if (index.virtual) AssetRoot = confiAssetRootg.metaFiles.assets.virtual;
         if (index.map_to_resources) { AssetRoot = config.metaFiles.assets.resources; };
         var launcher_version = "0.0.0";
         try {
@@ -74,7 +74,7 @@ export default class {
         if (index.map_to_resources) {
             const res = join(this.path, "resources")
             if (existsSync(res)) unlinkSync(res);
-            symlinkSync(config.metaFiles.assets.resources, res, 'dir')
+            symlinkSync(config.metaFiles.assets.resources, res, 'junction')
         }
         const libdexpath = join(config.metaFiles.launcher.libIndex, this.version + ".json");
         if (!existsSync(libdexpath)) await chronicle.chkLibs();
