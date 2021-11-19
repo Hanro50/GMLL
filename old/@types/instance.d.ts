@@ -1,4 +1,4 @@
-namespace GMLL.instance {
+namespace GMLL2.instance {
     export interface options {
         /**The name of the instance */
         name?: string,

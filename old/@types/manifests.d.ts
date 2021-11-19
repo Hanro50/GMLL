@@ -1,8 +1,8 @@
- namespace GMLL.manifests {
+ namespace GMLL2.manifests {
     export interface version {
         id: string,
         type:version_type ,
-        url: string,
+        url?: string,
         time?: string,
         releaseTime?: string,
         sha1?: string,

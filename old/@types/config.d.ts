@@ -1,7 +1,7 @@
-namespace GMLL.config {
+namespace GMLL2.config {
     export interface metafiles {
         profile: string
-        version: {
+        manifest: {
             folder: string,
             latest: string,
             vanilla: string,

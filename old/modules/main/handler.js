@@ -3,8 +3,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, createWriteStream, 
 import { createHash } from "crypto";
 import { getConfig, getVersions } from "./config.js";
 import FETCH from "node-fetch";
-import { libs, assets as assetDownloader, runtime } from "./downloader.js";
-import { mkdir } from "./internal/util.js"
+import { libs, assets as assetDownloader, runtime } from "../internal/downloader.js";
+import { mkdir } from "../internal/util.js"
 const config = await getConfig();
 
 function combine(ob1, ob2) {
@@ -166,8 +166,6 @@ class chronicle {
         await this.install(type);
         await this.chkLibs();
         await this.chkAssets();
-
-
     }
 };
 

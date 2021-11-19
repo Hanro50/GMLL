@@ -1,5 +1,5 @@
 
-namespace GMLL.version {
+namespace GMLL2.version {
     export interface args {
         is_demo_user: boolean,
 

@@ -1,7 +1,7 @@
 import Fetch from "node-fetch";
 import { join } from "path";
 import { getConfig } from "./config.js"
-import { mkdir } from "./internal/util.js";
+import { mkdir } from "../internal/util.js";
 import crypto from "crypto";
 import { createWriteStream, existsSync, readFileSync } from "fs";
 import { getJavaPath } from "./instance.js";
@@ -50,7 +50,7 @@ export async function install(file) {
     const javaPath = getJavaPath("java-runtime-alpha");
     const path = join(config.files.instances, ".forgiac");
     const logFile = join(path, "log.txt")
-    var args = ["-jar", await build(), "--log", logFile, "--virtual", config.files.versions, config.files.libraries, "--mk_manifest", config.metaFiles.version.folder]
+    var args = ["-jar", await build(), "--log", logFile, "--virtual", config.files.versions, config.files.libraries, "--mk_manifest", config.metaFiles.manifest.folder]
     if (file) {//--installer
         file = (file instanceof Array ? join(...file) : file);
         args.push("--installer", file);

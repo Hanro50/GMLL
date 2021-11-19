@@ -1,6 +1,5 @@
-import { type } from "os";
 
-namespace GMLL {
+namespace GMLL2 {
     export type update = "fabric" | "vanilla" | "files" | "runtime";
     export type version_type = "old_alpha" | "old_beta" | "release" | "snapshot" | "custom" | "fabric";
     export type user_type = "msa" | "mojang" | "legacy";
@@ -36,6 +35,9 @@ namespace GMLL {
          * @returns 
          */
         getVersions(): Array<GMLL.manifests.version>
+
+
+        writeManifest(manifests: Array<GMLL.manifests>, fileID: string): void;
 
     }
 }

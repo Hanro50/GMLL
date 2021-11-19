@@ -1,16 +1,18 @@
 
-import * as _config from "./config.js";
-import * as  _forge from "./forge.js";
-import * as  _handler from "./handler.js"
-import _profile from "./instance.js";
+import * as _config from "./main/config.js";
+import * as  _forge from "./main/forge.js";
+import * as  _handler from "./main/handler.js"
+import _profile from "./main/instance.js";
 import { fsSanitiser } from "./internal/util.js";
-
+import { join } from "path";
+import { writeFile } from "fs";
+const conf = await _config.getConfig();
 /**
  * First time setup. 
  */
 export async function setup() {
-    let prof =  new _profile({name:"default"});
-    let chron =prof.getChronicle();
+    let prof = new _profile({ name: "default" });
+    let chron = prof.getChronicle();
     await chron.setup();
     prof.save();
     await _forge.build();
@@ -32,16 +34,18 @@ export const instance = {
  * @param {String | String[] | null} file
  * @returns {Promise<void>}
  */
-export function installForge(File){
+export function installForge(File) {
     return _forge.install(File)
 }
 /**
  * 
  * @returns 
  */
-export function getVersions(){
+export function getVersions() {
     return _config.getVersions();
 }
 
-export function writeManifest(manifests,fileID){
+export function writeManifest(manifests, fileID) {
+   const file =  join(conf.metaFiles.manifest.folder, fsSanitiser(fileID) + ".json");
+   writeFile(file,JSON.stringify(manifests))
 }

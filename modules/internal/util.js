@@ -1,6 +1,5 @@
-import { existsSync, mkdirSync } from "fs";
-import { platform, version, arch, type } from "os";
-//import { GMLL } from "../../@types";
+import fs from "fs"
+
 export function getOS() {
     const OS = platform();
     switch (OS) {
@@ -13,26 +12,24 @@ export function getOS() {
             return "linux";
     }
 }
+
 const OS = getOS();
-
-/**
- * 
- * @param {string} text 
- */
-export function fsSanitiser(text) {
-    return text.normalize("NFKC").trim().toLowerCase().replace(/[\,\!\@\#\$\%\^\&\*\(\)\[\]\{\}\;\:\"\<\>\\\/\?\~\`\'\|\=\+\s\t]/g, "_")
+export function mkdir(path) {
+    if (fs.existsSync(!path)) fs.mkdirSync(path, { recursive: true, });
 }
 
-export function mkdir(test) {
-    if (!existsSync(test)) mkdirSync(test, { recursive: true })
+export function mklink(target, path) {
+    if (fs.existsSync(path)) fs.unlinkSync(path)
+    fs.symlinkSync(target, path, "junction");
 }
+
 /**
  * 
  * @param {Array<GMLL.version.rules>}  rules
  * @param {GMLL.version.args} properties
  * @returns {boolean | any}
  */
-export function lawyer(rules, properties = {}) {
+ export function lawyer(rules, properties = {}) {
     var end = true, end2 = false;
     for (var i = 0; i < rules.length; i++) {
         if (rules[i].features) Object.keys(rules[i].features).forEach(e => {
@@ -53,28 +50,3 @@ export function lawyer(rules, properties = {}) {
     }
     return (end && end2);
 }
-export var defJVM = [
-    { "rules": [{ "action": "allow", "os": { "name": "osx" } }], "value": ["-XstartOnFirstThread"] },
-    { "rules": [{ "action": "allow", "os": { "name": "windows" } }], "value": "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump" },
-    { "rules": [{ "action": "allow", "os": { "name": "windows", "version": "^10\\." } }], "value": ["-Dos.name=Windows 10", "-Dos.version=10.0"] },
-    { "rules": [{ "action": "allow", "os": { "arch": "x86" } }], "value": "-Xss1M" },
-    "-Djava.library.path=${natives_directory}",
-    "-Dminecraft.launcher.brand=${launcher_name}",
-    "-Dminecraft.launcher.version=${launcher_version}",
-    "-cp",
-    "${classpath}"
-]
-
-
-export function parseArguments(val = {}, args = defJVM) {
-    var out = ""
-    args.forEach(e => {
-        if (typeof e == "string")
-            out += " " + e.trim().replace(/\s/g,"");
-        else if (lawyer(e, val))
-            out += " " + (e instanceof Array ? e.join("\t") : e);
-    })
-    return out
-
-}
-
