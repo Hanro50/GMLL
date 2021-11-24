@@ -1,32 +1,36 @@
 //Handles mass file downloads
-import { isWorker } from 'cluster';
 import { existsSync, readFileSync, createWriteStream } from 'fs';
 import { join } from 'path';
 import Fetch from 'node-fetch';
 import { cmd as _cmd } from '7zip-min';
 import { type } from 'os';
-import { execSync } from 'child_process';
+import { execSync, fork } from 'child_process';
 import { compare } from './util.js';
+import { isMainThread, threadId } from 'worker_threads';
+import { downloadable } from '../downloader.js';
 export const processCMD = "download.progress";
 export const failCMD = "download.fail";
+
+
+export function getSelf() : string{
+    let self = join(...new URL(import.meta.url).pathname.split("/"));
+    return self.substr(process.cwd().length);
+}
+console.log(process.env.file);
 /**
  * @param {{objects:{[key: string]:{hash:string,size:number}}}} file 
  */
-if (isWorker) {
+if (process.env.file) {
     /**
      * @type {GMLL.get.downloadable[]}
      */
-    const keys = JSON.parse(readFileSync(process.env.file));
-    function chmod(dir) {
+    const keys : downloadable[] = JSON.parse(readFileSync(process.env.file).toString());
+    function chmod(dir:string) {
         if (type() != "Windows_NT")
             execSync('chmod +x ' + dir)
     }
-    /**
-     * 
-     * @param {GMLL.get.downloadable} o 
-     * @returns 
-     */
-    async function mutator(o) {
+
+    async function mutator(o:downloadable) :Promise<void> {
         try {
             var path = o.path;
             var name = o.name;
@@ -44,7 +48,7 @@ if (isWorker) {
                             com.push("-xr!" + f);
                         })
                     }
-                    await new Promise(e => _cmd(com, err => { if (err) console.log(err); e() }))
+                    await new Promise<void>(e => _cmd(com, (err: any) => { if (err) console.log(err); e() }));
                     if (o.unzip.name)
                         name = o.unzip.name;
                     path = o.unzip.path
@@ -67,7 +71,7 @@ if (isWorker) {
                 new Promise(async e => {
                     const file = createWriteStream(join(o.path, o.name))
                     const res = await Fetch(o.url);
-                    res.body.pipe(file, { end: "true" });
+                    res.body.pipe(file, { end: true });
                     file.on("close", e);
 
                 });

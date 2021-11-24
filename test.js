@@ -1,4 +1,7 @@
-import { manifests,runtime } from "./modules/downloader.js";
-import { instance } from "./modules/instance.js";
-import { getManifest, version } from "./modules/versions.js";
+import { URL } from "url";
+import { instance } from "./dist/modules/instance.js";
+import { getSelf } from "./dist/modules/internal/get.js";
+console.log(getSelf())
+
+getSelf();
 new instance({version:"1.18-pre5"}).launch({name:"Hanro50"})

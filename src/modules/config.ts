@@ -1,7 +1,20 @@
-import EventEmitter from "events";
+import { EventEmitter } from "events";
 import { join } from "path";
 import { mkdir } from "./internal/util.js";
-let defEvents = new EventEmitter()
+export type update = "fabric" | "vanilla" | "forge" | "runtime";
+
+export interface Events {
+    //Download
+    on(e: "download.start" | "download.restart" | "download.done", f: () => void): void
+    on(e: "download.setup", f: (cores: number) => void): void
+    on(e: "download.progress", f: (key: string, index: Number, total: Number, left: Number) => void): void
+    on(e: "download.fail", f: (key: string, type: "retry" | "fail" | "system", err: any) => void): void
+   
+    on(e: "minecraft.stdout" | "minecraft.stderr" , f: (chunk:any) => void): void
+
+    emit(tag:string, ...args:any):void
+}
+let defEvents:Events = new EventEmitter();
 //Download Manager
 defEvents.on('download.setup', (cores) => console.log("[GMLL]: Dividing out work to " + cores + " cores"))
 defEvents.on('download.start', () => console.log("[GMLL]: Starting download"))
@@ -26,13 +39,13 @@ defEvents.on('minecraft.stderr', (out) => {
 /**
  * @typedef {Array<GMLL.update>} updateConf
  */
-var updateConf = ["fabric", "vanilla", "forge", "runtime"];
-var root, assets, libraries, instances, versions, runtimes, launcher, natives
+var updateConf : update[] = ["fabric", "vanilla", "forge", "runtime"];
+var root: string, assets: string, libraries: string, instances: string, versions: string, runtimes: string, launcher: string, natives: string
 /**
  * Resets the root folder path and all of it's sub folders
  * @param {String} _root 
  */
-export function resetRoot(_root) {
+export function resetRoot(_root: string) {
     root = _root
     assets = join(root, "assets");
     libraries = join(root, "libraries");
@@ -45,26 +58,26 @@ export function resetRoot(_root) {
 
 resetRoot(join(process.cwd(), ".minecraft"));
 
-export function setRoot(_root) {
+export function setRoot(_root: string) {
     root = _root;
 }
-export function setAssets(_assets) {
+export function setAssets(_assets: string) {
     assets = _assets;
 }
-export function setLibraries(_libraries) {
+export function setLibraries(_libraries: string) {
     libraries = _libraries;
 }
-export function setInstances(_instances) {
+export function setInstances(_instances: string) {
     instances = _instances;
 }
-export function setRuntimes(_runtimes) {
+export function setRuntimes(_runtimes: string) {
     runtimes = _runtimes;
 }
-export function setLauncher(_launcher) {
+export function setLauncher(_launcher: string) {
     launcher = _launcher;
 }
 
-export function setNatives(_natives) {
+export function setNatives(_natives: string) {
     natives = _natives;
 }
 
@@ -109,10 +122,10 @@ export function getMeta() {
 }
 
 
-export function emit(tag, ...args) {
+export function emit(tag: string, ...args: number[]) {
     defEvents.emit(tag, ...args);
 }
-export function setEventListener(events) {
+export function setEventListener(events:Events) {
     defEvents = events;
 }
 /**
@@ -125,17 +138,11 @@ export function getEventListener() {
 export function clrUpdateConfig() {
     updateConf = [];
 }
-/**
- * 
- * @param {GMLL.update} item 
- */
-export function addUpdateConfig(item) {
+
+export function addUpdateConfig(item: update) {
     updateConf.push(item);
 }
-/**
- * 
- * @returns {Array<GMLL.update>}
- */
+
 export function getUpdateConfig() {
     return updateConf;
 }

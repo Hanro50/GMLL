@@ -1,20 +1,42 @@
 import { mkdir, lawyer, getOS, loadSave, compare, assetTag, mklink, chkLoadSave, rmdir } from "./internal/util.js";
 import { join } from "path";
 import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig } from "./config.js";
-import { processCMD, failCMD } from "./internal/get.js"
+import { processCMD, failCMD, getSelf } from "./internal/get.js"
 //Handles mass file downloads
-import { fork, setupMaster } from 'cluster';
+import cluster from "cluster";
+const fork = cluster.fork;
+const setupMaster = cluster.setupPrimary || cluster.setupMaster;
 import { cpus, arch, tmpdir } from 'os';
 import { readFileSync, writeFileSync, createWriteStream, copyFileSync } from "fs";
 import Fetch from "node-fetch";
+import { assetIndex, assets, manifest, version } from "./types.js";
+
+export interface downloadable {
+
+    path: string,
+    url: string,
+    name: string,
+    unzip?: {
+        exclude?: string[],
+        name?: string
+        path: string,
+
+    }
+    size?: number,
+    sha1?: String,
+    executable?: boolean,
+    /**Internally used to identify object: 
+           * May not be constant */
+    key: string
+}
+
 setupMaster({
-    exec: join(".", "modules", "internal", "get.js")
+    exec: getSelf()
 });
 /**
  * The root download function
- * @param {Array<GMLL.get.downloadable>} obj 
  */
-export function download(obj, it = 1) {
+export function download(obj: Partial<downloadable>[], it: number = 1) {
     if (it < 1) it = 1;
     emit("download.started");
     obj.sort((a, b) => { return (b.size || 0) - (a.size || 0) });
@@ -34,7 +56,7 @@ export function download(obj, it = 1) {
 
     function resolve() {
         const totalItems = Object.values(temp).length;
-        return new Promise(res => {
+        return new Promise<void>(res => {
             const numCPUs = cpus().length;
             emit("download.setup", numCPUs);
             var done = 0;
@@ -98,7 +120,7 @@ export function runtime(runtime) {
         throw "Cannot find runtime"
     }
     /**@type {GMLL.json.version} */
-    const json = JSON.parse(readFileSync(file)).files;
+    const json = JSON.parse(readFileSync(file).toString()).files;
     var arr = [];
     const lzma = join(getRuntimes(), "lzma");
     mkdir(lzma);
@@ -113,18 +135,14 @@ export function runtime(runtime) {
                 mkdir(FullPath)
                 break;
             case "file":
-                var dload = {};
+                var dload: Partial<downloadable> = {};
                 if (obj.downloads.lzma) {
                     const downLoc = assetTag(lzma, obj.downloads.lzma.sha1);
                     dload.path = join(downLoc, obj.downloads.lzma.sha1);
                     mkdir(dload.path);
                     dload.url = obj.downloads.lzma.url;
                     dload.name = name + ".xz";
-
-                    dload.unzip = {};
-                    dload.unzip.path = filePath;
-                    dload.unzip.name = name;
-
+                    dload.unzip = { path: filePath, name: name };
                     dload.size = obj.downloads.lzma.size;
                     dload.sha1 = obj.downloads.lzma.sha1;
                 } else {
@@ -149,21 +167,16 @@ export function runtime(runtime) {
     });
     return download(arr, 5);
 }
-/**
- * 
- * @param {GMLL.json.assetIndex} index 
- */
-export async function assets(index) {
+
+export async function assets(index: assetIndex) {
     console.trace();
     const root = getAssets();
     var findex = join(root, "indexes");
     mkdir(findex);
     findex = join(findex, index.id + ".json");
-    /**@type {GMLL.json.assets} */
-    const assetIndex = await chkLoadSave(index.url, findex, index.sha1, index.size);
-    /**@type {GMLL.get.downloadable[]} */
-    var downloader = [];
-    const getURL = (obj) => "http://resources.download.minecraft.net/" + obj.hash.substring(0, 2) + "/" + obj.hash;
+    const assetIndex = await chkLoadSave<assets>(index.url, findex, index.sha1, index.size);
+    var downloader: downloadable[] = [];
+    const getURL = (obj: { hash: string; size: Number; }) => "http://resources.download.minecraft.net/" + obj.hash.substring(0, 2) + "/" + obj.hash;
     if (assetIndex.map_to_resources) {
         assetIndex.objects["icons/icon_16x16.png"] = { "hash": "bdf48ef6b5d0d23bbb02e17d04865216179f510a", "size": 3665 };
         assetIndex.objects["icons/icon_32x32.png"] = { "hash": "92750c5f93c312ba9ab413d546f32190c56d6f1f", "size": 5362 };
@@ -197,19 +210,19 @@ export async function assets(index) {
  * @param {GMLL.json.version} version 
  * @param {GMLL.get.downloadable} download_jar 
  */
-export async function libraries(version, download_jar) {
-    const arr = [download_jar];
+export async function libraries(version: version, download_jar: downloadable) {
+    const arr: Partial<downloadable>[] = [download_jar];
     const natives = getNatives();
     rmdir(natives);
     mkdir(natives);
     const index = join(getMeta().libraries, download_jar.key + ".json");
-    /**@type {Array<GMLL.artifact>} */
-    const classPath = [];
+
+    const classPath: string[] = [];
     const OS = getOS();
     const libraries = version.libraries;
     for (var key = 0; key < libraries.length; key++) {
         /**@type {GMLL.get.downloadable} */
-        var dload = {};
+        var dload: Partial<downloadable> = {};
         const e = libraries[key]
         if (e.rules) {
             if (!lawyer(e.rules)) continue;
@@ -218,11 +231,10 @@ export async function libraries(version, download_jar) {
             if (e.downloads.classifiers && e.natives && e.natives[OS] && e.downloads.classifiers[e.natives[OS]]) {
                 const art = e.downloads.classifiers[e.natives[OS]];
                 const rawPath = [getlibraries(), ...art.path.split("/")];
-                var dload2 = {};
+                var dload2: Partial<downloadable> = {};
 
-                dload2.unzip = {};
-                dload2.unzip.exclude = e.extract ? e.extract.exclude : undefined;
-                dload2.unzip.path = natives;
+                dload2.unzip = { exclude: e.extract ? e.extract.exclude : undefined, path: natives };
+
 
                 dload2.name = rawPath.pop();
                 dload2.path = join(...rawPath);
@@ -271,13 +283,15 @@ export async function libraries(version, download_jar) {
 
     }
     classPath.push(join(download_jar.path, download_jar.name));
-    writeFileSync(index, JSON.stringify(classPath, "\n", "\t"));
+    writeFileSync(index, JSON.stringify(classPath, ["\n"], "\t"));
 
 
     return await download(arr, 3);
 
 
 }
+
+
 
 export async function manifests() {
     const forgiacURL = "https://github.com/Hanro50/Forgiac/releases/download/1.7-SNAPSHOT/Forgiac-basic-1.7-SNAPSHOT.jar";
@@ -292,10 +306,20 @@ export async function manifests() {
 
     const update = getUpdateConfig();
     const meta = getMeta();
-
+    interface jsloaderInf {
+        "separator": string,
+        "build": Number,
+        "maven": string,
+        "version": string,
+        "stable": boolean
+    
+    }
+    interface jsgameInf {
+         version: string; stable: boolean; 
+    }
     if (update.includes("fabric")) {
-        const jsgame = await loadSave(fabricVersions, join(meta.index, "fabric_game.json"));
-        const jsloader = await loadSave(fabricLoader, join(meta.index, "fabric_loader.json"));
+        const jsgame = await loadSave<[jsgameInf]>(fabricVersions, join(meta.index, "fabric_game.json"));
+        const jsloader = await loadSave<[jsloaderInf]>(fabricLoader, join(meta.index, "fabric_loader.json"));
         const result = [];
         jsgame.forEach(game => {
             const version = game.version;
@@ -309,7 +333,7 @@ export async function manifests() {
                 });
             });
         });
-        writeFileSync(join(meta.manifests, "fabric.json"), JSON.stringify(result, "\n", "\t"));
+        writeFileSync(join(meta.manifests, "fabric.json"), JSON.stringify(result, ["\n"], "\t"));
 
     }
     if (update.includes("forge")) {
@@ -321,9 +345,9 @@ export async function manifests() {
         if (rURL2.status == 200 && !compare({ key: "forgiac", name: "forgiac.jar", url: forgiacURL, path: libzFolder, sha1: await rURL2.text() })) {
             await new Promise(async e => {
                 console.log("Downloading forgiac");
-                const file = createWriteStream(libs);
+                const file = createWriteStream(join(libzFolder,"forgiac.jar"));
                 const res = await Fetch(forgiacURL);
-                res.body.pipe(file, { end: "true" });
+                res.body.pipe(file, { end: true });
                 file.on("close", e);
             });
         }
@@ -361,9 +385,9 @@ export async function manifests() {
     if (update.includes("vanilla")) {
         const r = await Fetch(mcVersionManifest);
         if (r.status == 200) {
-            const json = await r.json();
-            writeFileSync(join(meta.index, "latest.json"), JSON.stringify(json.latest, "\n", "\t"));
-            writeFileSync(join(meta.manifests, "vanilla.json"), JSON.stringify(json.versions, "\n", "\t"));
+            const json:{versions?:[manifest],latest?:{}} = await r.json();
+            writeFileSync(join(meta.index, "latest.json"), JSON.stringify(json.latest, ["\n"], "\t"));
+            writeFileSync(join(meta.manifests, "vanilla.json"), JSON.stringify(json.versions, ["\n"], "\t"));
         }
     }
 }

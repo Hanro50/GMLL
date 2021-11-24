@@ -3,6 +3,22 @@ import { join } from "path";
 import { getMeta, getRuntimes, getVersions } from "./config.js";
 import { assets, libraries, runtime } from "./downloader.js";
 import { chkLoadSave, getOS, mkdir } from "./internal/util.js";
+import { artifact, manifest,version as _version, rules, version_type } from "./types.js";
+
+
+export interface options {
+    /**The name of the instance */
+    name?: string,
+    /**The version of the game to load */
+    version?: string,
+    /**The installation path */
+    path?: string,
+    /**Ram in GB */
+    ram?: Number,
+    /**Custom data your launcher can use */
+    meta?: any
+}
+
 function combine(ob1, ob2) {
     Object.keys(ob2).forEach(e => {
         if (!ob1[e]) {
@@ -25,11 +41,17 @@ function combine(ob1, ob2) {
     return ob1;
 }
 export class version {
+    json: _version;
+    manifest: manifest;
+    name: string;
+    folder: string;
+    file: string;
+    inheritsFrom: any;
     /**
      * 
      * @param {string | GMLL.json.manifest} manifest 
      */
-    constructor(manifest) {
+    constructor(manifest:string | manifest) {
         /**@type {GMLL.json.manifest} */
         this.manifest = typeof manifest == "string" ? getManifest(manifest) : manifest;
         /**@type {GMLL.json.version} */
@@ -43,13 +65,13 @@ export class version {
      * 
      * @returns {Promise<GMLL.json.version>}
      */
-    async getJSON() {
+    async getJSON() : Promise<_version> {
         if (this.json)
             return this.json;
         if (this.manifest.url) {
-            this.json = await chkLoadSave(this.manifest.url, this.file, this.manifest.sha1);
+            this.json = await chkLoadSave<_version>(this.manifest.url, this.file, this.manifest.sha1);
         } else if (existsSync(this.file)) {
-            this.json = JSON.parse(readFileSync(this.file));
+            this.json = JSON.parse(readFileSync(this.file).toString());
         } else {
             throw this.manifest.type == "unknown"
                 ? "Unknown version, please check spelling of given version ID"
@@ -102,7 +124,7 @@ export class version {
  * @returns {string[]}
  */
     getLibs() {
-        return JSON.parse(readFileSync(join(getMeta().libraries, this.manifest.id+".json")));
+        return JSON.parse(readFileSync(join(getMeta().libraries, this.manifest.id+".json")).toString());
     }
 }
 
@@ -114,7 +136,7 @@ export function getManifests() {
     const root = getMeta().manifests
     readdirSync(root).forEach(e => {
         if (e.endsWith("json")) {
-            var v = JSON.parse(readFileSync(join(root, e)));
+            var v = JSON.parse(readFileSync(join(root, e)).toString());
             if (v instanceof Array)
                 versionManifest.push(...v);
         }
@@ -140,6 +162,6 @@ export function getManifest(version) {
 export function getLatest() {
     const file = join(getMeta().index, "latest.json");
     if (existsSync(file))
-        return JSON.parse(readFileSync(file));
+        return JSON.parse(readFileSync(file).toString());
     else return { "release": "1.17.1", "snapshot": "21w42a" };
 }
