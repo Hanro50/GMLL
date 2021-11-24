@@ -108,3 +108,5 @@ dist
 package-lock.json
 yarn.lock
 temp.json
+
+old_*
