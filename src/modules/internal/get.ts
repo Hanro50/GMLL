@@ -3,20 +3,49 @@ import { existsSync, readFileSync, createWriteStream } from 'fs';
 import { join } from 'path';
 import Fetch from 'node-fetch';
 import { cmd as _cmd } from '7zip-min';
-import { type } from 'os';
-import { execSync, fork } from 'child_process';
-import { compare } from './util.js';
-import { isMainThread, threadId } from 'worker_threads';
+import { chmod, compare } from './util.js';
 import { downloadable } from '../downloader.js';
 export const processCMD = "download.progress";
 export const failCMD = "download.fail";
 
 
-export function getSelf() : string{
-    let self = join(...new URL(import.meta.url).pathname.split("/"));
-    return self.substr(process.cwd().length);
+export function getSelf(): string {
+        let self = join(...new URL(import.meta.url).pathname.split("/"));
+        return self.substr(process.cwd().length);
 }
 console.log(process.env.file);
+
+
+export async function mutator(o: downloadable): Promise<void> {
+    try {
+        var path = o.path;
+        var name = o.name;
+        if (!existsSync(path)) {
+            console.log("Does not exist", path);
+            return;
+        }
+        if (o.unzip) {
+            if (o.unzip.path) {
+                var com = ['x', join(path, name), '-y', '-o' + o.unzip.path]
+                if (o.unzip.exclude) {
+                    o.unzip.exclude.forEach(e => {
+                        var f = String(e);
+                        if (f.endsWith("/")) f += "*"
+                        com.push("-xr!" + f);
+                    })
+                }
+                await new Promise<void>(e => _cmd(com, (err: any) => { if (err) console.log(err); e() }));
+                if (o.unzip.name)
+                    name = o.unzip.name;
+                path = o.unzip.path
+            }
+        }
+        if (o.executable) {
+            chmod(join(path, name));
+        }
+    } catch (e) { }
+
+}
 /**
  * @param {{objects:{[key: string]:{hash:string,size:number}}}} file 
  */
@@ -24,42 +53,8 @@ if (process.env.file) {
     /**
      * @type {GMLL.get.downloadable[]}
      */
-    const keys : downloadable[] = JSON.parse(readFileSync(process.env.file).toString());
-    function chmod(dir:string) {
-        if (type() != "Windows_NT")
-            execSync('chmod +x ' + dir)
-    }
+    const keys: downloadable[] = JSON.parse(readFileSync(process.env.file).toString());
 
-    async function mutator(o:downloadable) :Promise<void> {
-        try {
-            var path = o.path;
-            var name = o.name;
-            if (!existsSync(path)) {
-                console.log("Does not exist", path);
-                return;
-            }
-            if (o.unzip) {
-                if (o.unzip.path) {
-                    var com = ['x', join(path, name), '-y', '-o' + o.unzip.path]
-                    if (o.unzip.exclude) {
-                        o.unzip.exclude.forEach(e => {
-                            var f = String(e);
-                            if (f.endsWith("/")) f += "*"
-                            com.push("-xr!" + f);
-                        })
-                    }
-                    await new Promise<void>(e => _cmd(com, (err: any) => { if (err) console.log(err); e() }));
-                    if (o.unzip.name)
-                        name = o.unzip.name;
-                    path = o.unzip.path
-                }
-            }
-            if (o.executable) {
-                chmod(join(path, name));
-            }
-        } catch (e) { }
-
-    }
     keys.forEach(o => {
         var retry = 0;
         async function load() {

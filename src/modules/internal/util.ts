@@ -2,8 +2,9 @@ import { createHash } from "crypto";
 import Fetch from "node-fetch";
 import * as fs from "fs";
 import { join } from "path";
-import { arch, platform, version } from "os";
+import { arch, platform, type, version } from "os";
 import { launchArgs, rules } from "../types";
+import { execSync } from "child_process";
 export function getOS() {
     const OS = platform();
     switch (OS) {
@@ -144,4 +145,9 @@ export function assetTag(lzma, sha1) {
  */
 export function fsSanitiser(text) {
     return text.normalize("NFKC").trim().toLowerCase().replace(/[\,\!\@\#\$\%\^\&\*\(\)\[\]\{\}\;\:\"\<\>\\\/\?\~\`\'\|\=\+\s\t]/g, "_")
+}
+
+export function chmod(dir:string) {
+    if (type() != "Windows_NT")
+        execSync('chmod +x ' + dir)
 }

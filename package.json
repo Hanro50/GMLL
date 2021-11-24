@@ -1,12 +1,10 @@
 {
     "name": "gmll",
-    "version": "0.0.0",
+    "version": "0.0.1",
     "description": "A generic launcher core for building custom launchers",
     "license": "MIT",
-    "main": "index.cjs",
-    "esnext": {
-        "main": "index.js"
-    },
+    "main": "/dist/index.js",
+    "type": "module",
     "dependencies": {
         "7zip-min": "^1.4.0",
         "@types/node": "^16.11.10",
@@ -14,8 +12,8 @@
         "node": "^14.18.1",
         "node-fetch": "^3.0.0"
     },
-    "type": "module",
     "types": "index.d.ts",
+    "files": ["/dist/*","/package.json","/LICENSE","/README.md"],
     "engines": {
         "node": ">=14"
     }
