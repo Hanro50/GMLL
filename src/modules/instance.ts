@@ -3,9 +3,10 @@ import { spawn } from "child_process";
 import { join } from "path";
 import { defJVM, fsSanitiser, mkdir, mklink, oldJVM, parseArguments } from "./internal/util.js";
 import { cpus, type } from "os";
-import { version, getLatest } from "./versions.js";
-import { emit, getAssets, getInstances, getlibraries, getMeta, getNatives } from "./config.js";
+import { version, getLatest, getJavaPath } from "./versions.js";
+import { emit, getAssets, getInstances, getlibraries, getMeta, getNatives, getVersions } from "./config.js";
 import { launchArgs } from "./types.js";
+import { manifests, runtime } from "./downloader.js";
 const defArgs = [
     "-Xms${ram}G",
     "-Xmx${ram}G",
@@ -132,17 +133,38 @@ export class instance implements options {
 
         var launchCom = jvmArgs + " " + vjson.mainClass + " " + gameArgs;
 
-        console.log(javaPath)
         Object.keys(args).forEach(key => {
             const regex = new RegExp(`\\\$\{${key}\}`, "g")
             launchCom = launchCom.replace(regex, args[key])
         })
-        console.log(javaPath + launchCom)
         const s = spawn(javaPath, launchCom.trim().split(" "), { "cwd": this.path })
-        s.stdout.on('data', (chunk) => emit("minecraft.stdout", chunk));
-        s.stderr.on('data', (chunk) => emit("minecraft.stderr", chunk));
-        //  s.stdout.pipe(process.stdout);
-        // s.stderr.pipe(process.stderr);
+        s.stdout.on('data', (chunk) => emit("jvm.stdout","Minecraft", chunk));
+        s.stderr.on('data', (chunk) => emit("jvm.stderr","Minecraft", chunk));
     }
 
+}
+
+
+/**
+ * @param {String | String[] | null} file
+ */
+ export async function installForge(file:string| string[] | null) {
+    await runtime("java-runtime-beta");
+    const javaPath = getJavaPath("java-runtime-beta");
+    const path = join(getInstances(), ".forgiac");
+    const logFile = join(path, "log.txt")
+    const args : string[] = ["-jar", join(getlibraries(),"za", "net", "hanro50", "forgiac", "basic","forgiac.jar"), " --log", logFile, "--virtual", getVersions(), getlibraries(), "--mk_manifest", getMeta().manifests];
+    if (file) {//--installer
+        //@ts-ignore
+        file = (file instanceof Array ? join(...file) : file);
+        args.push("--installer", file);
+    }
+
+    mkdir(path);
+    const s = spawn(javaPath, args, { "cwd": path })
+    s.stdout.on('data', (chunk) => emit("jvm.stdout","Forgiac", chunk));
+    s.stderr.on('data', (chunk) => emit("jvm.stderr","Forgiac", chunk));
+    console.log(await new Promise(e => s.on('exit', e)));
+
+   return await new Promise(exit=>s.on("exit",exit));
 }

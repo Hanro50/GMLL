@@ -75,7 +75,7 @@ export interface version {
         }
     },
     javaVersion?: {
-        component: string,
+        component: runtimes,
         majorVersion: Number
     },
     complianceLevel: string

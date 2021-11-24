@@ -1,9 +1,9 @@
-import { existsSync, readdirSync, readFileSync } from "fs";
+import { copyFileSync, existsSync, readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { getMeta, getRuntimes, getVersions } from "./config.js";
 import { assets, libraries, runtime } from "./downloader.js";
-import { chkLoadSave, getOS, mkdir } from "./internal/util.js";
-import { artifact, manifest,version as _version, rules, version_type } from "./types.js";
+import { chkLoadSave, getOS, mkdir, rmdir } from "./internal/util.js";
+import { artifact, manifest, version as _version, rules, version_type, runtimes } from "./types.js";
 
 
 export interface options {
@@ -46,29 +46,40 @@ export class version {
     name: string;
     folder: string;
     file: string;
+    private file_old: string;
+    private folder_old: string;
     inheritsFrom: any;
     /**
      * 
      * @param {string | GMLL.json.manifest} manifest 
      */
-    constructor(manifest:string | manifest) {
+    constructor(manifest: string | manifest) {
         /**@type {GMLL.json.manifest} */
         this.manifest = typeof manifest == "string" ? getManifest(manifest) : manifest;
         /**@type {GMLL.json.version} */
         this.json;
         this.name = this.manifest.base || this.manifest.id;
         this.folder = join(getVersions(), this.name);
-        mkdir(this.folder);
         this.file = join(this.folder, this.manifest.id + ".json");
+        this.folder_old = join(getVersions(), this.manifest.id);
+        this.file_old = join(this.folder_old, this.manifest.id + ".json");
+
     }
+
     /**
      * 
      * @returns {Promise<GMLL.json.version>}
      */
-    async getJSON() : Promise<_version> {
+    async getJSON(): Promise<_version> {
         if (this.json)
             return this.json;
+        if (this.file != this.file_old && !existsSync(this.file) && existsSync(this.file_old)) {
+            console.log("[GMLL] Cleaning up versions!")
+            copyFileSync(this.file_old, this.file);
+            rmdir(this.folder_old);
+        }
         if (this.manifest.url) {
+            mkdir(this.folder);
             this.json = await chkLoadSave<_version>(this.manifest.url, this.file, this.manifest.sha1);
         } else if (existsSync(this.file)) {
             this.json = JSON.parse(readFileSync(this.file).toString());
@@ -83,6 +94,8 @@ export class version {
             this.folder = base.folder;
             this.name = base.name;
         }
+
+
         return this.json;
     }
 
@@ -101,7 +114,7 @@ export class version {
 
     async getJavaPath() {
         const json = await this.getJSON();
-        return join(getRuntimes(), json.javaVersion ? json.javaVersion.component : "jre-legacy", "bin", getOS() == "windows" ? "java.exe" : "java");
+        return getJavaPath(json.javaVersion ? json.javaVersion.component : "jre-legacy");
     }
     /**
      * 
@@ -120,14 +133,16 @@ export class version {
         await this.getJar("client", this.folder, this.name + ".jar");
         await this.getRuntime();
     }
-/**
- * @returns {string[]}
- */
+    /**
+     * @returns {string[]}
+     */
     getLibs() {
-        return JSON.parse(readFileSync(join(getMeta().libraries, this.manifest.id+".json")).toString());
+        return JSON.parse(readFileSync(join(getMeta().libraries, this.manifest.id + ".json")).toString());
     }
 }
-
+export function getJavaPath(java: runtimes = "jre-legacy") {
+    return join(getRuntimes(), java, "bin", getOS() == "windows" ? "java.exe" : "java");
+}
 /**
  * @returns {Array<GMLL.json.manifest>}
  */
@@ -139,6 +154,8 @@ export function getManifests() {
             var v = JSON.parse(readFileSync(join(root, e)).toString());
             if (v instanceof Array)
                 versionManifest.push(...v);
+            else
+                versionManifest.push(v);
         }
     })
     return versionManifest;

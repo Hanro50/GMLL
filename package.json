@@ -13,7 +13,12 @@
         "node-fetch": "^3.0.0"
     },
     "types": "index.d.ts",
-    "files": ["/dist/*","/package.json","/LICENSE","/README.md"],
+    "files": [
+        "/dist/*",
+        "/package.json",
+        "/LICENSE",
+        "/README.md"
+    ],
     "engines": {
         "node": ">=14"
     }

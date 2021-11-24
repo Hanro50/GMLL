@@ -1,5 +1,9 @@
+import { spawn } from "child_process";
+import { join } from "path";
 import * as _config from "./modules/config";
-import { download as _download, downloadable } from "./modules/downloader";
+import { download as _download, downloadable, manifests, runtime } from "./modules/downloader";
+import { mkdir } from "./modules/internal/util";
+import { getJavaPath } from "./modules/versions";
 /**The core config class */
 export function getConfig() {
     return _config;

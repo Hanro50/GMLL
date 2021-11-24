@@ -9,7 +9,7 @@ const setupMaster = cluster.setupPrimary || cluster.setupMaster;
 import { cpus, arch, tmpdir } from 'os';
 import { readFileSync, writeFileSync, createWriteStream, copyFileSync } from "fs";
 import Fetch from "node-fetch";
-import { assetIndex, assets, manifest, version } from "./types.js";
+import { assetIndex, assets, manifest, runtimes, version } from "./types.js";
 
 export interface downloadable {
 
@@ -113,7 +113,7 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
  * 
  * @param {GMLL.runtimes} runtime 
  */
-export function runtime(runtime) {
+export function runtime(runtime:runtimes) {
     const meta = getMeta();
     const file = join(meta.runtimes, runtime + ".json");
     if (!file) {

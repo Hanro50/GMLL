@@ -9,12 +9,12 @@ export interface Events {
     on(e: "download.setup", f: (cores: number) => void): void
     on(e: "download.progress", f: (key: string, index: Number, total: Number, left: Number) => void): void
     on(e: "download.fail", f: (key: string, type: "retry" | "fail" | "system", err: any) => void): void
-   
-    on(e: "minecraft.stdout" | "minecraft.stderr" , f: (chunk:any) => void): void
 
-    emit(tag:string, ...args:any):void
+    on(e: "jvm.stdout" | "jvm.stderr", f: (app:string,chunk: any) => void): void
+
+    emit(tag: string, ...args: any): void
 }
-let defEvents:Events = new EventEmitter();
+let defEvents: Events = new EventEmitter();
 //Download Manager
 defEvents.on('download.setup', (cores) => console.log("[GMLL]: Dividing out work to " + cores + " cores"))
 defEvents.on('download.start', () => console.log("[GMLL]: Starting download"))
@@ -29,17 +29,16 @@ defEvents.on('download.fail', (key, type, err) => {
     }
 });
 
-defEvents.on('minecraft.stdout', (out) => {
-    console.log(("[Minecraft] " + out).trim());
+defEvents.on('jvm.stdout', (app,out) => {
+    console.log(("["+app+"] " + out).trim());
 });
-
-defEvents.on('minecraft.stderr', (out) => {
-    console.log(("[Minecraft] " + out).trim());
+defEvents.on('jvm.stderr', (app,out) => {
+    console.log(("\x1b[31m\x1b[1m["+app+"] " + out).trim()+"\x1b[0m");
 });
 /**
  * @typedef {Array<GMLL.update>} updateConf
  */
-var updateConf : update[] = ["fabric", "vanilla", "forge", "runtime"];
+var updateConf: update[] = ["fabric", "vanilla", "forge", "runtime"];
 var root: string, assets: string, libraries: string, instances: string, versions: string, runtimes: string, launcher: string, natives: string
 /**
  * Resets the root folder path and all of it's sub folders
@@ -122,10 +121,10 @@ export function getMeta() {
 }
 
 
-export function emit(tag: string, ...args: number[]) {
+export function emit(tag: string, ...args: Array<Number | String>) {
     defEvents.emit(tag, ...args);
 }
-export function setEventListener(events:Events) {
+export function setEventListener(events: Events) {
     defEvents = events;
 }
 /**
