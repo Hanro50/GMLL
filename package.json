@@ -10,6 +10,7 @@
     "dependencies": {
         "7zip-min": "^1.4.0",
         "@types/node": "^16.11.6",
+        "msmc": "^3.0.0-pre0",
         "node-fetch": "^3.0.0"
     },
     "type": "module",

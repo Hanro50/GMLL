@@ -1,17 +1,14 @@
 //Handles mass file downloads
 import { isWorker } from 'cluster';
-import { existsSync, statSync, readFileSync, createWriteStream } from 'fs';
+import { existsSync, readFileSync, createWriteStream } from 'fs';
 import { join } from 'path';
 import Fetch from 'node-fetch';
 import { cmd as _cmd } from '7zip-min';
-
-import { createHash } from "crypto";
 import { type } from 'os';
 import { execSync } from 'child_process';
+import { compare } from './util.js';
 export const processCMD = "download.progress";
 export const failCMD = "download.fail";
-
-
 /**
  * @param {{objects:{[key: string]:{hash:string,size:number}}}} file 
  */
@@ -19,7 +16,7 @@ if (isWorker) {
     /**
      * @type {GMLL.get.downloadable[]}
      */
-    const keys = JSON.parse(process.env.data);
+    const keys = JSON.parse(readFileSync(process.env.file));
     function chmod(dir) {
         if (type() != "Windows_NT")
             execSync('chmod +x ' + dir)
@@ -39,7 +36,7 @@ if (isWorker) {
             }
             if (o.unzip) {
                 if (o.unzip.path) {
-                    var com = ['x', path, '-y', '-o' + o.extract.path]
+                    var com = ['x', join(path, name), '-y', '-o' + o.unzip.path]
                     if (o.unzip.exclude) {
                         o.unzip.exclude.forEach(e => {
                             var f = String(e);
@@ -61,30 +58,14 @@ if (isWorker) {
     }
     keys.forEach(o => {
         var retry = 0;
-        function chk() {
-            if (!existsSync(o.path)) return false;
-            var stats = statSync(o.path);
-            if (!o.size || stats.size != o.size) {
-                if (stats.size > 0) console.log("[GMLL]: " + stats.size + " vs " + o.size + " : " + o.key);
-                return false;
-            }
-            if (o.sha1) {
-                const sha1 = createHash('sha1').update(readFileSync(o.location)).digest("hex");
-                if (o.sha1 != sha1) {
-                    console.log("[GMLL]: " + sha1 + " vs " + o.sha1 + " : " + o.key); return false;
-                }
-            }
-            return true;
-
-        }
         async function load() {
-            if (chk()) {
+            if (compare(o)) {
                 await mutator(o);
                 process.send({ cmd: processCMD, key: o.key }); return
             };
             const download =
                 new Promise(async e => {
-                    const file = createWriteStream(o.location)
+                    const file = createWriteStream(join(o.path, o.name))
                     const res = await Fetch(o.url);
                     res.body.pipe(file, { end: "true" });
                     file.on("close", e);

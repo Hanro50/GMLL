@@ -10,7 +10,7 @@ namespace GMLL.json {
         features?: features
     }
 
-    export interface downloadable {
+    export interface artifact {
         sha1: string,
         url: String,
         size?: Number,
@@ -40,25 +40,32 @@ namespace GMLL.json {
             osx?: string
         },
     }
+    export interface assetIndex {
+        id: string,
+        sha1: string,
+        size: Number,
+        totalSize: Number,
+        url: string
+    }
 
     export interface version {
         arguments?: {
             "game": [string | { "rules": [rules], "value": string | [string] }]
             "jvm": [string | { "rules": [rules], "value": string | [string] }]
         },
-        assetIndex: downloadable,
+        assetIndex: artifact,
         assets: string,
         downloads: {
-            client: downloadable,
-            client_mappings?: downloadable,
-            server?: downloadable,
-            server_mappings?: downloadable,
-            windows_server?: downloadable
+            client: artifact,
+            client_mappings?: artifact,
+            server?: artifact,
+            server_mappings?: artifact,
+            windows_server?: artifact
         },
         logging?: {
             client: {
                 argument: string,
-                file: downloadable,
+                file: artifact,
                 type: "log4j2-xml"
             }
         },
@@ -79,8 +86,33 @@ namespace GMLL.json {
     }
 
     export interface assets {
-        "objects": [{ "hash": string, "size": Number }],
+        "objects": {[key instanceof string]: { "hash": string, "size": Number} },
         map_to_resources?: boolean,
         virtual?: boolean
+    }
+
+    export interface manifest {
+        //The ID of the version, must be unique
+        id: string,
+        //version type,
+        type: version_type,
+        //the URL to get the version.json. Assumes version.json already exists if missing
+        url?: string,
+        /**Vanilla version file includes this*/
+        time?: string,
+        /**Vanilla version file includes this*/
+        releaseTime?: string,
+        /**A sha1 of the vinal version manifest file, will not redownload version.json if it matches this*/
+        sha1?: string,
+        /**Vanilla version file includes this*/
+        complianceLevel?: 1 | 0,
+        /**For version manifest files that are based on another version. */
+        base?: string,
+        /**From the fabric manifest files, always false for some reason */
+        stable?: boolean,
+        /**Overrides fields in the version json file this references. 
+         *Used when pulling files from sources that have incompatibilities with the vannilla launcher methods.
+         */
+        overrides?: Partial<GMLL.json.version>
     }
 }
