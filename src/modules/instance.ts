@@ -5,7 +5,7 @@ import { defJVM, fsSanitiser, mkdir, mklink, oldJVM, parseArguments, writeJSON }
 import { cpus, type } from "os";
 import { version, getLatest, getJavaPath } from "./versions.js";
 import { emit, getAssets, getInstances, getlibraries, getMeta, getNatives, getVersions } from "./config.js";
-import { launchArgs } from "./types.js";
+import { launchArgs } from "../index.js";
 import { manifests, runtime } from "./downloader.js";
 const defArgs = [
     "-Xms${ram}G",
@@ -38,7 +38,7 @@ export class instance implements options {
     ram: Number;
     meta: any;
 
-    static get(name:string) {
+    static get(name: string) {
         const json = JSON.parse(readFileSync(join(getMeta().profiles, fsSanitiser(name + ".json"))).toString());
         return new this(json);
     }
@@ -56,8 +56,8 @@ export class instance implements options {
         mkdir(this.path);
     }
 
-    async getVersion() {
-        return await version.get(this.version)
+    getVersion() {
+        return new version(this.version)
     }
     save() {
         writeJSON(join(getMeta().profiles, fsSanitiser(this.name + ".json")), this);
@@ -121,7 +121,7 @@ export class instance implements options {
             library_directory: getlibraries()
         }
         const javaPath = await version.getJavaPath();
-        const rawJVMargs:launchArgs = defArgs;
+        const rawJVMargs: launchArgs = defArgs;
         rawJVMargs.push(...(vjson.arguments ? vjson.arguments.jvm : defJVM));
         if (version.manifest.releaseTime && Date.parse(version.manifest.releaseTime) < Date.parse("2012-11-18T22:00:00+00:00")) {
             rawJVMargs.push(...oldJVM);
@@ -138,8 +138,8 @@ export class instance implements options {
             launchCom = launchCom.replace(regex, args[key])
         })
         const s = spawn(javaPath, launchCom.trim().split(" "), { "cwd": this.path })
-        s.stdout.on('data', (chunk) => emit("jvm.stdout","Minecraft", chunk));
-        s.stderr.on('data', (chunk) => emit("jvm.stderr","Minecraft", chunk));
+        s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
+        s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
     }
 
 }
@@ -148,12 +148,12 @@ export class instance implements options {
 /**
  * @param {String | String[] | null} file
  */
- export async function installForge(file:string| string[] | null) {
+export async function installForge(file: string | string[] | null) {
     await runtime("java-runtime-beta");
     const javaPath = getJavaPath("java-runtime-beta");
     const path = join(getInstances(), ".forgiac");
     const logFile = join(path, "log.txt")
-    const args : string[] = ["-jar", join(getlibraries(),"za", "net", "hanro50", "forgiac", "basic","forgiac.jar"), " --log", logFile, "--virtual", getVersions(), getlibraries(), "--mk_manifest", getMeta().manifests];
+    const args: string[] = ["-jar", join(getlibraries(), "za", "net", "hanro50", "forgiac", "basic", "forgiac.jar"), " --log", logFile, "--virtual", getVersions(), getlibraries(), "--mk_manifest", getMeta().manifests];
     if (file) {//--installer
         //@ts-ignore
         file = (file instanceof Array ? join(...file) : file);
@@ -162,9 +162,9 @@ export class instance implements options {
 
     mkdir(path);
     const s = spawn(javaPath, args, { "cwd": path })
-    s.stdout.on('data', (chunk) => emit("jvm.stdout","Forgiac", chunk));
-    s.stderr.on('data', (chunk) => emit("jvm.stderr","Forgiac", chunk));
+    s.stdout.on('data', (chunk) => emit("jvm.stdout", "Forgiac", chunk));
+    s.stderr.on('data', (chunk) => emit("jvm.stderr", "Forgiac", chunk));
     console.log(await new Promise(e => s.on('exit', e)));
 
-   return await new Promise(exit=>s.on("exit",exit));
+    return await new Promise(exit => s.on("exit", exit));
 }

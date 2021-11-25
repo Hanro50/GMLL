@@ -9,7 +9,7 @@ const setupMaster = cluster.setupPrimary || cluster.setupMaster;
 import { cpus, arch, tmpdir } from 'os';
 import { readFileSync, createWriteStream, copyFileSync } from "fs";
 import Fetch from "node-fetch";
-import { assetIndex, assets, manifest, runtimes, version } from "./types.js";
+import { assetIndex, assets, manifest, runtimes, version } from "../index.js";
 
 export interface downloadable {
 

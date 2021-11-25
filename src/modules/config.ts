@@ -1,8 +1,15 @@
 import { EventEmitter } from "events";
 import { join } from "path";
-import { mkdir } from "./internal/util.js";
+import { manifests } from "./downloader.js";
+import { mkdir, throwErr } from "./internal/util.js";
 export type update = "fabric" | "vanilla" | "forge" | "runtime";
+let initialised = false;
 
+export function isInitialised() {
+    if (!initialised) {
+        throwErr("GMLL is not initialised!\nPlease run \"init()\" or wait for the manifest files to redownload when changing the launcher directory.\nThis error is here to prevent unexpected errors")
+    }
+}
 export interface Events {
     //Download
     on(e: "download.start" | "download.restart" | "download.done", f: () => void): void
@@ -10,7 +17,7 @@ export interface Events {
     on(e: "download.progress", f: (key: string, index: Number, total: Number, left: Number) => void): void
     on(e: "download.fail", f: (key: string, type: "retry" | "fail" | "system", err: any) => void): void
 
-    on(e: "jvm.stdout" | "jvm.stderr", f: (app:string,chunk: any) => void): void
+    on(e: "jvm.stdout" | "jvm.stderr", f: (app: string, chunk: any) => void): void
 
     emit(tag: string, ...args: any): void
 }
@@ -29,94 +36,102 @@ defEvents.on('download.fail', (key, type, err) => {
     }
 });
 
-defEvents.on('jvm.stdout', (app,out) => {
-    console.log(("["+app+"] " + out).trim());
+defEvents.on('jvm.stdout', (app, out) => {
+    console.log(("[" + app + "] " + out).trim());
 });
-defEvents.on('jvm.stderr', (app,out) => {
-    console.log(("\x1b[31m\x1b[1m["+app+"] " + out).trim()+"\x1b[0m");
+defEvents.on('jvm.stderr', (app, out) => {
+    console.log(("\x1b[31m\x1b[1m[" + app + "] " + out).trim() + "\x1b[0m");
 });
 /**
  * @typedef {Array<GMLL.update>} updateConf
  */
 var updateConf: update[] = ["fabric", "vanilla", "forge", "runtime"];
-var root: string, assets: string, libraries: string, instances: string, versions: string, runtimes: string, launcher: string, natives: string
+
+var files: { root: string, assets: string, libraries: string, instances: string, versions: string, runtimes: string, launcher: string, natives: string }
 /**
  * Resets the root folder path and all of it's sub folders
  * @param {String} _root 
  */
-export function resetRoot(_root: string) {
-    root = _root
-    assets = join(root, "assets");
-    libraries = join(root, "libraries");
-    instances = join(root, "instances");
-    versions = join(root, "versions");
-    runtimes = join(root, "runtimes");
-    launcher = join(root, "launcher");
-    natives = join(root, "natives");
+function _resetRoot(_root: string) {
+    files = {
+        root: _root,
+        assets: join(_root, "assets"),
+        libraries: join(_root, "libraries"),
+        instances: join(_root, "instances"),
+        versions: join(_root, "versions"),
+        runtimes: join(_root, "runtimes"),
+        launcher: join(_root, "launcher"),
+        natives: join(_root, "natives")
+    }
 }
 
-resetRoot(join(process.cwd(), ".minecraft"));
+_resetRoot(join(process.cwd(), ".minecraft"));
+
+export async function resetRoot(_root: string) {
+    initialised = false;
+    _resetRoot(_root);
+    await initialize();
+}
 
 export function setRoot(_root: string) {
-    root = _root;
+    mkdir(files.root);
+    files.root = _root;
 }
 export function setAssets(_assets: string) {
-    assets = _assets;
+    mkdir(files.assets);
+    files.assets = _assets;
 }
 export function setLibraries(_libraries: string) {
-    libraries = _libraries;
+    mkdir(files.libraries);
+    files.libraries = _libraries;
 }
 export function setInstances(_instances: string) {
-    instances = _instances;
+    mkdir(files.instances);
+    files.instances = _instances;
 }
 export function setRuntimes(_runtimes: string) {
-    runtimes = _runtimes;
+    mkdir(files.runtimes);
+    files.runtimes = _runtimes;
 }
-export function setLauncher(_launcher: string) {
-    launcher = _launcher;
+export async function setLauncher(_launcher: string) {
+    initialised = false;
+    files.launcher = _launcher;
+    await initialize();
 }
 
 export function setNatives(_natives: string) {
-    natives = _natives;
+    files.natives = _natives;
 }
 
 export function getRoot() {
-    mkdir(root);
-    return root;
+    return files.root;
 }
 
 export function getAssets() {
-    mkdir(assets)
-    return assets;
+    return files.assets;
 }
 export function getlibraries() {
-    mkdir(libraries);
-    return libraries;
+    return files.libraries;
 }
 export function getInstances() {
-    mkdir(instances);
-    return instances;
+    return files.instances;
 }
 export function getVersions() {
-    mkdir(versions);
-    return versions;
+    return files.versions;
 }
 export function getRuntimes() {
-    mkdir(runtimes);
-    return runtimes;
+    return files.runtimes;
 }
 export function getMeta() {
     const meta = {
-        libraries: join(launcher, "libraries"),
-        manifests: join(launcher, "manifests"),
-        runtimes: join(launcher, "runtimes"),
-        index: join(launcher, "index"),
-        profiles: join(launcher, "profiles"),
-        temp: join(launcher, "temp"),
-        folder: launcher,
+        libraries: join(files.launcher, "libraries"),
+        manifests: join(files.launcher, "manifests"),
+        runtimes: join(files.launcher, "runtimes"),
+        index: join(files.launcher, "index"),
+        profiles: join(files.launcher, "profiles"),
+        temp: join(files.launcher, "temp"),
+        folder: files.launcher,
     }
-    Object.values(meta).forEach(e => { mkdir(e) });
-
     return meta;
 }
 
@@ -146,6 +161,14 @@ export function getUpdateConfig() {
     return updateConf;
 }
 export function getNatives() {
-    mkdir(natives);
-    return natives
+    mkdir(files.natives);
+    return files.natives
+}
+
+/**Does the basic pre flight checks. */
+export async function initialize() {
+    await manifests();
+    Object.values(files).forEach(e => { mkdir(e) });
+    Object.values(getMeta()).forEach(e => { mkdir(e) });
+    initialised = true;
 }

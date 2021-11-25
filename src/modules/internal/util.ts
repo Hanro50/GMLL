@@ -3,8 +3,9 @@ import Fetch from "node-fetch";
 import * as fs from "fs";
 import { join } from "path";
 import { arch, platform, type, version } from "os";
-import { launchArgs, rules } from "../types";
+import { launchArgs, rules } from "../../index.js";
 import { execSync } from "child_process";
+import { downloadable } from "../downloader";
 export function getOS() {
     const OS = platform();
     switch (OS) {
@@ -85,18 +86,14 @@ export function parseArguments(val = {}, args: launchArgs = defJVM) {
 
 
 
-export function chkLoadSave<T>(url: string, file: string, sha1: string, size?: Number): Promise<T> {
+export function chkLoadSave<T>(url: string, file: string, sha1: string, size?: number): Promise<T> {
     if (!compare({ key: file, path: file, sha1: sha1, size: size })) {
         return loadSave(url, file);
     }
     return JSON.parse(fs.readFileSync(file).toString());
 }
-/**
- * 
- * @param {GMLL.get.downloadable} o 
- * @returns 
- */
-export function compare(o) {
+
+export function compare(o:Partial<downloadable>) {
     const loc = o.name ? join(o.path, o.name) : o.path;
     if (!fs.existsSync(loc)) return false;
     var stats = fs.statSync(loc);
@@ -115,35 +112,29 @@ export function compare(o) {
 }
 export function loadSave<T>(url: string, file: string): Promise<T> {
     return new Promise(async res => {
-        var data;
+        var data: T;
         const rg = await Fetch(url);
         if (rg.status == 200) {
             /**@type {Array} */
-            data = await rg.json();
+            data = await rg.json() as T;
             writeJSON(file, data);
         }
         else {
-            data = fs.readFileSync(JSON.parse(file));
+            data = JSON.parse(fs.readFileSync(file).toString()) as T;
         }
         res(data);
     })
 }
 /**
- * 
- * @param {string} sha1 
- * @returns 
+ * Generates the sha1 dir listings for assets and compressed runtime files 
  */
-export function assetTag(lzma, sha1) {
-    const file = join(lzma, sha1.substr(0, 2));
+export function assetTag(dir:string, sha1:string) {
+    const file = join(dir, sha1.substr(0, 2));
     mkdir(file);
     return join(file);
 }
 
-/**
- * 
- * @param {string} text 
- */
-export function fsSanitiser(text) {
+export function fsSanitiser(text:string) {
     return text.normalize("NFKC").trim().toLowerCase().replace(/[\,\!\@\#\$\%\^\&\*\(\)\[\]\{\}\;\:\"\<\>\\\/\?\~\`\'\|\=\+\s\t]/g, "_")
 }
 
@@ -166,8 +157,8 @@ export function writeJSON(file: string, data: Object | Object[]) {
     }
     fs.writeFileSync(file, json);
 }
-
-export function throwErr(message) {
-    const header = "\n\x1b[31m\x1b[1m[--------------ERROR--------------ERROR--------------ERROR--------------ERROR--------------ERROR--------------]\x1b[0m\n";
+/**Used to throw error messages that are easy to find in a busy terminal */
+export function throwErr(message:any) {
+    const header = "\n\n\x1b[31m\x1b[1m[--------------ERROR--------------ERROR--------------!GMLL!--------------ERROR--------------ERROR--------------]\x1b[0m\n\n";
     throw header + message + header;
 }

@@ -1,10 +1,8 @@
-import { manifests } from "./dist/modules/downloader.js";
-import { start } from "./dist/modules/init.js";
-import { installForge, instance } from "./dist/modules/instance.js";
+import {  instance } from "./dist/modules/instance.js";
 import { getSelf } from "./dist/modules/internal/get.js";
-import { getManifests } from "./dist/modules/versions.js";
+import { initialize } from "./dist/modules/config.js";
 
-await manifests();
+await initialize();
 console.log(getSelf())
 
 getSelf();
