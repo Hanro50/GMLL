@@ -1,7 +1,7 @@
-import { existsSync, symlinkSync, unlinkSync, writeFileSync, readFileSync } from "fs";
+import { readFileSync } from "fs";
 import { spawn } from "child_process";
 import { join } from "path";
-import { defJVM, fsSanitiser, mkdir, mklink, oldJVM, parseArguments } from "./internal/util.js";
+import { defJVM, fsSanitiser, mkdir, mklink, oldJVM, parseArguments, writeJSON } from "./internal/util.js";
 import { cpus, type } from "os";
 import { version, getLatest, getJavaPath } from "./versions.js";
 import { emit, getAssets, getInstances, getlibraries, getMeta, getNatives, getVersions } from "./config.js";
@@ -56,11 +56,11 @@ export class instance implements options {
         mkdir(this.path);
     }
 
-    getVersion() {
-        return new version(this.version)
+    async getVersion() {
+        return await version.get(this.version)
     }
     save() {
-        writeFileSync(join(getMeta().profiles, fsSanitiser(this.name + ".json")), JSON.stringify(this));
+        writeJSON(join(getMeta().profiles, fsSanitiser(this.name + ".json")), this);
     }
 
     /**
@@ -71,7 +71,7 @@ export class instance implements options {
      */
     async launch(player, resolution) {
 
-        const version = this.getVersion();
+        const version = await this.getVersion();
         await version.install();
         const cp = version.getLibs();
         var vjson = await version.getJSON();

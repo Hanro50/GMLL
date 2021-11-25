@@ -1,4 +1,4 @@
-import { mkdir, lawyer, getOS, loadSave, compare, assetTag, mklink, chkLoadSave, rmdir } from "./internal/util.js";
+import { mkdir, lawyer, getOS, loadSave, compare, assetTag, mklink, chkLoadSave, rmdir, stringify, writeJSON } from "./internal/util.js";
 import { join } from "path";
 import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig } from "./config.js";
 import { processCMD, failCMD, getSelf } from "./internal/get.js"
@@ -7,7 +7,7 @@ import cluster from "cluster";
 const fork = cluster.fork;
 const setupMaster = cluster.setupPrimary || cluster.setupMaster;
 import { cpus, arch, tmpdir } from 'os';
-import { readFileSync, writeFileSync, createWriteStream, copyFileSync } from "fs";
+import { readFileSync, createWriteStream, copyFileSync } from "fs";
 import Fetch from "node-fetch";
 import { assetIndex, assets, manifest, runtimes, version } from "./types.js";
 
@@ -83,7 +83,7 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
             for (let i = 0; i < arr.length; i++) {
                 const tmp = join(tmpRoot, i + ".json");
 
-                writeFileSync(tmp, JSON.stringify(arr[i]));
+                writeJSON(tmp, arr[i]);
                 const w = fork({ "file": tmp });
                 workers.push(w);
                 w.on('message', (msg) => {
@@ -283,7 +283,7 @@ export async function libraries(version: version, download_jar: downloadable) {
 
     }
     classPath.push(join(download_jar.path, download_jar.name));
-    writeFileSync(index, JSON.stringify(classPath, ["\n"], "\t"));
+    writeJSON(index, classPath);
 
 
     return await download(arr, 3);
@@ -317,6 +317,15 @@ export async function manifests() {
     interface jsgameInf {
          version: string; stable: boolean; 
     }
+    if (update.includes("vanilla")) {
+        const r = await Fetch(mcVersionManifest);
+        if (r.status == 200) {
+            const json:{versions?:[manifest],latest?:{}} = await r.json();
+            console.log(json);
+            writeJSON(join(meta.index, "latest.json"), json.latest);
+            writeJSON(join(meta.manifests, "vanilla.json"), json.versions);
+        }
+    }
     if (update.includes("fabric")) {
         const jsgame = await loadSave<[jsgameInf]>(fabricVersions, join(meta.index, "fabric_game.json"));
         const jsloader = await loadSave<[jsloaderInf]>(fabricLoader, join(meta.index, "fabric_loader.json"));
@@ -333,7 +342,7 @@ export async function manifests() {
                 });
             });
         });
-        writeFileSync(join(meta.manifests, "fabric.json"), JSON.stringify(result, ["\n"], "\t"));
+        writeJSON(join(meta.manifests, "fabric.json"), result);
 
     }
     if (update.includes("forge")) {
@@ -382,12 +391,5 @@ export async function manifests() {
             }
         }
     }
-    if (update.includes("vanilla")) {
-        const r = await Fetch(mcVersionManifest);
-        if (r.status == 200) {
-            const json:{versions?:[manifest],latest?:{}} = await r.json();
-            writeFileSync(join(meta.index, "latest.json"), JSON.stringify(json.latest, ["\n"], "\t"));
-            writeFileSync(join(meta.manifests, "vanilla.json"), JSON.stringify(json.versions, ["\n"], "\t"));
-        }
-    }
+    
 }

@@ -23,3 +23,7 @@ export function download(obj:Partial<downloadable>[], it:number = 1) {
     return _download(obj, it);
 }
 
+/**Does the basic pre flight checks. */
+export async function init() {
+    await manifests();
+}

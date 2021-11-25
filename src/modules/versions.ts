@@ -1,9 +1,9 @@
 import { copyFileSync, existsSync, readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { getMeta, getRuntimes, getVersions } from "./config.js";
-import { assets, libraries, runtime } from "./downloader.js";
-import { chkLoadSave, getOS, mkdir, rmdir } from "./internal/util.js";
-import { artifact, manifest, version as _version, rules, version_type, runtimes } from "./types.js";
+import { assets, libraries, manifests, runtime } from "./downloader.js";
+import { chkLoadSave, getOS, mkdir, rmdir, throwErr } from "./internal/util.js";
+import {manifest, version as _version, runtimes } from "./types.js";
 
 
 export interface options {
@@ -40,6 +40,7 @@ function combine(ob1, ob2) {
     })
     return ob1;
 }
+
 export class version {
     json: _version;
     manifest: manifest;
@@ -49,11 +50,21 @@ export class version {
     private file_old: string;
     private folder_old: string;
     inheritsFrom: any;
+
+
+    static async get(manifest: string | manifest): Promise<version> {
+        await manifests();
+        if (typeof manifest == "string" || manifest.type != "unknown")
+            return new version(manifest);
+        return new version(manifest.id);
+
+    }
+
     /**
      * 
      * @param {string | GMLL.json.manifest} manifest 
      */
-    constructor(manifest: string | manifest) {
+    private constructor(manifest: string | manifest) {
         /**@type {GMLL.json.manifest} */
         this.manifest = typeof manifest == "string" ? getManifest(manifest) : manifest;
         /**@type {GMLL.json.version} */
@@ -63,7 +74,6 @@ export class version {
         this.file = join(this.folder, this.manifest.id + ".json");
         this.folder_old = join(getVersions(), this.manifest.id);
         this.file_old = join(this.folder_old, this.manifest.id + ".json");
-
     }
 
     /**
@@ -84,9 +94,9 @@ export class version {
         } else if (existsSync(this.file)) {
             this.json = JSON.parse(readFileSync(this.file).toString());
         } else {
-            throw this.manifest.type == "unknown"
+            throwErr( this.manifest.type == "unknown"
                 ? "Unknown version, please check spelling of given version ID"
-                : "Version json is missing for this version!"
+                : "Version json is missing for this version!");
         }
         if (this.json.inheritsFrom) {
             const base = (new version(this.json.inheritsFrom));
@@ -146,7 +156,7 @@ export function getJavaPath(java: runtimes = "jre-legacy") {
 /**
  * @returns {Array<GMLL.json.manifest>}
  */
-export function getManifests() {
+export function getManifests(): manifest[] {
     var versionManifest = [];
     const root = getMeta().manifests
     readdirSync(root).forEach(e => {
@@ -166,10 +176,10 @@ export function getManifests() {
  * @param {GMLL.json.manifest} version 
  * @returns 
  */
-export function getManifest(version) {
+export function getManifest(version: string) {
     const manifests = getManifests();
     const v = version.toLocaleLowerCase().trim();
-    return manifests.find(e => e.id.toLocaleLowerCase().trim() == v) || { id: version, type: "unknown" };
+    return manifests.find(e => { try { return e.id.toLocaleLowerCase().trim() == v } catch {console.log(e); return false; } }) || { id: version, type: "unknown" };
 }
 
 /**

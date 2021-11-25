@@ -22,8 +22,8 @@ export function mkdir(path) {
     if (!fs.existsSync(path)) fs.mkdirSync(path, { recursive: true, });
 }
 
-export function rmdir(target:string) {
-        return fs.rmSync(target, { recursive: true, force: true })
+export function rmdir(target: string) {
+    return fs.rmSync(target, { recursive: true, force: true })
 }
 
 export function mklink(target: string, path: string) {
@@ -119,13 +119,13 @@ export function loadSave<T>(url: string, file: string): Promise<T> {
         const rg = await Fetch(url);
         if (rg.status == 200) {
             /**@type {Array} */
-            data = await rg.text();
-            fs.writeFileSync(file, data);
+            data = await rg.json();
+            writeJSON(file, data);
         }
         else {
-            data = fs.readFileSync(file);
+            data = fs.readFileSync(JSON.parse(file));
         }
-        res(JSON.parse(data));
+        res(data);
     })
 }
 /**
@@ -147,7 +147,27 @@ export function fsSanitiser(text) {
     return text.normalize("NFKC").trim().toLowerCase().replace(/[\,\!\@\#\$\%\^\&\*\(\)\[\]\{\}\;\:\"\<\>\\\/\?\~\`\'\|\=\+\s\t]/g, "_")
 }
 
-export function chmod(dir:string) {
+export function chmod(dir: string) {
     if (type() != "Windows_NT")
         execSync('chmod +x ' + dir)
+}
+
+export function stringify(json: object) {
+    //@ts-ignore
+    return JSON.stringify(json, "\n", "\t");
+}
+
+export function writeJSON(file: string, data: Object | Object[]) {
+    const json = stringify(data);
+    if (fs.existsSync(file)) {
+        //Here for people with SSDs to save on write cycles
+        if (fs.readFileSync(file).toString() == json) return;
+        fs.rmSync(file);
+    }
+    fs.writeFileSync(file, json);
+}
+
+export function throwErr(message) {
+    const header = "\n\x1b[31m\x1b[1m[--------------ERROR--------------ERROR--------------ERROR--------------ERROR--------------ERROR--------------]\x1b[0m\n";
+    throw header + message + header;
 }
