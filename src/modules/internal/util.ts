@@ -87,37 +87,50 @@ export function parseArguments(val = {}, args: launchArgs = defJVM) {
 
 
 export function chkLoadSave<T>(url: string, file: string, sha1: string, size?: number): Promise<T> {
-    if (!compare({ key: file, path: file, sha1: sha1, size: size })) {
-        return loadSave(url, file);
+    if (!compare({ key: file, path: file, sha1: sha1, size: size }, true)) {
+        return loadSave(url, file, true);
     }
     return JSON.parse(fs.readFileSync(file).toString());
 }
 
-export function compare(o:Partial<downloadable>) {
+export function compare(o: Partial<downloadable>, json = false) {
     const loc = o.name ? join(o.path, o.name) : o.path;
     if (!fs.existsSync(loc)) return false;
-    var stats = fs.statSync(loc);
 
+    var stats: { size: number };
+    var jfile: string;
+    if (json) {
+        jfile = JSON.stringify(JSON.parse(fs.readFileSync(loc).toString()));
+        stats = { size: jfile.length }
+
+    }
+    else stats = fs.statSync(loc);
     if (o.size && stats.size != o.size) {
         if (stats.size > 0) console.log("[GMLL]: " + stats.size + " vs " + o.size + " : " + o.key);
         return false;
     }
     if (o.sha1) {
-        const sha1 = createHash('sha1').update(fs.readFileSync(loc)).digest("hex");
+        const sha1 = createHash('sha1').update(jfile ? jfile : fs.readFileSync(loc)).digest("hex");
         if (o.sha1 != sha1) {
             console.log("[GMLL]: " + sha1 + " vs " + o.sha1 + " : " + o.key); return false;
         }
     }
     return true;
 }
-export function loadSave<T>(url: string, file: string): Promise<T> {
+export function loadSave<T>(url: string, file: string, strict = false): Promise<T> {
     return new Promise(async res => {
         var data: T;
         const rg = await Fetch(url);
         if (rg.status == 200) {
-            /**@type {Array} */
-            data = await rg.json() as T;
-            writeJSON(file, data);
+            if (strict) {
+                const text = await rg.text();
+                write(file, text);
+                data = JSON.parse(text);
+            }
+            else {
+                data = await rg.json() as T;
+                writeJSON(file, data);
+            }
         }
         else {
             data = JSON.parse(fs.readFileSync(file).toString()) as T;
@@ -128,13 +141,13 @@ export function loadSave<T>(url: string, file: string): Promise<T> {
 /**
  * Generates the sha1 dir listings for assets and compressed runtime files 
  */
-export function assetTag(dir:string, sha1:string) {
+export function assetTag(dir: string, sha1: string) {
     const file = join(dir, sha1.substr(0, 2));
     mkdir(file);
     return join(file);
 }
 
-export function fsSanitiser(text:string) {
+export function fsSanitiser(text: string) {
     return text.normalize("NFKC").trim().toLowerCase().replace(/[\,\!\@\#\$\%\^\&\*\(\)\[\]\{\}\;\:\"\<\>\\\/\?\~\`\'\|\=\+\s\t]/g, "_")
 }
 
@@ -148,8 +161,7 @@ export function stringify(json: object) {
     return JSON.stringify(json, "\n", "\t");
 }
 
-export function writeJSON(file: string, data: Object | Object[]) {
-    const json = stringify(data);
+export function write(file: string, json: string) {
     if (fs.existsSync(file)) {
         //Here for people with SSDs to save on write cycles
         if (fs.readFileSync(file).toString() == json) return;
@@ -157,8 +169,18 @@ export function writeJSON(file: string, data: Object | Object[]) {
     }
     fs.writeFileSync(file, json);
 }
+
+export function writeRAW(file: string, data: Object | Object[]) {
+    write(file, JSON.stringify(data));
+
+}
+
+export function writeJSON(file: string, data: Object | Object[]) {
+    write(file, stringify(data));
+
+}
 /**Used to throw error messages that are easy to find in a busy terminal */
-export function throwErr(message:any) {
+export function throwErr(message: any) {
     const header = "\n\n\x1b[31m\x1b[1m[--------------ERROR--------------ERROR--------------!GMLL!--------------ERROR--------------ERROR--------------]\x1b[0m\n\n";
     throw header + message + header;
 }

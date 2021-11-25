@@ -1,12 +1,13 @@
 import { readFileSync } from "fs";
 import { spawn } from "child_process";
 import { join } from "path";
-import { defJVM, fsSanitiser, mkdir, mklink, oldJVM, parseArguments, writeJSON } from "./internal/util.js";
+import { defJVM, fsSanitiser, mkdir, mklink, oldJVM, parseArguments, writeJSON } from "../internal/util.js";
 import { cpus, type } from "os";
 import { version, getLatest, getJavaPath } from "./versions.js";
-import { emit, getAssets, getInstances, getlibraries, getMeta, getNatives, getVersions } from "./config.js";
-import { launchArgs } from "../index.js";
-import { manifests, runtime } from "./downloader.js";
+import { emit, getAssets, getInstances, getlibraries, getMeta, getNatives, getVersions } from "../config.js";
+import { launchArgs, user_type } from "../../index.js";
+import { manifests, runtime } from "../downloader.js";
+import { instance, options, registerInstanceType } from "./instance.js";
 const defArgs = [
     "-Xms${ram}G",
     "-Xmx${ram}G",
@@ -17,43 +18,30 @@ const defArgs = [
     "-XX:MaxGCPauseMillis=50",
     "-XX:G1HeapRegionSize=32M",
 ]
+export interface player {
+    name: string,
+    uuid: string,
+    type: user_type,
+    demo: boolean,
+    auth_xuid: string,
+    clientid: string
 
-export interface options {
-    /**The name of the instance */
-    name?: string,
-    /**The version of the game to load */
-    version?: string,
-    /**The installation path */
-    path?: string,
-    /**Ram in GB */
-    ram?: Number,
-    /**Custom data your launcher can use */
-    meta?: any
+    accessToken: string,
+    /** @deprecated Only used with ancient versions of minecraft and is arguably not even supported by mojang anymore*/
+    session?: string,
+
 }
-/**@type {GMLL.instance.instance} */
-export class instance implements options {
-    name: string;
-    version: string;
-    path: string;
-    ram: Number;
-    meta: any;
 
-    static get(name: string) {
-        const json = JSON.parse(readFileSync(join(getMeta().profiles, fsSanitiser(name + ".json"))).toString());
-        return new this(json);
-    }
+export class client extends instance {
+
+
     /**
      * 
      * @param {GMLL.instance.options} opt 
      */
     constructor(opt: options) {
-        this.version = opt && opt.version ? opt.version : getLatest().release;
-        this.name = opt && opt.name ? opt.name : this.version;
-        this.path = opt && opt.path ? opt.path : join(getInstances(), fsSanitiser(this.name));
-        this.ram = opt && opt.ram ? opt.ram : 2;
-        this.meta = opt && opt.meta ? opt.meta : undefined;
+        super(opt, "client");
 
-        mkdir(this.path);
     }
 
     getVersion() {
@@ -69,7 +57,7 @@ export class instance implements options {
      * @param {{width:string,height:string}} resolution 
      * @returns 
      */
-    async launch(player, resolution) {
+    async launch(player: player, resolution: { width: string, height: string }) {
 
         const version = await this.getVersion();
         await version.install();
@@ -105,8 +93,12 @@ export class instance implements options {
 
             assets_root: AssetRoot,
             assets_index_name: vjson.assetIndex.id,
+
             auth_uuid: player.uuid,
             user_type: player.type,
+            auth_xuid: player.auth_xuid,
+            clientid: player.clientid,
+            
             version_type: vjson.type,
             auth_access_token: player.accessToken,
 
@@ -144,7 +136,7 @@ export class instance implements options {
 
 }
 
-
+registerInstanceType("client", client);
 /**
  * @param {String | String[] | null} file
  */
@@ -154,8 +146,7 @@ export async function installForge(file: string | string[] | null) {
     const path = join(getInstances(), ".forgiac");
     const logFile = join(path, "log.txt")
     const args: string[] = ["-jar", join(getlibraries(), "za", "net", "hanro50", "forgiac", "basic", "forgiac.jar"), " --log", logFile, "--virtual", getVersions(), getlibraries(), "--mk_manifest", getMeta().manifests];
-    if (file) {//--installer
-        //@ts-ignore
+    if (file) {
         file = (file instanceof Array ? join(...file) : file);
         args.push("--installer", file);
     }

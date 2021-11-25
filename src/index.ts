@@ -4,7 +4,7 @@
  * ---------------------------------------------------------------------------------------------
  */
 
-import { options } from "./modules/versions.js";
+import { options } from "./modules/objects/versions.js";
 
 export type version_type = "old_alpha" | "old_beta" | "release" | "snapshot" | "fabric" | "forge" | "custom" | "unknown";
 export type user_type = "msa" | "mojang" | "legacy";

@@ -1,4 +1,4 @@
-import { mkdir, lawyer, getOS, loadSave, compare, assetTag, mklink, chkLoadSave, rmdir, stringify, writeJSON } from "./internal/util.js";
+import { mkdir, lawyer, getOS, loadSave, compare, assetTag, mklink, chkLoadSave, rmdir, stringify, writeJSON, throwErr } from "./internal/util.js";
 import { join } from "path";
 import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig } from "./config.js";
 import { processCMD, failCMD, getSelf } from "./internal/get.js"
@@ -12,15 +12,13 @@ import Fetch from "node-fetch";
 import { assetIndex, assets, manifest, runtimes, version } from "../index.js";
 
 export interface downloadable {
-
     path: string,
     url: string,
     name: string,
     unzip?: {
         exclude?: string[],
-        name?: string
-        path: string,
-
+        name?: string,
+        path: string
     }
     size?: number,
     sha1?: String,
@@ -40,13 +38,11 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
     if (it < 1) it = 1;
     emit("download.started");
     obj.sort((a, b) => { return (b.size || 0) - (a.size || 0) });
-    console.log(obj);
     var temp = {};
 
     obj.forEach((e, k) => {
         e.key = e.key || join(e.path, e.name);
         if (e.path == null) {
-            console.log(e)
             process.exit()
         }
         mkdir(e.path);
@@ -82,7 +78,6 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
             mkdir(tmpRoot);
             for (let i = 0; i < arr.length; i++) {
                 const tmp = join(tmpRoot, i + ".json");
-
                 writeJSON(tmp, arr[i]);
                 const w = fork({ "file": tmp });
                 workers.push(w);
@@ -96,7 +91,6 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
                         emit('download.progress', msg.key, done, totalItems, left);
                         if (left < 1) {
                             clearTimeout(to);
-
                             emit('download.done');
                             fire();
                             res();
@@ -113,11 +107,11 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
  * 
  * @param {GMLL.runtimes} runtime 
  */
-export function runtime(runtime:runtimes) {
+export function runtime(runtime: runtimes) {
     const meta = getMeta();
     const file = join(meta.runtimes, runtime + ".json");
     if (!file) {
-        throw "Cannot find runtime"
+        throwErr("Cannot find runtime");
     }
     /**@type {GMLL.json.version} */
     const json = JSON.parse(readFileSync(file).toString()).files;
@@ -193,7 +187,6 @@ export async function assets(index: assetIndex) {
     if (assetIndex.virtual || assetIndex.map_to_resources) {
         const file = join(root, "legacy", assetIndex.virtual ? "virtual" : "resources");
         mkdir(file);
-
         Object.entries(assetIndex.objects).forEach(o => {
             const key = o[0];
             const obj = o[1];
@@ -234,8 +227,6 @@ export async function libraries(version: version, download_jar: downloadable) {
                 var dload2: Partial<downloadable> = {};
 
                 dload2.unzip = { exclude: e.extract ? e.extract.exclude : undefined, path: natives };
-
-
                 dload2.name = rawPath.pop();
                 dload2.path = join(...rawPath);
 
@@ -254,7 +245,6 @@ export async function libraries(version: version, download_jar: downloadable) {
                     e.downloads.artifact.path = path;
                 }
                 const rawPath = [getlibraries(), ...e.downloads.artifact.path.split("/")];
-                console.log(rawPath)
                 dload.name = rawPath.pop();
                 dload.path = join(...rawPath);
                 mkdir(dload.path);
@@ -277,18 +267,11 @@ export async function libraries(version: version, download_jar: downloadable) {
             dload.sha1 = await r.text();
             classPath.push(join(dload.path, dload.name));
             arr.push(dload);
-        } else {
-            console.log(e)
-        }
-
+        } 
     }
     classPath.push(join(download_jar.path, download_jar.name));
     writeJSON(index, classPath);
-
-
     return await download(arr, 3);
-
-
 }
 
 
@@ -312,16 +295,14 @@ export async function manifests() {
         "maven": string,
         "version": string,
         "stable": boolean
-    
     }
     interface jsgameInf {
-         version: string; stable: boolean; 
+        version: string; stable: boolean;
     }
     if (update.includes("vanilla")) {
         const r = await Fetch(mcVersionManifest);
         if (r.status == 200) {
-            const json:{versions?:[manifest],latest?:{}} = await r.json();
-            console.log(json);
+            const json: { versions?: [manifest], latest?: {} } = await r.json();
             writeJSON(join(meta.index, "latest.json"), json.latest);
             writeJSON(join(meta.manifests, "vanilla.json"), json.versions);
         }
@@ -343,18 +324,17 @@ export async function manifests() {
             });
         });
         writeJSON(join(meta.manifests, "fabric.json"), result);
-
     }
     if (update.includes("forge")) {
         var libzFolder = join(getlibraries(), ...forgiacPath);
         mkdir(libzFolder);
 
         var rURL2 = await Fetch(forgiacSHA);
-        console.log(rURL2);
+   
         if (rURL2.status == 200 && !compare({ key: "forgiac", name: "forgiac.jar", url: forgiacURL, path: libzFolder, sha1: await rURL2.text() })) {
             await new Promise(async e => {
-                console.log("Downloading forgiac");
-                const file = createWriteStream(join(libzFolder,"forgiac.jar"));
+                console.log("[GMLL] Downloading forgiac");
+                const file = createWriteStream(join(libzFolder, "forgiac.jar"));
                 const res = await Fetch(forgiacURL);
                 res.body.pipe(file, { end: true });
                 file.on("close", e);
@@ -375,11 +355,8 @@ export async function manifests() {
                 platform = arch() == "x64" ? "windows-x64" : "windows-x86"; break;
             default: throw ("Unsupported operating system");
         }
-        //Object.keys(manifest[platform]).forEach(k => 
-        console.log(manifest)
         for (const key of Object.keys(manifest[platform])) {
             /**@type {GMLL.get.downloadable} */
-            console.log(key);
             if (manifest[platform][key].length < 1) continue;
             var obj = manifest[platform][key][0].manifest;
             obj.key = key;
@@ -391,5 +368,5 @@ export async function manifests() {
             }
         }
     }
-    
+
 }

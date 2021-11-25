@@ -13,7 +13,6 @@ export function getSelf(): string {
         let self = join(...new URL(import.meta.url).pathname.split("/"));
         return self.substr(process.cwd().length);
 }
-console.log(process.env.file);
 
 
 export async function mutator(o: downloadable): Promise<void> {
@@ -21,7 +20,7 @@ export async function mutator(o: downloadable): Promise<void> {
         var path = o.path;
         var name = o.name;
         if (!existsSync(path)) {
-            console.log("Does not exist", path);
+            console.error("[GMLL] Does not exist", path);
             return;
         }
         if (o.unzip) {
@@ -75,19 +74,16 @@ if (process.env.file) {
 
             download.catch(e => {
                 if (retry > 3) {
-                    console.log(e)
                     process.send({ cmd: processCMD, key: o.key });
                     process.send({ cmd: failCMD, type: "fail", key: o.key, err: e });
                     return;
                 }
-                console.log(e)
                 retry++;
                 process.send({ cmd: failCMD, type: "retry", key: o.key, err: e });
                 load();
             });
         }
         load().catch(e => {
-            console.log(e)
             console.log("[GMLL]: procedural failure : " + o.key);
             process.send({ cmd: failCMD, type: "system", key: o.key, err: e });
             process.send({ cmd: processCMD, key: o.key });
