@@ -106,7 +106,7 @@ export class client extends instance {
             launcher_name: process.env.launcher_name || process.env.npm_package_name || "GMLL",
             launcher_version: launcher_version,
             classpath: classPath,
-            auth_session: player.session,
+            auth_session: "token:"+player.accessToken,
             game_assets: AssetRoot,
 
             classpath_separator: classpath_separator,
