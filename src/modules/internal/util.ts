@@ -5,7 +5,9 @@ import { join } from "path";
 import { arch, platform, type, version } from "os";
 import { launchArgs, rules } from "../../index.js";
 import { execSync } from "child_process";
-import { downloadable } from "../downloader";
+import { downloadable } from "./get";
+import { cmd as _cmd } from '7zip-min';
+
 export function getOS() {
     const OS = platform();
     switch (OS) {
@@ -84,9 +86,10 @@ export function parseArguments(val = {}, args: launchArgs = defJVM) {
 }
 
 
-
-
+/**@deprecated */
 export function chkLoadSave<T>(url: string, file: string, sha1: string, size?: number): Promise<T> {
+    chkFileDownload
+
     if (!compare({ key: file, path: file, sha1: sha1, size: size }, true)) {
         return loadSave(url, file, true);
     }
@@ -183,4 +186,66 @@ export function writeJSON(file: string, data: Object | Object[]) {
 export function throwErr(message: any) {
     const header = "\n\n\x1b[31m\x1b[1m[--------------ERROR--------------ERROR--------------!GMLL!--------------ERROR--------------ERROR--------------]\x1b[0m\n\n";
     throw header + message + header;
+}
+
+export function classPathResolver(name: string) {
+    const namespec = name.split(":");
+    console.log(namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + ".jar")
+    return namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + ".jar";
+}
+
+
+export async function mutator(o: downloadable, main: boolean = false): Promise<downloadable> {
+    try {
+        var path = o.path;
+        var name = o.name;
+        if (main)
+            mkdir(path)
+        else if (!fs.existsSync(path)) {
+            console.error("[GMLL] Does not exist", path);
+            return o;
+        }
+        if (o.unzip) {
+            if (o.unzip.path) {
+                var com = ['x', join(path, name), '-y', '-o' + o.unzip.path]
+                if (o.unzip.exclude) {
+                    o.unzip.exclude.forEach(e => {
+                        var f = String(e);
+                        if (f.endsWith("/")) f += "*"
+                        com.push("-xr!" + f);
+                    })
+                }
+                await new Promise<void>(e => _cmd(com, (err: any) => { if (err) console.log(err); e() }));
+                if (o.unzip.name)
+                    name = o.unzip.name;
+                path = o.unzip.path
+            }
+        }
+        if (o.executable) {
+            chmod(join(path, name));
+        }
+
+        o.path = path;
+        o.name = name;
+
+        return o;
+    } catch (e) { }
+}
+
+
+export async function chkFileDownload(o: downloadable): Promise<Buffer> {
+    if (!compare(o)) await new Promise(async e => {
+        mkdir(o.path);
+        const file = fs.createWriteStream(join(o.path, o.name))
+        const res = await Fetch(o.url);
+        res.body.pipe(file, { end: true });
+        file.on("close", e);
+    });
+    o = await mutator(o,true);
+    return fs.readFileSync(join(o.path, o.name));
+}
+
+
+export function chkFileDownload2(url: string, name: string, path: string, sha1: string, size?: number): Promise<Buffer> {
+    return chkFileDownload({ key: name, url: url, name: name, path: path, sha1: sha1, size: size })
 }

@@ -4,24 +4,24 @@
  * ---------------------------------------------------------------------------------------------
  */
 
-import { options } from "./modules/objects/versions.js";
+import { options } from "./modules/handler.js";
 
 export type version_type = "old_alpha" | "old_beta" | "release" | "snapshot" | "fabric" | "forge" | "custom" | "unknown";
 export type user_type = "msa" | "mojang" | "legacy";
 export type jarTypes = "client" | "client_mappings" | "server" | "server_mappings" | "windows_server";
 export type runtimes = "java-runtime-alpha" | "java-runtime-beta" | "jre-legacy" | "minecraft-java-exe";
 
-export interface rule{
+export interface rule {
     "action": "allow" | "disallow",
     os?: {
         name?: "osx" | "windows" | "linux",
-        arch?: "x86" |  "x32" | "x64" | "arm" | "arm64" | "ia32" | "mips" | "mipsel" | "ppc" | "ppc64" | "s390" | 's390x',
+        arch?: "x86" | "x32" | "x64" | "arm" | "arm64" | "ia32" | "mips" | "mipsel" | "ppc" | "ppc64" | "s390" | 's390x',
         version?: string
     },
     features?: options
 }
 export type rules = Array<rule>;
-export type launchArgs = Array<string |  {rules: rules, value?: string | string[] }>
+export type launchArgs = Array<string | { rules: rules, value?: string | string[] }>
 export interface manifest {
     //The ID of the version, must be unique
     id: string,
@@ -130,28 +130,22 @@ export interface library {
  * ---------------------------------------------------------------------------------------------
  */
 
-import * as _config from "./modules/config";
-import { download as _download, downloadable, manifests, runtime } from "./modules/downloader";
-
+import { initialize } from "./modules/config";
+import { version } from "os";
 /**
  * Does a range of required preflight checks. Will cause errors if ignored!
  */
-export async function init() { await _config.initialize() }
-/**The core config class */
-export function getConfig() {
-    return _config;
-}
-/**
- * Download function. Used by GMLL internally, but exposed here for downloading modpacks and launcher updates.
- * Checks sha1 hashes and can use multiple cores to download files rapidly. 
- * Untested on Intel's new CPUs, use at own risk and report to me if it breaks. -Hanro50
- * 
- * @param obj The objects that will be downloaded
- * 
- * @param it The retry factor. Will effect how long it takes before the system assumes a crash and restarts. 
- * Lower is better for small files with 1 being the minimum. Higher might cause issues if fetch decides to hang on a download. 
- * Each restart actually increments this value. 
- */
-export function download(obj: Partial<downloadable>[], it: number = 1) {
-    return _download(obj, it);
+export async function init() { await initialize() }
+/**The core config class. Used to change the locations of files and to get the location of files as well! */
+export * as config from './modules/config';
+/**The main download manager in GMLL. */
+export * as downloader from './modules/downloader';
+/**Stuff related to the version and manifest files. Used to install forge, get a complete list of manifest files and so much more! */
+export * as handler from "./modules/handler.js";
+
+/**The instance object. An instance is basically a minecraft profile you can launch */
+export * as instance from "./modules/objects/instance.js";
+/**The version object is the raw handler behind a set minecraft release. */
+export function getVersion(){
+    return 
 }

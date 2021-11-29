@@ -124,7 +124,6 @@ export function getRuntimes() {
 }
 export function getMeta() {
     const meta = {
-        libraries: join(files.launcher, "libraries"),
         manifests: join(files.launcher, "manifests"),
         runtimes: join(files.launcher, "runtimes"),
         index: join(files.launcher, "index"),

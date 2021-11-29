@@ -1,38 +1,30 @@
-import { mkdir, lawyer, getOS, loadSave, compare, assetTag, mklink, chkLoadSave, rmdir, stringify, writeJSON, throwErr } from "./internal/util.js";
+import { mkdir, lawyer, getOS, loadSave, compare, assetTag, mklink, chkLoadSave, rmdir, stringify, writeJSON, throwErr, classPathResolver, chkFileDownload2, chkFileDownload } from "./internal/util.js";
 import { join } from "path";
 import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig } from "./config.js";
-import { processCMD, failCMD, getSelf } from "./internal/get.js"
+import { processCMD, failCMD, getSelf, downloadable } from "./internal/get.js"
 //Handles mass file downloads
 import cluster from "cluster";
 const fork = cluster.fork;
 const setupMaster = cluster.setupPrimary || cluster.setupMaster;
 import { cpus, arch, tmpdir } from 'os';
-import { readFileSync, createWriteStream, copyFileSync } from "fs";
+import { readFileSync, copyFileSync } from "fs";
 import Fetch from "node-fetch";
-import { assetIndex, assets, manifest, runtimes, version } from "../index.js";
+import { assetIndex, assets, manifest, runtimes,version } from "../index.js";
 
-export interface downloadable {
-    path: string,
-    url: string,
-    name: string,
-    unzip?: {
-        exclude?: string[],
-        name?: string,
-        path: string
-    }
-    size?: number,
-    sha1?: String,
-    executable?: boolean,
-    /**Internally used to identify object: 
-           * May not be constant */
-    key: string
-}
 
 setupMaster({
     exec: getSelf()
 });
 /**
- * The root download function
+ * Download function. Can be used for downloading modpacks and launcher updates.
+ * Checks sha1 hashes and can use multiple cores to download files rapidly. 
+ * Untested on Intel's new CPUs, use at own risk and report to me if it breaks. -Hanro50
+ * 
+ * @param obj The objects that will be downloaded
+ * 
+ * @param it The retry factor. Will effect how long it takes before the system assumes a crash and restarts. 
+ * Lower is better for small files with 1 being the minimum. Higher might cause issues if fetch decides to hang on a download. 
+ * Each restart actually increments this value. 
  */
 export function download(obj: Partial<downloadable>[], it: number = 1) {
     if (it < 1) it = 1;
@@ -51,7 +43,9 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
     })
 
     function resolve() {
+        var active = true;
         const totalItems = Object.values(temp).length;
+        console.trace();
         return new Promise<void>(res => {
             const numCPUs = cpus().length;
             emit("download.setup", numCPUs);
@@ -67,6 +61,8 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
             }
 
             const to = setTimeout(async () => {
+                if (!active) return;
+                active = false;
                 emit('download.restart');
                 fire();
                 it++;
@@ -82,18 +78,20 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
                 const w = fork({ "file": tmp });
                 workers.push(w);
                 w.on('message', (msg) => {
-                    to.refresh();
                     if (!msg.cmd) return;
+                    if (active) to.refresh();
                     if (msg.cmd === processCMD) {
                         done++;
                         delete temp[msg.key]
                         const left = Object.values(temp).length;
                         emit('download.progress', msg.key, done, totalItems, left);
                         if (left < 1) {
+                            active = false;
                             clearTimeout(to);
                             emit('download.done');
                             fire();
-                            res();
+
+                            return res();
                         }
                     }
                     else if (msg.cmd === failCMD) emit(msg.cmd, msg.key, msg.type, msg.err);
@@ -163,12 +161,10 @@ export function runtime(runtime: runtimes) {
 }
 
 export async function assets(index: assetIndex) {
-    console.trace();
     const root = getAssets();
     var findex = join(root, "indexes");
     mkdir(findex);
-    findex = join(findex, index.id + ".json");
-    const assetIndex = await chkLoadSave<assets>(index.url, findex, index.sha1, index.size);
+    const assetIndex = JSON.parse((await chkFileDownload2(index.url, index.id + ".json", findex, index.sha1, index.size)).toString()) as assets;
     var downloader: downloadable[] = [];
     const getURL = (obj: { hash: string; size: Number; }) => "http://resources.download.minecraft.net/" + obj.hash.substring(0, 2) + "/" + obj.hash;
     if (assetIndex.map_to_resources) {
@@ -199,16 +195,12 @@ export async function assets(index: assetIndex) {
     }
 
 }
-/**
- * @param {GMLL.json.version} version 
- * @param {GMLL.get.downloadable} download_jar 
- */
-export async function libraries(version: version, download_jar: downloadable) {
-    const arr: Partial<downloadable>[] = [download_jar];
+
+export async function libraries(version: version) {
+    const arr: Partial<downloadable>[] = [];
     const natives = getNatives();
     rmdir(natives);
     mkdir(natives);
-    const index = join(getMeta().libraries, download_jar.key + ".json");
 
     const classPath: string[] = [];
     const OS = getOS();
@@ -256,8 +248,7 @@ export async function libraries(version: version, download_jar: downloadable) {
                 arr.push(dload);
             }
         } else if (e.url) {
-            const namespec = e.name.split(":")
-            const path = namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + ".jar";
+            const path = classPathResolver(e.name);
             const rawPath = [getlibraries(), ...path.split("/")];
             dload.name = rawPath.pop();
             dload.path = join(...rawPath);
@@ -267,10 +258,8 @@ export async function libraries(version: version, download_jar: downloadable) {
             dload.sha1 = await r.text();
             classPath.push(join(dload.path, dload.name));
             arr.push(dload);
-        } 
+        }
     }
-    classPath.push(join(download_jar.path, download_jar.name));
-    writeJSON(index, classPath);
     return await download(arr, 3);
 }
 
@@ -330,21 +319,15 @@ export async function manifests() {
         mkdir(libzFolder);
 
         var rURL2 = await Fetch(forgiacSHA);
-   
-        if (rURL2.status == 200 && !compare({ key: "forgiac", name: "forgiac.jar", url: forgiacURL, path: libzFolder, sha1: await rURL2.text() })) {
-            await new Promise(async e => {
-                console.log("[GMLL] Downloading forgiac");
-                const file = createWriteStream(join(libzFolder, "forgiac.jar"));
-                const res = await Fetch(forgiacURL);
-                res.body.pipe(file, { end: true });
-                file.on("close", e);
-            });
+
+        if (rURL2.status == 200) {
+            chkFileDownload({ key: "forgiac", name: "forgiac.jar", url: forgiacURL, path: libzFolder, sha1: await rURL2.text() });
         }
     }
     if (update.includes("runtime")) {
         const meta = getMeta();
         const manifest = await loadSave(mcRuntimes, join(meta.index, "runtime.json"));
-        var platform;
+        var platform: string;
 
         switch (getOS()) {
             case ("osx"):
