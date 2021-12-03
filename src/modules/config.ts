@@ -1,4 +1,5 @@
 import { EventEmitter } from "events";
+import { tmpdir } from "os";
 import { join } from "path";
 import { manifests } from "./downloader.js";
 import { mkdir, throwErr } from "./internal/util.js";
@@ -128,7 +129,7 @@ export function getMeta() {
         runtimes: join(files.launcher, "runtimes"),
         index: join(files.launcher, "index"),
         profiles: join(files.launcher, "profiles"),
-        temp: join(files.launcher, "temp"),
+        temp: join(tmpdir(), "GMLL"),
         folder: files.launcher,
     }
     return meta;

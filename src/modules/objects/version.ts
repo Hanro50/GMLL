@@ -1,12 +1,12 @@
 import { existsSync, copyFileSync, readFileSync } from "fs";
 import { join } from "path";
-import { jarTypes, manifest,version as _version } from "../..";
-import { getVersions, isInitialised } from "../config";
-import { assets, runtime, libraries } from "../downloader";
-import { getManifest, getJavaPath } from "../handler";
-import { chkFileDownload2, throwErr, rmdir, mkdir, chkFileDownload, classPathResolver } from "../internal/util";
+import { jarTypes, manifest, version as _version } from "../..";
+import { getlibraries, getVersions, isInitialised } from "../config.js";
+import { assets, runtime, libraries } from "../downloader.js";
+import { getManifest, getJavaPath } from "../handler.js";
+import { chkFileDownload2, throwErr, rmdir, mkdir, chkFileDownload, classPathResolver } from "../internal/util.js";
 
-function combine(ob1:any, ob2:any) {
+function combine(ob1: any, ob2: any) {
     Object.keys(ob2).forEach(e => {
         if (!ob1[e]) {
             ob1[e] = ob2[e]
@@ -71,7 +71,7 @@ export class version {
         }
         if (this.manifest.url) {
             mkdir(this.folder);
-            this.json = JSON.parse( (await chkFileDownload2(this.manifest.url,this.name, this.folder, this.manifest.sha1)).toString());
+            this.json = JSON.parse((await chkFileDownload2(this.manifest.url, this.name, this.folder, this.manifest.sha1)).toString());
         } else if (existsSync(this.file)) {
             this.json = JSON.parse(readFileSync(this.file).toString());
         } else {
@@ -121,7 +121,9 @@ export class version {
     getClassPath() {
         const cp = [];
         this.json.libraries.forEach(lib => {
-            cp.push(this.getLibs(),...classPathResolver(lib.name).split("/"));
+            const p = join(getlibraries(), ...classPathResolver(lib.name).split("/"));
+            if (!cp.includes(p))
+                cp.push(p);
         });
         const jar = join(this.folder, this.name + ".jar");
         if (existsSync(jar))

@@ -3,8 +3,8 @@ import { spawn } from "child_process";
 import { join } from "path";
 import { defJVM, fsSanitiser, mkdir, mklink, oldJVM, parseArguments, writeJSON } from "../internal/util.js";
 import { cpus, type } from "os";
-import {  getClientID, getJavaPath, getLatest } from "../handler.js";
-import { emit, getAssets, getInstances, getlibraries, getMeta, getNatives, getVersions } from "../config.js";
+import {  getClientID, getLatest } from "../handler.js";
+import { emit, getAssets, getInstances, getlibraries, getMeta, getNatives } from "../config.js";
 import { launchArgs, user_type } from "../../index.js";
 import {version} from "./version.js";
 const defArgs = [

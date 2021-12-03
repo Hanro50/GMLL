@@ -1,4 +1,4 @@
-import { mkdir, lawyer, getOS, loadSave, compare, assetTag, mklink, chkLoadSave, rmdir, stringify, writeJSON, throwErr, classPathResolver, chkFileDownload2, chkFileDownload } from "./internal/util.js";
+import { mkdir, lawyer, getOS, loadSave, compare, assetTag, mklink, rmdir, writeJSON, throwErr, classPathResolver, chkFileDownload2, chkFileDownload } from "./internal/util.js";
 import { join } from "path";
 import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig } from "./config.js";
 import { processCMD, failCMD, getSelf, downloadable } from "./internal/get.js"
@@ -6,7 +6,7 @@ import { processCMD, failCMD, getSelf, downloadable } from "./internal/get.js"
 import cluster from "cluster";
 const fork = cluster.fork;
 const setupMaster = cluster.setupPrimary || cluster.setupMaster;
-import { cpus, arch, tmpdir } from 'os';
+import { cpus, arch } from 'os';
 import { readFileSync, copyFileSync } from "fs";
 import Fetch from "node-fetch";
 import { assetIndex, assets, manifest, runtimes,version } from "../index.js";
@@ -344,10 +344,10 @@ export async function manifests() {
             var obj = manifest[platform][key][0].manifest;
             obj.key = key;
             obj.path = meta.runtimes;
-            obj.name = key + ".json"
+            obj.name = key + ".json";
             obj.size = undefined;
             if (!compare(obj)) {
-                await loadSave(obj.url, join(obj.path, obj.name));
+                await loadSave(obj.url, join(obj.path, obj.name),true);
             }
         }
     }

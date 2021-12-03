@@ -1,9 +1,9 @@
-import { copyFileSync, existsSync, readdirSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { emit, getInstances, getlibraries, getMeta, getRuntimes, getVersions, isInitialised } from "./config.js";
-import { assets, libraries, manifests, runtime } from "./downloader.js";
-import { chkFileDownload, chkFileDownload2, classPathResolver, getOS, mkdir, rmdir, stringify, throwErr } from "./internal/util.js";
-import { manifest, version as _version, runtimes, jarTypes } from "../index.js";
+import { runtime } from "./downloader.js";
+import { getOS, mkdir, stringify } from "./internal/util.js";
+import { manifest, version as _version, runtimes } from "../index.js";
 import { randomUUID, createHash } from "crypto";
 import { networkInterfaces, userInfo } from "os";
 import { spawn } from "child_process";
@@ -91,7 +91,7 @@ export function getClientID() {
 /**
  * @param {String | String[] | null} file
  */
- export async function installForge(file: string | string[] | null) {
+export async function installForge(file: string | string[] | null) {
     await runtime("java-runtime-beta");
     const javaPath = getJavaPath("java-runtime-beta");
     const path = join(getInstances(), ".forgiac");
