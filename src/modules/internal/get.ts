@@ -4,14 +4,13 @@ import { join } from 'path';
 import Fetch from 'node-fetch';
 import { cmd as _cmd } from '7zip-min';
 import { mutator, compare } from './util.js';
-
+import root from './root.js';
 export const processCMD = "download.progress";
 export const failCMD = "download.fail";
 
 
 export function getSelf(): string {
-        let self = join(...new URL(import.meta.url).pathname.split("/"));
-        return self.substr(process.cwd().length);
+    return join(...root, "modules", "internal", "get.js");
 }
 export interface downloadable {
     path: string,

@@ -3,14 +3,16 @@
   "include": [
     "src/**/*"
   ],
-  "exclude": ["node_modules/**/*"],
+  "exclude": [
+    "node_modules/**/*"
+  ],
   "compilerOptions": {
-    "module": "ESNEXT",
-    "target": "ESNext",
     "moduleResolution": "Node",
     "resolveJsonModule": true,
     // Generate d.ts files
     "declaration": true,
+    "declarationDir": "dist/types",
+    "declarationMap": true,
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "importHelpers": true,
@@ -18,8 +20,7 @@
     // Types should go into this directory.
     // Removing this would place the .d.ts files
     // next to the .js files
-    "outDir": "dist",
-    "rootDir": "src/"
+    "rootDir": "src/",
+    "sourceMap": true
   }
-
 }

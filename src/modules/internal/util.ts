@@ -1,6 +1,6 @@
 import { createHash } from "crypto";
 import Fetch from "node-fetch";
-import * as fs from "fs";
+import  fs from "fs";
 import { join } from "path";
 import { arch, platform, type, version } from "os";
 import { launchArgs, rules } from "../../index.js";

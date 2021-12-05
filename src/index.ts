@@ -130,21 +130,24 @@ export interface library {
  * ---------------------------------------------------------------------------------------------
  */
 
-import { initialize } from "./modules/config";
+import { initialize } from "./modules/config.js";
 import { version } from "os";
 /**
  * Does a range of required preflight checks. Will cause errors if ignored!
  */
 export async function init() { await initialize() }
 /**The core config class. Used to change the locations of files and to get the location of files as well! */
-export * as config from './modules/config';
+export * as config from './modules/config.js';
 /**The main download manager in GMLL. */
-export * as downloader from './modules/downloader';
+export * as downloader from './modules/downloader.js';
 /**Stuff related to the version and manifest files. Used to install forge, get a complete list of manifest files and so much more! */
 export * as handler from "./modules/handler.js";
 
 /**The instance object. An instance is basically a minecraft profile you can launch */
-export * as instance from "./modules/objects/instance.js";
+export {default as instance} from "./modules/objects/instance.js";
+export {player as player} from "./modules/objects/instance.js";
+export {options as options} from "./modules/objects/instance.js";
+
 /**The version object is the raw handler behind a set minecraft release. */
 export function getVersion(){
     return 
