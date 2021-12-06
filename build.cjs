@@ -1,5 +1,5 @@
 const { execSync } = require("child_process");
-const { writeFileSync,rmSync } = require("fs");
+const { writeFileSync, rmSync } = require("fs");
 const { join } = require("path");
 
 console.log("Removing old files\n");
@@ -31,5 +31,10 @@ writeFileSync(mjsRoot,
     'var root = ["dist", "mjs"]\n' +
     'export default root\n' +
     '//# sourceMappingURL=root.js.map');
+
+
+console.log("Building types");
+console.log(execSync("tsc -p tsconfig.ts.json").toString());
+
 
 console.log("DONE!");

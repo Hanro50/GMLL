@@ -147,8 +147,3 @@ export * as handler from "./modules/handler.js";
 export {default as instance} from "./modules/objects/instance.js";
 export {player as player} from "./modules/objects/instance.js";
 export {options as options} from "./modules/objects/instance.js";
-
-/**The version object is the raw handler behind a set minecraft release. */
-export function getVersion(){
-    return 
-}

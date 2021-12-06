@@ -20,17 +20,18 @@
         "@types/node": "^16.11.10",
         "node": "^14.18.1"
     },
-    "types": "/dist/types/index.d.ts",
+ 
     "files": [
-        "/dist/**/*",
-        "/dist/**/**/*",
-        "/package.json",
-        "/LICENSE",
-        "/README.md"
+        "dist",
+        "package.json",
+        "LICENSE",
+        "README.md",
+        "@types"
     ],
     "engines": {
         "node": ">=14"
     },
+    "types": "@types/index.d.ts",
     "repository": {
         "type": "git",
         "url": "https://github.com/Hanro50/GMLL"
@@ -42,6 +43,8 @@
         }
     ],
     "scripts": {
-        "build": "node build.cjs"
+        "build": "node build.cjs",
+        "test-cjs":"node tests/test.cjs",
+        "test-mjs":"node tests/test.mjs"
     }
 }

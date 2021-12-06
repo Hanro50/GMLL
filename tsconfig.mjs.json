@@ -4,6 +4,6 @@
     "compilerOptions": {
         "module": "ESNEXT",
         "target": "ESNext",
-        "outDir": "dist/mjs",
+        "outDir": "dist/mjs"
     }
 }
