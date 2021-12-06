@@ -124,6 +124,20 @@ export interface library {
     },
 }
 
+/**The return object that all the async login procedures return */
+export interface msmcResult {
+    type: "Success" | "DemoUser" | "Authentication" | "Cancelled" | "Unknown"
+    /**Only returned when the user has logged in via microsoft */
+    "access_token"?: string, //Your classic Mojang auth token. 
+    /**Only returned on a successful login and if the player owns the game*/
+    profile?: any, //Player profile. Similar to the one you'd normally get with the Mojang login
+    /**Used with the error types*/
+    reason?: string,
+    /**Used when there was a fetch rejection.*/
+    data?: Response,
+}
+
+
 /**
  * ---------------------------------------------------------------------------------------------
  * INDEX 
@@ -132,6 +146,8 @@ export interface library {
 
 import { initialize } from "./modules/config.js";
 import { version } from "os";
+import { throwErr } from "./modules/internal/util.js";
+import { token as _token } from "./modules/objects/instance.js";
 /**
  * Does a range of required preflight checks. Will cause errors if ignored!
  */
@@ -144,6 +160,22 @@ export * as downloader from './modules/downloader.js';
 export * as handler from "./modules/handler.js";
 
 /**The instance object. An instance is basically a minecraft profile you can launch */
-export {default as instance} from "./modules/objects/instance.js";
-export {player as player} from "./modules/objects/instance.js";
-export {options as options} from "./modules/objects/instance.js";
+export { default as instance } from "./modules/objects/instance.js";
+export { token as token } from "./modules/objects/instance.js";
+export { options as options } from "./modules/objects/instance.js";
+
+export function msmcWrapper(msmcResult: msmcResult): _token {
+    if (msmcResult.type != "DemoUser" && msmcResult.type != "Success" || !msmcResult.profile) {
+        throwErr("User was not logged in with msmc!");
+    }
+    return {
+        profile: {
+            demo: msmcResult.type == "DemoUser",
+            type: "msa",
+            id: msmcResult.profile.id,
+            name: msmcResult.profile.name,
+            xuid: msmcResult.profile.xuid
+        },
+        access_token: msmcResult.access_token
+    };
+}

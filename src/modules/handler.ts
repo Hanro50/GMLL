@@ -68,11 +68,9 @@ export function getLatest() {
     else return { "release": "1.17.1", "snapshot": "21w42a" };
 }
 
-
-
 export function getClientID() {
     isInitialised();
-    const path = join("some files");
+    const path = join(getMeta().index, "ID.txt");
     var data: string;
     if (!existsSync(path)) {
         data = stringify({

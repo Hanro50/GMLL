@@ -167,8 +167,8 @@ export function getNatives() {
 
 /**Does the basic pre flight checks. */
 export async function initialize() {
-    await manifests();
     Object.values(files).forEach(e => { mkdir(e) });
     Object.values(getMeta()).forEach(e => { mkdir(e) });
+    await manifests();
     initialised = true;
 }

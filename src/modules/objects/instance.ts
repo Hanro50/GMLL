@@ -3,10 +3,10 @@ import { spawn } from "child_process";
 import { join } from "path";
 import { defJVM, fsSanitiser, mkdir, mklink, oldJVM, parseArguments, writeJSON } from "../internal/util.js";
 import { cpus, type } from "os";
-import {  getClientID, getLatest } from "../handler.js";
+import { getClientID, getLatest } from "../handler.js";
 import { emit, getAssets, getInstances, getlibraries, getMeta, getNatives } from "../config.js";
 import { launchArgs, user_type } from "../../index.js";
-import {version} from "./version.js";
+import { version } from "./version.js";
 const defArgs = [
     "-Xms${ram}G",
     "-Xmx${ram}G",
@@ -17,13 +17,15 @@ const defArgs = [
     "-XX:MaxGCPauseMillis=50",
     "-XX:G1HeapRegionSize=32M",
 ]
-export interface player {
-    name: string,
-    uuid: string,
-    type: user_type,
-    demo?: boolean,
-    auth_xuid?: string,
-    accessToken: string
+export interface token {
+    profile: {
+        id: string,
+        name: string,
+        xuid?: string,
+        type?: user_type,
+        demo?: boolean
+    },
+    access_token?: string
 }
 
 
@@ -80,7 +82,7 @@ export default class instance {
      * @param {{width:string,height:string}} resolution 
      * @returns 
      */
-    async launch(player: player, resolution: { width: string, height: string }) {
+    async launch(token: token, resolution: { width: string, height: string }) {
 
         const version = await this.getVersion();
         await version.install();
@@ -105,31 +107,31 @@ export default class instance {
             ram: this.ram,
             cores: cpus().length,
 
-            is_demo_user: !!player.demo,
+            is_demo_user: !!token.profile.demo,
             has_custom_resolution: !!resolution,
             resolution_width: resolution ? resolution.width : "",
             resolution_height: resolution ? resolution.height : "",
 
-            auth_player_name: player.name,
+            auth_player_name: token.profile.name,
             version_name: vjson.inheritsFrom || vjson.id,
             game_directory: this.path,
 
             assets_root: AssetRoot,
             assets_index_name: vjson.assetIndex.id,
 
-            auth_uuid: player.uuid,
-            user_type: player.type,
-            auth_xuid: player.auth_xuid,
+            auth_uuid: token.profile.id,
+            user_type: token.profile.type,
+            auth_xuid: token.profile.xuid,
             clientid: getClientID(),
-            
+
             version_type: vjson.type,
-            auth_access_token: player.accessToken,
+            auth_access_token: token.access_token,
 
             natives_directory: getNatives(),
             launcher_name: process.env.launcher_name || process.env.npm_package_name || "GMLL",
             launcher_version: launcher_version,
             classpath: classPath,
-            auth_session: "token:"+player.accessToken,
+            auth_session: "token:" + token.access_token,
             game_assets: AssetRoot,
 
             classpath_separator: classpath_separator,
