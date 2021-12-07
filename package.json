@@ -1,12 +1,53 @@
 {
     "name": "gmll",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "A generic launcher core for building custom launchers",
     "license": "MIT",
+    "types": "./dist/ts/index.d.ts",
+    "typesVersions": {
+        "*": {
+            "config": [
+                "./dist/ts/modules/config.d.ts"
+            ],
+            "downloader": [
+                "./dist/ts/modules/downloader.d.ts"
+            ],
+            "handler": [
+                "./dist/ts/modules/handler.d.ts"
+            ],
+            "objects/instance": [
+                "./dist/ts/modules/objects/instance.d.ts"
+            ],
+            "objects/version": [
+                "./dist/ts/modules/objects/version.d.ts"
+            ]
+        }
+    },
     "exports": {
         ".": {
             "import": "./dist/mjs/index.js",
             "require": "./dist/cjs/index.js"
+        },
+        "./config": {
+            "import": "./dist/mjs/modules/config.js",
+            "require": "./dist/cjs/modules/config.js"
+        },
+        "./downloader": {
+            "import": "./dist/mjs/modules/downloader.js",
+            "require": "./dist/cjs/modules/downloader.js"
+        },
+        "./handler": {
+            "import": "./dist/mjs/modules/handler.js",
+            "require": "./dist/cjs/modules/handler.js"
+        },
+        "./objects/instance": {
+            "import": "./dist/mjs/modules/objects/instance.js",
+            "require": "./dist/cjs/modules/objects/instance.js"
+        },
+        "./objects/version": {
+            "import": "./dist/mjs/modules/objects/version.js",
+            "require": "./dist/cjs/modules/objects/version.js",
+            "@types": "./@types/objects/version.d.ts"
         }
     },
     "main": "dist/cjs/index.js",
@@ -29,7 +70,6 @@
     "engines": {
         "node": ">=14"
     },
-    "types": "@types/index.d.ts",
     "repository": {
         "type": "git",
         "url": "https://github.com/Hanro50/GMLL"

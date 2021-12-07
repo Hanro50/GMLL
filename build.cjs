@@ -5,7 +5,7 @@ const { join } = require("path");
 console.log("Removing old files");
 const rm = (file) => rmSync(file, { recursive: true, force: true });
 rm("dist");
-rm("@types");
+//rm("@types");
 
 /**
  * 
