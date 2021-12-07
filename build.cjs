@@ -2,7 +2,7 @@ const { execSync } = require("child_process");
 const { writeFileSync, rmSync, WriteStream } = require("fs");
 const { join } = require("path");
 
-console.log("Removing old files\n");
+console.log("Removing old files");
 const rm = (file) => rmSync(file, { recursive: true, force: true });
 rm("dist");
 rm("@types");
