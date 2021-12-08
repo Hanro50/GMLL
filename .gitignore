@@ -105,6 +105,7 @@ dist
 
 # GMLL Project files
 .minecraft/
+.tests/
 package-lock.json
 yarn.lock
 temp.json
