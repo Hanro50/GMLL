@@ -4,11 +4,11 @@ import { join } from "path";
 import { manifests } from "./downloader.js";
 import { mkdir, throwErr } from "./internal/util.js";
 export type update = "fabric" | "vanilla" | "forge" | "runtime";
-let initialised = false;
+let initialized = false;
 
-export function isInitialised() {
-    if (!initialised) {
-        throwErr("GMLL is not initialised!\nPlease run \"init()\" or wait for the manifest files to redownload when changing the launcher directory.\nThis error is here to prevent unexpected errors")
+export function isInitialized() {
+    if (!initialized) {
+        throwErr("GMLL is not initialized!\nPlease run \"init()\" or wait for the manifest files to redownload when changing the launcher directory.\nThis error is here to prevent unexpected errors")
     }
 }
 export interface Events {
@@ -53,7 +53,8 @@ var files: { root: string, assets: string, libraries: string, instances: string,
  * Resets the root folder path and all of it's sub folders
  * @param {String} _root 
  */
-function _resetRoot(_root: string) {
+ export function resetRoot(_root: string) {
+    initialized = false;
     files = {
         root: _root,
         assets: join(_root, "assets"),
@@ -66,13 +67,9 @@ function _resetRoot(_root: string) {
     }
 }
 
-_resetRoot(join(process.cwd(), ".minecraft"));
+resetRoot(join(process.cwd(), ".minecraft"));
 
-export async function resetRoot(_root: string) {
-    initialised = false;
-    _resetRoot(_root);
-    await initialize();
-}
+
 
 export function setRoot(_root: string) {
     mkdir(files.root);
@@ -95,7 +92,7 @@ export function setRuntimes(_runtimes: string) {
     files.runtimes = _runtimes;
 }
 export async function setLauncher(_launcher: string) {
-    initialised = false;
+    initialized = false;
     files.launcher = _launcher;
     await initialize();
 }
@@ -170,5 +167,5 @@ export async function initialize() {
     Object.values(files).forEach(e => { mkdir(e) });
     Object.values(getMeta()).forEach(e => { mkdir(e) });
     await manifests();
-    initialised = true;
+    initialized = true;
 }

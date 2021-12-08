@@ -15,6 +15,9 @@
             "handler": [
                 "./dist/ts/modules/handler.d.ts"
             ],
+            "wrapper": [
+                "./dist/ts/modules/wrapper.d.ts"
+            ],
             "objects/instance": [
                 "./dist/ts/modules/objects/instance.d.ts"
             ],
@@ -39,6 +42,10 @@
         "./handler": {
             "import": "./dist/mjs/modules/handler.js",
             "require": "./dist/cjs/modules/handler.js"
+        },
+        "./wrapper": {
+            "import": "./dist/mjs/modules/wrapper.js",
+            "require": "./dist/cjs/modules/wrapper.js"
         },
         "./objects/instance": {
             "import": "./dist/mjs/modules/objects/instance.js",

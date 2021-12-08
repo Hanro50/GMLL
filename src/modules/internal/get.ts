@@ -30,15 +30,7 @@ export interface downloadable {
     key: string
 }
 
-
-
-/**
- * @param {{objects:{[key: string]:{hash:string,size:number}}}} file 
- */
 if (process.env.file && existsSync(process.env.file)) {
-    /**
-     * @type {GMLL.get.downloadable[]}
-     */
     const keys: downloadable[] = JSON.parse(readFileSync(process.env.file).toString());
 
     keys.forEach(o => {

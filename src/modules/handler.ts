@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
-import { emit, getInstances, getlibraries, getMeta, getRuntimes, getVersions, isInitialised } from "./config.js";
+import { emit, getInstances, getlibraries, getMeta, getRuntimes, getVersions, isInitialized } from "./config.js";
 import { runtime } from "./downloader.js";
 import { getOS, mkdir, stringify } from "./internal/util.js";
 import { manifest, version as _version, runtimes } from "../index.js";
@@ -29,7 +29,7 @@ export function getJavaPath(java: runtimes = "jre-legacy") {
  * @returns {Array<GMLL.json.manifest>}
  */
 export function getManifests(): manifest[] {
-    isInitialised();
+    isInitialized();
     var versionManifest = [];
     const root = getMeta().manifests
     readdirSync(root).forEach(e => {
@@ -50,7 +50,7 @@ export function getManifests(): manifest[] {
  * @returns 
  */
 export function getManifest(version: string) {
-    isInitialised();
+    isInitialized();
     const manifests = getManifests();
     const v = version.toLocaleLowerCase().trim();
     return manifests.find(e => { try { return e.id.toLocaleLowerCase().trim() == v } catch { return false; } }) || { id: version, type: "unknown" };
@@ -61,7 +61,7 @@ export function getManifest(version: string) {
  * @returns {{ "release": string, "snapshot": string }};
  */
 export function getLatest() {
-    isInitialised();
+    isInitialized();
     const file = join(getMeta().index, "latest.json");
     if (existsSync(file))
         return JSON.parse(readFileSync(file).toString());
@@ -69,7 +69,7 @@ export function getLatest() {
 }
 
 export function getClientID() {
-    isInitialised();
+    isInitialized();
     const path = join(getMeta().index, "ID.txt");
     var data: string;
     if (!existsSync(path)) {

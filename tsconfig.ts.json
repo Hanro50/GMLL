@@ -4,6 +4,7 @@
     "compilerOptions": {
         "emitDeclarationOnly": true,
         "declaration": true,
+        "removeComments": false,
         "declarationDir": "dist/ts"       
     }
 }

@@ -1,7 +1,7 @@
 import { existsSync, copyFileSync, readFileSync } from "fs";
 import { join } from "path";
 import { jarTypes, manifest, version as _version } from "../..";
-import { getlibraries, getVersions, isInitialised } from "../config.js";
+import { getlibraries, getVersions, isInitialized } from "../config.js";
 import { assets, runtime, libraries } from "../downloader.js";
 import { getManifest, getJavaPath } from "../handler.js";
 import { chkFileDownload2, throwErr, rmdir, mkdir, chkFileDownload, classPathResolver } from "../internal/util.js";
@@ -37,7 +37,7 @@ export class version {
 
 
     static async get(manifest: string | manifest): Promise<version> {
-        isInitialised();
+        isInitialized();
         const v = new version(manifest);
         await v.getJSON();
         return v;
