@@ -1,8 +1,21 @@
 # GMLL
+<a href="https://www.npmjs.com/package/gmll"><img src="https://img.shields.io/npm/l/msmc" alt="MIT license"/></a>
+<a href="https://github.com/Hanro50/gmll/"><img src="https://img.shields.io/npm/v/gmll" alt="Version Number"/></a>
+<a href="https://github.com/Hanro50/gmll/"><img src="https://img.shields.io/github/stars/hanro50/gmll" alt="Github Stars"/></a><br/>
 A generic Minecraft Launcher Library 
 
 # Module type
 GMLL is a hybrid module. However as such, you should best avoid trying to use GMLL as both a ES6 and a CommonJS module in the same project. 
+
+# Support 
+No support will be given to launchers that seek to grant access to Minecraft to individuals whom do not posses a valid Minecraft License. In other words, don't launch Minecraft if a user has not logged in with an account that owns the game at least once. I'm not in the mood to get sued. -Hanro
+
+Other then that. There's a channel dedicated to GMLL on the MSMC support Discord server. Click the following badge to join.
+<div>
+   <a href="https://discord.gg/3hM8H7nQMA">
+   <img src="https://img.shields.io/discord/861839919655944213?logo=discord"
+      alt="chat on Discord"></a>
+</div>
 
 # Initialization
 The library relies on a collection core files that are dynamically downloaded from the internet to function. GMLL thus has two states it can be within. Initialized and uninitialized. GMLL will refuse to launch minecraft if it is not properly initialized. 
