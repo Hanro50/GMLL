@@ -53,7 +53,7 @@ var files: { root: string, assets: string, libraries: string, instances: string,
  * Resets the root folder path and all of it's sub folders
  * @param {String} _root 
  */
- export function resetRoot(_root: string) {
+ export function setRoot(_root: string) {
     initialized = false;
     files = {
         root: _root,
@@ -67,14 +67,8 @@ var files: { root: string, assets: string, libraries: string, instances: string,
     }
 }
 
-resetRoot(join(process.cwd(), ".minecraft"));
+setRoot(join(process.cwd(), ".minecraft"));
 
-
-
-export function setRoot(_root: string) {
-    mkdir(files.root);
-    files.root = _root;
-}
 export function setAssets(_assets: string) {
     mkdir(files.assets);
     files.assets = _assets;
@@ -98,6 +92,7 @@ export async function setLauncher(_launcher: string) {
 }
 
 export function setNatives(_natives: string) {
+    mkdir(_natives);
     files.natives = _natives;
 }
 
@@ -132,7 +127,10 @@ export function getMeta() {
     return meta;
 }
 
-
+export function getNatives() {
+    mkdir(files.natives);
+    return files.natives
+}
 export function emit(tag: string, ...args: Array<Number | String>) {
     defEvents.emit(tag, ...args);
 }
@@ -157,10 +155,7 @@ export function addUpdateConfig(item: update) {
 export function getUpdateConfig() {
     return updateConf;
 }
-export function getNatives() {
-    mkdir(files.natives);
-    return files.natives
-}
+
 
 /**Does the basic pre flight checks. */
 export async function initialize() {

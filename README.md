@@ -34,17 +34,19 @@ await init();
 
 # Modules
 ## index
+```js
+//ES6 
+import * as gmll from "gmll";
+//commonJS
+const gmll = require("gmll");
+```
 The main module you will load upon pulling in GMLL. It contains fallback hooks for every other module in GMLL as well as the init function witch will initialize GMLL. See content under the header "Initialization". 
 
 This module also contains shortcuts for setting up an the code needed to launch a new instance. Namely a direct export for the instance, player and instance options. 
 
 For example
 ```js
-//ES6 
-import * as gmll from "gmll";
-//commonJS
-const gmll = require("gmll");
-... //Let's assume the next part in a async function!
+//Let's assume the next part is in an async function!
 //Needed to make sure all the needed files are downloaded
 await gmll.init();
 //The player profile and login token
@@ -61,17 +63,61 @@ new gmll.instance({ version: "1.18" }.launch(token);
 ...
 ```
 ## config
+```js
+//ES6 
+import * as config from "gmll/config";
+//commonJS
+const config = require("gmll/config");
+//fallback 
+const config = gmll.config; 
+```
 The config class manages all the configuration data managed by the module. It should ideally be handled exclusively when the library has not been initialized yet as changing certain properties within the config module can cause GMLL to become uninitialized again. 
 
 This is primarily due to this module controlling where GMLL will look and pull files from. <br><br>
 
-### Function: resetRoot
-This allows you to customize where the data folder for GMLL will be located. This function is called internally on startup to specify the default directory GMLL will use if you don't customize the directories
-
-Warning: This function will override any directories you have already changed and will mark GMLL as uninitialized. Which will cause errors if the initialize function is not called again!
-
+## set and get functions
+### Root
 ```ts
-function resetRoot(_root: string): void;
+function getRoot(): string;
+function setRoot(_root: string): void;
+```
+<b style="color:red">Warning:</b> using "setRoot" will mark gmll as uninitialized. It will also reset all other filepaths to their default values based on the given root path. This call is used internally to set the initial filepaths. 
+
+<b>set:</b> The set method can be used to customize where your launcher stores GMLL's data. Useful if the default location is not exactly optimal for one reason or another. 
+
+<b>get:</b> In a sense the get method will give you the root directory gmll is using. Unless you're developing a plugin for GMLL and wish to use the same folder GMLL uses to store critical information and or settings. It is best to use one of the other methods below to access GMLL's files.  
+
+### Assets
+```ts
+function setAssets(_assets: string): void;
+function getAssets(): string;
+```
+The location of the assets in GMLL. Internally it should look similar to the vanilla launcher's asset's folder. Apart from the fact that certain folders aren't deleted after GMLL shuts down. 
+### Libraries
+```ts
+function setLibraries(_libraries: string):void;
+function getlibraries(): string;
+```
+The array of Java libraries Minecraft needs to function correctly. These two commands allow you to specify where GMLL will store them internally. 
+### Instances
+```ts
+function setInstances(_instances: string): void;
+function getInstances(): string;
+```
+### Runtimes
+```ts
+function setRuntimes(_runtimes: string): void;
+function getRuntimes(): string;
+```
+### Launcher/Meta
+```ts
+function setLauncher(_launcher: string): Promise<void>;
+function getMeta();
+```
+### Natives
+```ts
+function setNatives(_natives: string): void;
+function getNatives(): string;
 ```
 
 # WIP Docs
