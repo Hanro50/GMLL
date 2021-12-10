@@ -91,5 +91,15 @@
         "build": "node build.cjs",
         "test-cjs": "node tests/test.cjs",
         "test-mjs": "node tests/test.mjs"
-    }
+    },
+    "keywords": [
+        "msmc",
+        "minecraft",
+        "launcher",
+        "java edition",
+        "mc",
+        "es6",
+        "commonjs",
+        "gmll"
+      ]
 }
