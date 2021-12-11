@@ -79,11 +79,11 @@ This is primarily due to this module controlling where GMLL will look and pull f
 ### Root
 ```ts
 function getRoot(): string;
-function setRoot(_root: string): void;
+function setRoot(_root: string, absolutePath?: boolean): void;
 ```
 <b style="color:red">Warning:</b> using "setRoot" will mark gmll as uninitialized. It will also reset all other filepaths to their default values based on the given root path. This call is used internally to set the initial filepaths. 
 
-<b>set:</b> The set method can be used to customize where your launcher stores GMLL's data. Useful if the default location is not exactly optimal for one reason or another. 
+<b>set:</b> The set method can be used to customize where your launcher stores GMLL's data. Useful if the default location is not exactly optimal for one reason or another. If "absolutePath" is set to false (default) it will append the process directory as a prefix onto the path. Please keep this in mind as providing a relative path is likely to result in unforeseen behavior. 
 
 <b>get:</b> In a sense the get method will give you the root directory gmll is using. Unless you're developing a plugin for GMLL and wish to use the same folder GMLL uses to store critical information and or settings. It is best to use one of the other methods below to access GMLL's files.  
 

@@ -52,7 +52,6 @@ export class version {
         this.name = this.manifest.base || this.manifest.id;
         this.folder = join(getVersions(), this.name);
         this.file = join(this.folder, this.manifest.id + ".json");
-
     }
 
     /**
@@ -71,7 +70,7 @@ export class version {
         }
         if (this.manifest.url) {
             mkdir(this.folder);
-            this.json = JSON.parse((await chkFileDownload2(this.manifest.url, this.name, this.folder, this.manifest.sha1)).toString());
+            this.json = JSON.parse((await chkFileDownload2(this.manifest.url, this.name + ".json", this.folder, this.manifest.sha1)).toString());
         } else if (existsSync(this.file)) {
             this.json = JSON.parse(readFileSync(this.file).toString());
         } else {

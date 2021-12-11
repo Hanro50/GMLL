@@ -53,7 +53,9 @@ var files: { root: string, assets: string, libraries: string, instances: string,
  * Resets the root folder path and all of it's sub folders
  * @param {String} _root 
  */
- export function setRoot(_root: string) {
+export function setRoot(_root: string, absolutePath = false) {
+    if (!absolutePath) 
+        _root = join(process.cwd(), _root);
     initialized = false;
     files = {
         root: _root,
@@ -67,7 +69,7 @@ var files: { root: string, assets: string, libraries: string, instances: string,
     }
 }
 
-setRoot(join(process.cwd(), ".minecraft"));
+setRoot(".minecraft");
 
 export function setAssets(_assets: string) {
     mkdir(files.assets);

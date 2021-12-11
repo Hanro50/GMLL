@@ -16,6 +16,7 @@ const defArgs = [
     "-XX:G1ReservePercent=20",
     "-XX:MaxGCPauseMillis=50",
     "-XX:G1HeapRegionSize=32M",
+    "-Dlog4j2.formatMsgNoLookups=true"
 ]
 export interface token {
     profile: {
