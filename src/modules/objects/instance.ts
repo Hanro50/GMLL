@@ -4,9 +4,10 @@ import { join } from "path";
 import { defJVM, fsSanitiser, mkdir, mklink, oldJVM, parseArguments, writeJSON } from "../internal/util.js";
 import { cpus, type } from "os";
 import { getClientID, getLatest } from "../handler.js";
-import { emit, getAssets, getInstances, getlibraries, getMeta, getNatives } from "../config.js";
+import { emit, getAssets, getInstances, getLauncherVersion, getlibraries, getMeta, getNatives, resolvePath } from "../config.js";
 import { launchArgs, user_type } from "../../index.js";
 import { version } from "./version.js";
+import path from "path/posix";
 const defArgs = [
     "-Xms${ram}G",
     "-Xmx${ram}G",
@@ -46,28 +47,25 @@ export interface options {
 export default class instance {
     name: string;
     version: string;
-    path: string;
     ram: Number;
     meta: any;
-    protected type: string;
+    private path: string;
     static get(name: string) {
         const json = JSON.parse(readFileSync(join(getMeta().profiles, fsSanitiser(name + ".json"))).toString());
         return new instance(json);
     }
-
-    /**
-     * 
-     * @param {GMLL.instance.options} opt 
-     */
     constructor(opt: options) {
-
         this.version = opt && opt.version ? opt.version : getLatest().release;
         this.name = opt && opt.name ? opt.name : this.version;
-        this.path = opt && opt.path ? opt.path : join(getInstances(), fsSanitiser(this.name));
+        this.path = opt && opt.path ? opt.path : join("<instance>", fsSanitiser(this.name));
         this.ram = opt && opt.ram ? opt.ram : 2;
         this.meta = opt && opt.meta ? opt.meta : undefined;
 
-        mkdir(this.path);
+        mkdir(this.getPath());
+    }
+
+    getPath() {
+        return resolvePath(this.path);
     }
 
     async getVersion() {
@@ -95,13 +93,12 @@ export default class instance {
         if (AssetIndex.virtual) AssetRoot = join(AssetRoot, "legacy", "virtual");
         if (AssetIndex.map_to_resources) {
             AssetRoot = join(AssetRoot, "legacy", "resources");
-            mklink(AssetRoot, join(this.path, "resources"));
-            AssetRoot = join(this.path, "resources");
+            mklink(AssetRoot, join(this.getPath(), "resources"));
+            AssetRoot = join(this.getPath(), "resources");
         };
-        var launcher_version = "0.0.0";
-        try {
-            launcher_version = process.env.launcher_version || process.env.npm_package_version || require("../../package.json").version
-        } catch { }
+
+  
+
         const classpath_separator = type() == "Windows_NT" ? ";" : ":";
         const classPath = cp.join(classpath_separator)
         const args = {
@@ -115,7 +112,7 @@ export default class instance {
 
             auth_player_name: token.profile.name,
             version_name: vjson.inheritsFrom || vjson.id,
-            game_directory: this.path,
+            game_directory: this.getPath(),
 
             assets_root: AssetRoot,
             assets_index_name: vjson.assetIndex.id,
@@ -130,7 +127,7 @@ export default class instance {
 
             natives_directory: getNatives(),
             launcher_name: process.env.launcher_name || process.env.npm_package_name || "GMLL",
-            launcher_version: launcher_version,
+            launcher_version: getLauncherVersion(),
             classpath: classPath,
             auth_session: "token:" + token.access_token,
             game_assets: AssetRoot,
@@ -155,7 +152,8 @@ export default class instance {
             const regex = new RegExp(`\\\$\{${key}\}`, "g")
             launchCom = launchCom.replace(regex, args[key])
         })
-        const s = spawn(javaPath, launchCom.trim().split(" "), { "cwd": this.path })
+        emit("jvm.start", "Minecraft", this.getPath());
+        const s = spawn(javaPath, launchCom.trim().split(" "), { "cwd": this.getPath() })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
     }

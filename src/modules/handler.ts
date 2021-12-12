@@ -78,7 +78,7 @@ export function getClientID() {
             UUID: randomUUID(),
             network: createHash('sha256').update(stringify(networkInterfaces())).digest("base64"),
             user: createHash('sha256').update(stringify(userInfo())).digest("base64"),
-            provider: "MSMC",
+            provider: "GMLL",
         });
         data = createHash('sha512').update(data).digest("base64");
         writeFileSync(path, data);
@@ -93,6 +93,7 @@ export function getClientID() {
  */
 export async function installForge(file: string | string[] | null) {
     await runtime("java-runtime-beta");
+  
     const javaPath = getJavaPath("java-runtime-beta");
     const path = join(getInstances(), ".forgiac");
     const logFile = join(path, "log.txt")
@@ -103,6 +104,7 @@ export async function installForge(file: string | string[] | null) {
     }
 
     mkdir(path);
+    emit("jvm.start", "Forgiac", path);
     const s = spawn(javaPath, args, { "cwd": path })
     s.stdout.on('data', (chunk) => emit("jvm.stdout", "Forgiac", chunk));
     s.stderr.on('data', (chunk) => emit("jvm.stderr", "Forgiac", chunk));

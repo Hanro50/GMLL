@@ -1,13 +1,13 @@
-# GMLL
+# <b>GMLL</b>
 <a href="https://www.npmjs.com/package/gmll"><img src="https://img.shields.io/npm/l/msmc" alt="MIT license"/></a>
 <a href="https://github.com/Hanro50/gmll/"><img src="https://img.shields.io/npm/v/gmll" alt="Version Number"/></a>
 <a href="https://github.com/Hanro50/gmll/"><img src="https://img.shields.io/github/stars/hanro50/gmll" alt="Github Stars"/></a><br/>
 A generic Minecraft Launcher Library 
 
-# Module type
+# <b>Module type</b>
 GMLL is a hybrid module. However as such, you should best avoid trying to use GMLL as both a ES6 and a CommonJS module in the same project. 
 
-# Support 
+# <b>Support</b>
 No support will be given to launchers that seek to grant access to Minecraft to individuals whom do not posses a valid Minecraft License. In other words, don't launch Minecraft if a user has not logged in with an account that owns the game at least once. I'm not in the mood to get sued. -Hanro
 
 Other then that. There's a channel dedicated to GMLL on the MSMC support Discord server. Click the following badge to join.
@@ -17,7 +17,7 @@ Other then that. There's a channel dedicated to GMLL on the MSMC support Discord
       alt="chat on Discord"></a>
 </div>
 
-# Initialization
+# <b>Initialization</b>
 The library relies on a collection core files that are dynamically downloaded from the internet to function. GMLL thus has two states it can be within. Initialized and uninitialized. GMLL will refuse to launch minecraft if it is not properly initialized. 
 
 Before initialization. You'll likely want to load the config module and modify the paths GMLL uses. This is recommended as the initialization method will also create any folders required by GMLL to function. Essentially if you keep finding GMLL is generating random .minecraft folders, this is likely why. See the header "Config" under modules.
@@ -32,8 +32,8 @@ import { init } from "gmll";
 await init();
 ```
 
-# Modules
-## index
+# <b>Modules</b>
+# index
 ```js
 //ES6 
 import * as gmll from "gmll";
@@ -62,7 +62,7 @@ const token = {
 new gmll.instance({ version: "1.18" }.launch(token);
 ...
 ```
-## config
+# config
 ```js
 //ES6 
 import * as config from "gmll/config";
@@ -104,20 +104,88 @@ The array of Java libraries Minecraft needs to function correctly. These two com
 function setInstances(_instances: string): void;
 function getInstances(): string;
 ```
+The default location where GMLL stores the game files used by various versions of minecraft. It will contain the name of the instance which will default to the version id if a set instance is not given a name. 
 ### Runtimes
 ```ts
 function setRuntimes(_runtimes: string): void;
 function getRuntimes(): string;
 ```
+The "runtimes" folder contains all the java runtimes GMLL knows about. Adding custom runtimes to this folder can technically be done, but isn't recommended. 
 ### Launcher/Meta
 ```ts
-function setLauncher(_launcher: string): Promise<void>;
-function getMeta();
+async function setLauncher(_launcher: string): Promise<void>;
+export declare function getMeta(): {
+   manifests: string;runtimes: string;index: string;profiles: string;temp: string;folder: string;
+};
 ```
+The launcher folder contains all the core meta data and files GMLL uses. 
+It is where it will save data related to instances, manifest and core index files.
+The "getMeta" function wraps all of this into an easy to handle object that contains paths to 
+every folder within the meta files. The files here are more here to instruct GMLL where to get certain files from and are checked when you run the "init" command. 
+
+The "setLauncher" is asynchronous as it will reinitialize GMLL for you when it is used. 
+
+#### Fields
+<table>
+<tr><th>name</th><th>description</th></tr>
+<tr><td>manifests</td><td>This file contains files used to compile the version manifest file GMLL exposes to your Launcher. Want to add a custom version? Add a file in here. Forgiac actually drops in files here and every version should have exactly one file in this folder reference it. Since the manifests files also give GMLL some data points needed to sort a set custom version. </td></tr>
+<tr><td>runtimes</td><td>Contains the index files GMLL uses to download a set runtime required by a set version. The vanilla provided indexes are checked against a sha hash. Although custom runtime indexes are left alone and will be ignored unless a set version of minecraft requests it.<br><br>  <b style="color:red">Warning:</b>Contents of these indexes are different per platform. Just take that into account as you need to insure the right index is placed here for the set platform your launcher is currently running on.</td></tr>
+<tr><td>index</td><td>Contains miscellaneous index files used by GMLL to get other index files or to store internal data GMLL uses to function. Please ignore unless you're developing an addon for GMLL.</td></tr>
+<tr><td>profiles</td><td>Where instance config data is saved when you run the "save()" function on the profile object. </td></tr>
+<tr><td>temp</td><td>Temp directory for various files. Best to ignore.</td></tr>
+<tr><td>folder</td><td>Gets the root launcher folder. Useful for addons.</td></tr>
+</table>
+
 ### Natives
 ```ts
 function setNatives(_natives: string): void;
 function getNatives(): string;
 ```
+Where the natives a set version uses should be extracted to. 
 
+### setLauncherVersion
+```ts
+function setLauncherVersion(_version?: string): void;
+function getLauncherVersion(): string;
+```
+Declares the launcher version GMLL should report to Minecraft. Doesn't seem to do much of anything. 
+
+### events 
+```ts
+function emit(tag: string, ...args: Array<Number | String>): void;
+function setEventListener(events: Events): void;
+function getEventListener(): Events;
+```
+This determines a few things in GMLL. Like console output and how data for a set event is processed.
+If GMLL's console output is annoying then you can use the set method to feed in your own event listener. Check the JS docs for more information as the readme is likely to become outdated before long if I wrote information about it here. 
+
+emit is an internal function and should not be used outside of GMLL. 
+
+## Update config 
+```ts
+//Clears all settings
+function clrUpdateConfig(): void;
+//Adds a setting to the list of things GMLL should update
+function addUpdateConfig(item: update): void;
+//Gets the current list of things GMLL will update upon initialization
+function getUpdateConfig(): update[];
+```
+Can be used to fine tune GMLL if your launcher isn't using all of GMLL's functions. 
+For instance you can set it to only update the vanilla version manifest if you're not planning on using fabric or you can ask it to not download/update forgiac. 
+
+## misc
+```ts
+//Used to resolve paths within the context of GMLL. Useful for plugin developers
+function resolvePath(file: string): string;
+
+//Used for GMLL plugins. Any function passed to this function will be called every time GMLL is initialized. 
+export function initializationListener(func: () => void | Promise<void>):void;
+//Does some preflight checks and is actually called by the "init" function in the index file. This can be called directly and will be no different then calling "init" in the index file.
+export async function initialize();
+```
+Some random, but useful functions. 
+
+# downloader
+GMLL's internal download manager
 # WIP Docs
+Still being worked on actively. Stay tuned...

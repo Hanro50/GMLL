@@ -1,12 +1,13 @@
 import { createHash } from "crypto";
 import Fetch from "node-fetch";
-import  fs from "fs";
+import fs from "fs";
 import { join } from "path";
 import { arch, platform, type, version } from "os";
 import { launchArgs, rules } from "../../index.js";
 import { execSync } from "child_process";
 import { downloadable } from "./get";
 import { cmd as _cmd } from '7zip-min';
+import { getInstances } from "../config.js";
 
 export function getOS() {
     const OS = platform();
@@ -241,7 +242,7 @@ export async function chkFileDownload(o: downloadable): Promise<Buffer> {
         res.body.pipe(file, { end: true });
         file.on("close", e);
     });
-    o = await mutator(o,true);
+    o = await mutator(o, true);
     return fs.readFileSync(join(o.path, o.name));
 }
 
@@ -249,3 +250,4 @@ export async function chkFileDownload(o: downloadable): Promise<Buffer> {
 export function chkFileDownload2(url: string, name: string, path: string, sha1: string, size?: number): Promise<Buffer> {
     return chkFileDownload({ key: name, url: url, name: name, path: path, sha1: sha1, size: size })
 }
+

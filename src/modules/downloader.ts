@@ -45,7 +45,7 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
     function resolve() {
         var active = true;
         const totalItems = Object.values(temp).length;
-        console.trace();
+       // console.trace();
         return new Promise<void>(res => {
             const numCPUs = cpus().length;
             emit("download.setup", numCPUs);

@@ -1,6 +1,15 @@
-import { instance as _instance,init } from "gmll"
-import {initialize} from "gmll/config"
-import * as gmll from "gmll"
-await initialize();
-new _instance({version:"1.18"}).launch({name:"Hanro50"})
+
+import { wrapper, init, instance } from "gmll";
+import { setRoot } from "gmll/config";
+
+
+import { fastLaunch } from "msmc";
+setRoot(".MC")
+
+
+const token = wrapper.msmc2token(await fastLaunch("raw", console.log));
+await init();
+const i = new instance({ version: "1.17" });
+i.save();
+i.launch(token);
 

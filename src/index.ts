@@ -42,8 +42,9 @@ export interface manifest {
     /**From the fabric manifest files, always false for some reason */
     stable?: boolean,
     /**Overrides fields in the version json file this references. 
-     *Used when pulling files from sources that have incompatibilities with the vannilla launcher methods.
+     *Used when pulling files from sources that have incompatibilities with the vanilla launcher methods.
      */
+    //Not implemented yet
     overrides?: Partial<version>
 }
 
@@ -94,6 +95,41 @@ export interface version {
     time: string,
     type: version_type,
     inheritsFrom?: string,
+    //Not implemented yet
+    instance?: {
+        /**
+         * Determines how long to wait before restarting the download. 
+         * Lower = better for many smaller files. Higher is better for fewer larger files.
+         * Formula restart_Multiplier x 15 seconds = amount of time before assuming crash.
+         * Timer is reset every time GMLL downloads and saves a file successfully 
+         */
+        restart_Multiplier?: Number,
+        files: [{
+            /**Path relative to instance folder separated with "/"*/
+            path: string,
+            /**The name of the downloadable file*/
+            url: string,
+            /**Used to unzip files. Ignore the name field if it's not a single file in the zip. */
+            unzip?: {
+                exclude?: string[],
+                /**
+                 * Path relative to instance folder separated with "/"
+                 * The location GMLL should extract the files to. 
+                 * Leave as "/" to denote the root of the instance directory
+                 */
+                path: string
+            }
+            /**Used to check if the downloaded and cloud versions of a file are the same*/
+            size?: number,
+            /**Used to check if the downloaded and cloud versions of a file are the same*/
+            sha1?: string,
+            /**
+             * Dynamic files are expected to experience change and should be ignored if they already exist. 
+             * An example being game settings or world saves. You will be able to override this with a function in the future!
+             */
+            dynamic?: boolean
+        }]
+    }
 }
 
 export interface assets {
@@ -121,7 +157,9 @@ export interface library {
         linux?: string,
         windows?: string,
         osx?: string
-    },
+    }
+
+
 }
 
 
