@@ -1,4 +1,4 @@
-import { mkdir, lawyer, getOS, loadSave, compare, assetTag, mklink, rmdir, writeJSON, throwErr, classPathResolver, chkFileDownload2, chkFileDownload } from "./internal/util.js";
+import { mkdir, lawyer, getOS, loadSave, compare, assetTag, mklink, rmdir, writeJSON, throwErr, classPathResolver, chkFileDownload2, chkFileDownload, write } from "./internal/util.js";
 import { join } from "path";
 import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig } from "./config.js";
 import { processCMD, failCMD, getSelf, downloadable } from "./internal/get.js"
@@ -9,7 +9,7 @@ const setupMaster = cluster.setupPrimary || cluster.setupMaster;
 import { cpus, arch } from 'os';
 import { readFileSync, copyFileSync } from "fs";
 import Fetch from "node-fetch";
-import { assetIndex, assets, manifest, runtimes,version } from "../index.js";
+import { assetIndex, assets, manifest, runtimes, version } from "../index.js";
 
 
 setupMaster({
@@ -45,7 +45,7 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
     function resolve() {
         var active = true;
         const totalItems = Object.values(temp).length;
-       // console.trace();
+        // console.trace();
         return new Promise<void>(res => {
             const numCPUs = cpus().length;
             emit("download.setup", numCPUs);
@@ -101,17 +101,13 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
     }
     return resolve();
 }
-/**
- * 
- * @param {GMLL.runtimes} runtime 
- */
+
 export function runtime(runtime: runtimes) {
     const meta = getMeta();
     const file = join(meta.runtimes, runtime + ".json");
     if (!file) {
         throwErr("Cannot find runtime");
     }
-    /**@type {GMLL.json.version} */
     const json = JSON.parse(readFileSync(file).toString()).files;
     var arr = [];
     const lzma = join(getRuntimes(), "lzma");
@@ -206,7 +202,6 @@ export async function libraries(version: version) {
     const OS = getOS();
     const libraries = version.libraries;
     for (var key = 0; key < libraries.length; key++) {
-        /**@type {GMLL.get.downloadable} */
         var dload: Partial<downloadable> = {};
         const e = libraries[key]
         if (e.rules) {
@@ -275,6 +270,8 @@ export async function manifests() {
 
     const mcRuntimes = "https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json";
     const mcVersionManifest = "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json";
+    const mcLog4jFix = "https://launcher.mojang.com/v1/objects/02937d122c86ce73319ef9975b58896fc1b491d1/log4j2_112-116.xml";
+
 
     const update = getUpdateConfig();
     const meta = getMeta();
@@ -295,6 +292,8 @@ export async function manifests() {
             writeJSON(join(meta.index, "latest.json"), json.latest);
             writeJSON(join(meta.manifests, "vanilla.json"), json.versions);
         }
+        const ab = await Fetch(mcLog4jFix)
+        write(join(meta.index, "log4j-fix.xml"), await ab.text());
     }
     if (update.includes("fabric")) {
         const jsgame = await loadSave<[jsgameInf]>(fabricVersions, join(meta.index, "fabric_game.json"));
@@ -339,7 +338,6 @@ export async function manifests() {
             default: throw ("Unsupported operating system");
         }
         for (const key of Object.keys(manifest[platform])) {
-            /**@type {GMLL.get.downloadable} */
             if (manifest[platform][key].length < 1) continue;
             var obj = manifest[platform][key][0].manifest;
             obj.key = key;
@@ -347,7 +345,7 @@ export async function manifests() {
             obj.name = key + ".json";
             obj.size = undefined;
             if (!compare(obj)) {
-                await loadSave(obj.url, join(obj.path, obj.name),true);
+                await loadSave(obj.url, join(obj.path, obj.name), true);
             }
         }
     }

@@ -7,7 +7,6 @@ import { launchArgs, rules } from "../../index.js";
 import { execSync } from "child_process";
 import { downloadable } from "./get";
 import { cmd as _cmd } from '7zip-min';
-import { getInstances } from "../config.js";
 
 export function getOS() {
     const OS = platform();
@@ -35,20 +34,14 @@ export function mklink(target: string, path: string) {
     fs.symlinkSync(target, path, "junction");
 }
 
-/**
- * 
- * @param {Array<GMLL.version.rules>}  rules
- * @param {GMLL.version.args} properties
- * @returns {boolean | any}
- */
 export function lawyer(rules: rules, properties: any = {}): boolean {
-    var end = true, end2 = false;
-    for (var i = 0; i < rules.length; i++) {
+    let end = true, end2 = false;
+    for (let i = 0; i < rules.length; i++) {
         if (rules[i].features) Object.keys(rules[i].features).forEach(e => {
             if (rules[i].features[e] && !properties[e])
                 end = false;
         })
-        var os = !rules[i].os || (
+        const os = !rules[i].os || (
             (!rules[i].os.name || rules[i].os.name == OS) &&
             (!rules[i].os.version || version().match(rules[i].os.version)) &&
             (!rules[i].os.arch || (rules[i].os.arch == arch() || (arch() == "x32" && rules[i].os.arch == "x86"))))
@@ -62,7 +55,7 @@ export function lawyer(rules: rules, properties: any = {}): boolean {
     }
     return (end && end2);
 }
-export var defJVM: launchArgs = [
+export const defJVM: launchArgs = [
     { "rules": [{ "action": "allow", "os": { "name": "osx" } }], "value": ["-XstartOnFirstThread"] },
     { "rules": [{ "action": "allow", "os": { "name": "windows" } }], "value": "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump" },
     { "rules": [{ "action": "allow", "os": { "name": "windows", "version": "^10\\." } }], "value": ["-Dos.name=Windows 10", "-Dos.version=10.0"] },
@@ -74,9 +67,9 @@ export var defJVM: launchArgs = [
     "${classpath}"
 ]
 
-export var oldJVM = ["-Dhttp.proxyHost=betacraft.pl", "-Djava.util.Arrays.useLegacyMergeSort=true"]
+export const oldJVM = ["-Dhttp.proxyHost=betacraft.pl", "-Djava.util.Arrays.useLegacyMergeSort=true"]
 export function parseArguments(val = {}, args: launchArgs = defJVM) {
-    var out = ""
+    let out = ""
     args.forEach(e => {
         if (typeof e == "string")
             out += " " + e.trim().replace(/\s/g, "");
@@ -101,8 +94,8 @@ export function compare(o: Partial<downloadable>, json = false) {
     const loc = o.name ? join(o.path, o.name) : o.path;
     if (!fs.existsSync(loc)) return false;
 
-    var stats: { size: number };
-    var jfile: string;
+    let stats: { size: number };
+    let jfile: string;
     if (json) {
         jfile = JSON.stringify(JSON.parse(fs.readFileSync(loc).toString()));
         stats = { size: jfile.length }
@@ -123,7 +116,7 @@ export function compare(o: Partial<downloadable>, json = false) {
 }
 export function loadSave<T>(url: string, file: string, strict = false): Promise<T> {
     return new Promise(async res => {
-        var data: T;
+        let data: T;
         const rg = await Fetch(url);
         if (rg.status == 200) {
             if (strict) {

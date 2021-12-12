@@ -62,9 +62,6 @@ defEvents.on('jvm.stdout', (app, out) => {
 defEvents.on('jvm.stderr', (app, out) => {
     console.log(("\x1b[31m\x1b[1m[" + app + "] " + out).trim() + "\x1b[0m");
 });
-/**
- * @typedef {Array<GMLL.update>} updateConf
- */
 var updateConf: update[] = ["fabric", "vanilla", "forge", "runtime"];
 
 var files: { root: string, assets: string, libraries: string, instances: string, versions: string, runtimes: string, launcher: string, natives: string }

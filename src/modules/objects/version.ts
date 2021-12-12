@@ -44,20 +44,13 @@ export class version {
     }
 
     private constructor(manifest: string | manifest) {
-
-        /**@type {GMLL.json.manifest} */
         this.manifest = typeof manifest == "string" ? getManifest(manifest) : manifest;
-        /**@type {GMLL.json.version} */
         this.json;
         this.name = this.manifest.base || this.manifest.id;
         this.folder = join(getVersions(), this.name);
         this.file = join(this.folder, this.manifest.id + ".json");
     }
 
-    /**
-     * 
-     * @returns {Promise<GMLL.json.version>}
-     */
     async getJSON(): Promise<_version> {
         const folder_old = join(getVersions(), this.manifest.id);
         const file_old = join(folder_old, this.manifest.id + ".json");

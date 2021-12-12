@@ -25,9 +25,7 @@ export interface options {
 export function getJavaPath(java: runtimes = "jre-legacy") {
     return join(getRuntimes(), java, "bin", getOS() == "windows" ? "java.exe" : "java");
 }
-/**
- * @returns {Array<GMLL.json.manifest>}
- */
+
 export function getManifests(): manifest[] {
     isInitialized();
     var versionManifest = [];
@@ -44,11 +42,6 @@ export function getManifests(): manifest[] {
     return versionManifest;
 }
 
-/**
- * 
- * @param {GMLL.json.manifest} version 
- * @returns 
- */
 export function getManifest(version: string) {
     isInitialized();
     const manifests = getManifests();

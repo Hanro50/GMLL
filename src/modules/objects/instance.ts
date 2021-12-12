@@ -1,13 +1,12 @@
-import { readFileSync } from "fs";
+import { cpSync, readFileSync } from "fs";
 import { spawn } from "child_process";
 import { join } from "path";
-import { defJVM, fsSanitiser, mkdir, mklink, oldJVM, parseArguments, writeJSON } from "../internal/util.js";
+import { defJVM, fsSanitiser, mkdir, mklink, oldJVM, parseArguments, write, writeJSON } from "../internal/util.js";
 import { cpus, type } from "os";
 import { getClientID, getLatest } from "../handler.js";
 import { emit, getAssets, getInstances, getLauncherVersion, getlibraries, getMeta, getNatives, resolvePath } from "../config.js";
 import { launchArgs, user_type } from "../../index.js";
 import { version } from "./version.js";
-import path from "path/posix";
 const defArgs = [
     "-Xms${ram}G",
     "-Xmx${ram}G",
@@ -25,7 +24,12 @@ export interface token {
         name: string,
         xuid?: string,
         type?: user_type,
-        demo?: boolean
+        demo?: boolean,
+        properties?: {
+            //We're still reverse engineering what this property is used for...
+            //This likely does not work anymore...
+            twitch_access_token: string
+        }
     },
     access_token?: string
 }
@@ -75,12 +79,6 @@ export default class instance {
         writeJSON(join(getMeta().profiles, fsSanitiser(this.name + ".json")), this);
     }
 
-    /**
-     * 
-     * @param {GMLL.instance.player} player 
-     * @param {{width:string,height:string}} resolution 
-     * @returns 
-     */
     async launch(token: token, resolution: { width: string, height: string }) {
 
         const version = await this.getVersion();
@@ -96,8 +94,6 @@ export default class instance {
             mklink(AssetRoot, join(this.getPath(), "resources"));
             AssetRoot = join(this.getPath(), "resources");
         };
-
-  
 
         const classpath_separator = type() == "Windows_NT" ? ";" : ":";
         const classPath = cp.join(classpath_separator)
@@ -133,13 +129,21 @@ export default class instance {
             game_assets: AssetRoot,
 
             classpath_separator: classpath_separator,
-            library_directory: getlibraries()
+            library_directory: getlibraries(),
+            user_properties: JSON.stringify(token.profile.properties || {})
+
         }
         const javaPath = version.getJavaPath();
         const rawJVMargs: launchArgs = defArgs;
         rawJVMargs.push(...(vjson.arguments ? vjson.arguments.jvm : defJVM));
-        if (version.manifest.releaseTime && Date.parse(version.manifest.releaseTime) < Date.parse("2012-11-18T22:00:00+00:00")) {
-            rawJVMargs.push(...oldJVM);
+        if (version.manifest.releaseTime) {
+            const date = Date.parse(version.manifest.releaseTime);
+            if (date < Date.parse("2012-11-18T22:00:00+00:00")) {
+                rawJVMargs.push(...oldJVM);
+            } else if (date < Date.parse("2021-12-10T08:23:00+00:00")) {
+                cpSync(join(getMeta().index, "log4j-fix.xml"), join(this.getPath(), "log4j-fix.xml"));
+                rawJVMargs.push("-Dlog4j.configurationFile=log4j-fix.xml");
+            }
         }
         var jvmArgs = parseArguments(args, rawJVMargs);
 
@@ -153,6 +157,7 @@ export default class instance {
             launchCom = launchCom.replace(regex, args[key])
         })
         emit("jvm.start", "Minecraft", this.getPath());
+        console.log(launchCom.trim().split(" "))
         const s = spawn(javaPath, launchCom.trim().split(" "), { "cwd": this.getPath() })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));

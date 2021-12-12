@@ -1,6 +1,6 @@
 {
     "name": "gmll",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "description": "A generic launcher core for building custom launchers",
     "license": "MIT",
     "types": "./dist/ts/index.d.ts",
@@ -65,14 +65,16 @@
         "tslib": "^2.3.1"
     },
     "devDependencies": {
-        "@types/node": "^16.11.10"
+        "@types/node": "^16.11.10",
+        "@typescript-eslint/eslint-plugin": "^5.6.0",
+        "@typescript-eslint/parser": "^5.6.0",
+        "eslint": "^8.4.1"
     },
     "files": [
         "dist",
         "package.json",
         "LICENSE",
-        "README.md",
-        "@types"
+        "README.md"
     ],
     "engines": {
         "node": ">=14"
@@ -101,5 +103,5 @@
         "es6",
         "commonjs",
         "gmll"
-      ]
+    ]
 }
