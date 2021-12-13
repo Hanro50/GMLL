@@ -9,7 +9,7 @@ setRoot(".MC")
 
 const token = wrapper.msmc2token(await fastLaunch("raw", console.log));
 await init();
-const i = new instance({ version: "1.6.4" });
+const i = new instance({ version: "1.9" });
 i.save();
 i.launch(token);
 

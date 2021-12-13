@@ -42,11 +42,22 @@ export function getManifests(): manifest[] {
     return versionManifest;
 }
 
+function findManifest(version: string, manifests: manifest[]) {
+    const v = version.toLocaleLowerCase().trim();
+    const manifest = manifests.find(e => { try { return e.id.toLocaleLowerCase().trim() == v } catch { return false; } }) || { id: version, type: "unknown" };
+    if (manifest.base) {
+        const man2 = findManifest(manifest.base, manifests);
+        manifest.releaseTime = man2.releaseTime;
+        manifest.time = man2.time;
+        manifest.complianceLevel = man2.complianceLevel;
+    }
+    return manifest;
+}
+
 export function getManifest(version: string) {
     isInitialized();
     const manifests = getManifests();
-    const v = version.toLocaleLowerCase().trim();
-    return manifests.find(e => { try { return e.id.toLocaleLowerCase().trim() == v } catch { return false; } }) || { id: version, type: "unknown" };
+    return findManifest(version, manifests);
 }
 
 /**
@@ -86,7 +97,7 @@ export function getClientID() {
  */
 export async function installForge(file: string | string[] | null) {
     await runtime("java-runtime-beta");
-  
+
     const javaPath = getJavaPath("java-runtime-beta");
     const path = join(getInstances(), ".forgiac");
     const logFile = join(path, "log.txt")

@@ -140,9 +140,10 @@ export default class instance {
             const date = Date.parse(version.manifest.releaseTime);
             if (date < Date.parse("2012-11-18T22:00:00+00:00")) {
                 rawJVMargs.push(...oldJVM);
-            } else if (date < Date.parse("2021-12-10T08:23:00+00:00")) {
-                cpSync(join(getMeta().index, "log4j-fix.xml"), join(this.getPath(), "log4j-fix.xml"));
-                rawJVMargs.push("-Dlog4j.configurationFile=log4j-fix.xml");
+            } else if (date < Date.parse("2021-12-10T08:23:00+00:00")&&date > Date.parse("2013-09-19T15:52:37+00:00")) {
+                const log4j = date < Date.parse( "2017-05-10T11:37:17+00:00") ? "log4j-fix-1.xml" : "log4j-fix-2.xml"
+                cpSync(join(getMeta().index, log4j), join(this.getPath(), log4j));
+                rawJVMargs.push("-Dlog4j.configurationFile=" + log4j);
             }
         }
         var jvmArgs = parseArguments(args, rawJVMargs);

@@ -270,7 +270,8 @@ export async function manifests() {
 
     const mcRuntimes = "https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json";
     const mcVersionManifest = "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json";
-    const mcLog4jFix = "https://launcher.mojang.com/v1/objects/02937d122c86ce73319ef9975b58896fc1b491d1/log4j2_112-116.xml";
+    const mcLog4jFix_1 = "https://launcher.mojang.com/v1/objects/dd2b723346a8dcd48e7f4d245f6bf09e98db9696/log4j2_17-111.xml";
+    const mcLog4jFix_2 = "https://launcher.mojang.com/v1/objects/02937d122c86ce73319ef9975b58896fc1b491d1/log4j2_112-116.xml";
 
 
     const update = getUpdateConfig();
@@ -292,8 +293,10 @@ export async function manifests() {
             writeJSON(join(meta.index, "latest.json"), json.latest);
             writeJSON(join(meta.manifests, "vanilla.json"), json.versions);
         }
-        const ab = await Fetch(mcLog4jFix)
-        write(join(meta.index, "log4j-fix.xml"), await ab.text());
+        const a = await Fetch(mcLog4jFix_1);
+        write(join(meta.index, "log4j-fix-1.xml"), await a.text());
+        const ab = await Fetch(mcLog4jFix_2);
+        write(join(meta.index, "log4j-fix-2.xml"), await ab.text());
     }
     if (update.includes("fabric")) {
         const jsgame = await loadSave<[jsgameInf]>(fabricVersions, join(meta.index, "fabric_game.json"));
