@@ -112,7 +112,7 @@ export async function installForge(file: string | string[] | null) {
     const s = spawn(javaPath, args, { "cwd": path })
     s.stdout.on('data', (chunk) => emit("jvm.stdout", "Forgiac", chunk));
     s.stderr.on('data', (chunk) => emit("jvm.stderr", "Forgiac", chunk));
-    console.log(await new Promise(e => s.on('exit', e)));
+    await new Promise(e => s.on('exit', e));
 
     return await new Promise(exit => s.on("exit", exit));
 }
