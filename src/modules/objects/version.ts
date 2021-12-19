@@ -36,6 +36,7 @@ export class version {
     name: string;
     folder: string;
     file: string;
+    synced: boolean;
 
 
     static async get(manifest: string | manifest): Promise<version> {
@@ -52,6 +53,7 @@ export class version {
         this.name = this.manifest.base || this.manifest.id;
         this.folder = join(getVersions(), this.name);
         this.file = join(this.folder, this.manifest.id + ".json");
+        this.synced = true;
         mkdir(this.folder);
     }
 
@@ -62,8 +64,22 @@ export class version {
             return this.json;
         if (this.file != file_old && !existsSync(this.file) && existsSync(file_old)) {
             console.log("[GMLL] Cleaning up versions!")
-            copyFileSync(file_old, this.file);
-            rmdir(folder_old);
+            const data = JSON.parse(readFileSync(file_old).toString());
+            this.synced = !data.hasOwnProperty("synced") || data.synced;
+            if (this.synced) {
+                copyFileSync(file_old, this.file);
+                rmdir(folder_old);
+            } else {
+                console.log("[GMLL] Detected synced is false. Aborting sync attempted");
+                const base = (new version(this.json.inheritsFrom));
+                this.json = combine(await base.getJSON(), this.json);
+                this.json = data
+                this.name = data.id;
+                this.folder = folder_old;
+                this.file = file_old;
+                console.log(this.json)
+                return this.json;
+            }
         }
         if (this.manifest.url) {
             const f = (await chkFileDownload2(this.manifest.url, this.manifest.id + ".json", this.folder, this.manifest.sha1)).toString();
@@ -77,19 +93,24 @@ export class version {
                 : "Version json is missing for this version!");
         }
 
-        if (this.json.inheritsFrom) {
-            const base = (new version(this.json.inheritsFrom));
+        if (this.json.inheritsFrom || this.manifest.base) {
+            const base = (new version(this.json.inheritsFrom|| this.manifest.base));
             this.json = combine(await base.getJSON(), this.json);
             this.folder = base.folder;
             this.name = base.name;
         }
-
+        console.log(this.json)
 
         return this.json;
     }
 
     async getAssets() {
+        if (!this.json.assetIndex) {
+            const base = await (new version("1.0")).getJSON();
+            this.json.assetIndex = base.assetIndex;
+        }
         await assets(this.json.assetIndex);
+
     }
 
     async getRuntime() {
@@ -104,8 +125,10 @@ export class version {
     }
 
     async getJar(type: jarTypes, jarpath: string, jarname: string) {
-        const download = this.json.downloads[type];
-        return await chkFileDownload({ key: this.manifest.id, name: jarname, path: jarpath, url: download.url, size: download.size, sha1: download.sha1 })
+        if (this.synced && this.json.hasOwnProperty("downloads")) {
+            const download = this.json.downloads[type];
+            return await chkFileDownload({ key: this.manifest.id, name: jarname, path: jarpath, url: download.url, size: download.size, sha1: download.sha1 })
+        }
     }
     async install() {
         await this.getAssets();

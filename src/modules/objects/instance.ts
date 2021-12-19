@@ -85,7 +85,7 @@ export default class instance {
         const cp = version.getClassPath();
         var vjson = await version.getJSON();
         var AssetRoot = getAssets();
-        const AssetIndex = JSON.parse(readFileSync(join(getAssets(), "indexes", vjson.assets + ".json")).toString())
+        const AssetIndex = JSON.parse(readFileSync(join(getAssets(), "indexes", (vjson.assets || "pre-1.6") + ".json")).toString())
 
         if (AssetIndex.virtual) AssetRoot = join(AssetRoot, "legacy", "virtual");
         if (AssetIndex.map_to_resources) {
@@ -95,7 +95,7 @@ export default class instance {
         };
 
         const classpath_separator = type() == "Windows_NT" ? ";" : ":";
-        const classPath =cp.join(classpath_separator) ;
+        const classPath = cp.join(classpath_separator);
         const args = {
             ram: this.ram,
             cores: cpus().length,
@@ -159,8 +159,8 @@ export default class instance {
         })
         emit("jvm.start", "Minecraft", this.getPath());
         //console.log(version.json.libraries)
-       // console.log(launchCom.trim().split(" "))
-       console.log(javaPath+" "+launchCom)
+        // console.log(launchCom.trim().split(" "))
+        console.log(javaPath + " " + launchCom)
         const s = spawn(javaPath, launchCom.trim().split(" "), { "cwd": this.getPath() })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
