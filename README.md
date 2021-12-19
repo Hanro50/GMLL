@@ -1,6 +1,6 @@
 # <b>GMLL</b>
-<a href="https://www.npmjs.com/package/gmll"><img src="https://img.shields.io/npm/l/msmc" alt="MIT license"/></a>
-<a href="https://github.com/Hanro50/gmll/"><img src="https://img.shields.io/npm/v/gmll" alt="Version Number"/></a>
+<a href="https://github.com/Hanro50/GMLL/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/msmc" alt="MIT license"/></a>
+<a href="https://www.npmjs.com/package/gmll"><img src="https://img.shields.io/npm/v/gmll" alt="Version Number"/></a>
 <a href="https://github.com/Hanro50/gmll/"><img src="https://img.shields.io/github/stars/hanro50/gmll" alt="Github Stars"/></a><br/>
 A generic Minecraft Launcher Library 
 
@@ -16,6 +16,7 @@ Other then that. There's a channel dedicated to GMLL on the MSMC support Discord
    <img src="https://img.shields.io/discord/861839919655944213?logo=discord"
       alt="chat on Discord"></a>
 </div>
+PS: If you find a bug, don't be afraid to report it on Github or Discord!  
 
 # <b>Initialization</b>
 The library relies on a collection core files that are dynamically downloaded from the internet to function. GMLL thus has two states it can be within. Initialized and uninitialized. GMLL will refuse to launch minecraft if it is not properly initialized. 
