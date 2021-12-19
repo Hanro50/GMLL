@@ -34,7 +34,6 @@ export interface token {
     access_token?: string
 }
 
-
 export interface options {
     /**The name of the instance */
     name?: string,
@@ -96,7 +95,7 @@ export default class instance {
         };
 
         const classpath_separator = type() == "Windows_NT" ? ";" : ":";
-        const classPath = cp.join(classpath_separator)
+        const classPath =cp.join(classpath_separator) ;
         const args = {
             ram: this.ram,
             cores: cpus().length,
@@ -140,7 +139,7 @@ export default class instance {
             const date = Date.parse(version.manifest.releaseTime);
             if (date < Date.parse("2012-11-18T22:00:00+00:00")) {
                 rawJVMargs.push(...oldJVM);
-                
+
             }/* else if (date < Date.parse("2021-12-10T08:23:00+00:00")&&date > Date.parse("2013-09-19T15:52:37+00:00")) {
                 const log4j = date < Date.parse( "2017-05-10T11:37:17+00:00") ? "log4j-fix-1.xml" : "log4j-fix-2.xml"
                 cpSync(join(getMeta().index, log4j), join(this.getPath(), log4j));
@@ -159,7 +158,9 @@ export default class instance {
             launchCom = launchCom.replace(regex, args[key])
         })
         emit("jvm.start", "Minecraft", this.getPath());
-      //  console.log(launchCom.trim().split(" "))
+        //console.log(version.json.libraries)
+       // console.log(launchCom.trim().split(" "))
+       console.log(javaPath+" "+launchCom)
         const s = spawn(javaPath, launchCom.trim().split(" "), { "cwd": this.getPath() })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));

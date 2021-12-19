@@ -3,7 +3,7 @@ import { existsSync, readFileSync, createWriteStream } from 'fs';
 import { join } from 'path';
 import Fetch from 'node-fetch';
 import { cmd as _cmd } from '7zip-min';
-import { mutator, compare } from './util.js';
+import { mutator, compare, throwErr } from './util.js';
 /**@ts-ignore */
 import root from './root.cjs';
 export const processCMD = "download.progress";
@@ -23,16 +23,19 @@ export interface downloadable {
         path: string
     }
     size?: number,
-    sha1?: String,
+    sha1?: string | string[],
     executable?: boolean,
     /**Internally used to identify object: 
            * May not be constant */
     key: string
 }
-
-if (process.env.file && existsSync(process.env.file)) {
-    const keys: downloadable[] = JSON.parse(readFileSync(process.env.file).toString());
-
+//console.log(process.env)
+if (process.env.length) {
+  //  console.log(process.env)
+    const keys: downloadable[] = [];
+    for (var i = 0; i < new Number(process.env.length); i++) {
+        keys.push(JSON.parse(process.env["gmll_" + i]));
+    }
     keys.forEach(o => {
         var retry = 0;
         async function load() {
@@ -40,18 +43,7 @@ if (process.env.file && existsSync(process.env.file)) {
                 await mutator(o);
                 process.send({ cmd: processCMD, key: o.key }); return
             };
-            const download =
-                new Promise(async e => {
-                    const file = createWriteStream(join(o.path, o.name))
-                    const res = await Fetch(o.url);
-                    res.body.pipe(file, { end: true });
-                    file.on("close", e);
-
-                });
-            download.then(() => mutator(o))
-            download.then(() => process.send({ cmd: processCMD, key: o.key }));
-
-            download.catch(e => {
+            let crash = (e) => {
                 if (retry > 3) {
                     process.send({ cmd: processCMD, key: o.key });
                     process.send({ cmd: failCMD, type: "fail", key: o.key, err: e });
@@ -60,7 +52,25 @@ if (process.env.file && existsSync(process.env.file)) {
                 retry++;
                 process.send({ cmd: failCMD, type: "retry", key: o.key, err: e });
                 load();
-            });
+            }
+            const download =
+                new Promise((resolve, reject) => {
+
+                    const file = createWriteStream(join(o.path, o.name))
+                    try {
+                        Fetch(o.url).then(res => {
+                            res.body.pipe(file, { end: true });
+                            file.on("close", resolve);
+                        }).catch(reject);
+                    } catch (e) {
+                        //Fabric kept bypassing the async catch statements... somehow
+                        reject(e);
+                    }
+                });
+            download.then(() => mutator(o))
+            download.then(() => process.send({ cmd: processCMD, key: o.key }));
+
+            download.catch(crash);
         }
         load().catch(e => {
             console.log("[GMLL]: procedural failure : " + o.key);

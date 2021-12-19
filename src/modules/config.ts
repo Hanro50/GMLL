@@ -2,7 +2,7 @@ import { EventEmitter } from "events";
 import { tmpdir } from "os";
 import { join } from "path";
 import { manifests } from "./downloader.js";
-import { mkdir, throwErr } from "./internal/util.js";
+import { getErr, mkdir, throwErr } from "./internal/util.js";
 export type update = "fabric" | "vanilla" | "forge" | "runtime";
 let initialized = false;
 var version = "0.0.0";
@@ -49,8 +49,8 @@ defEvents.on('download.done', () => console.log("[GMLL]: Done with download"))
 defEvents.on('download.fail', (key, type, err) => {
     switch (type) {
         case ("retry"): console.log("[GMLL]: Trying to download " + key + " again"); break;
-        case ("fail"): console.log("[GMLL]: Failed to download " + key); break;
-        case ("system"): console.log("[GMLL]: Failed to download " + key + " due to an error"); console.trace(err); break;
+        case ("fail"): console.log(getErr("Failed to download " + key)); break;
+        case ("system"): console.log(getErr("Failed to download " + key + " due to an error \n" + err)); break;
     }
 });
 defEvents.on('jvm.start', (app, cwd) => {
@@ -139,7 +139,7 @@ export function getMeta() {
         runtimes: join(files.launcher, "runtimes"),
         index: join(files.launcher, "index"),
         profiles: join(files.launcher, "profiles"),
-        temp: join(tmpdir(), "GMLL"),
+      //  temp: join(tmpdir(), "GMLL"),
         folder: files.launcher,
     }
     return meta;

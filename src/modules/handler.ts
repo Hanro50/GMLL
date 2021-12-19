@@ -8,24 +8,19 @@ import { randomUUID, createHash } from "crypto";
 import { networkInterfaces, userInfo } from "os";
 import { spawn } from "child_process";
 
-
-export interface options {
-    /**The name of the instance */
-    name?: string,
-    /**The version of the game to load */
-    version?: string,
-    /**The installation path */
-    path?: string,
-    /**Ram in GB */
-    ram?: Number,
-    /**Custom data your launcher can use */
-    meta?: any
-}
-
+/**
+ * Gets the path to an installed version of Java. GMLL manages these versions and they're not provided by the system. 
+ * @param java the name of the Java runtime. Based on the names Mojang gave them.
+ * @returns The location of the hava executable. 
+ */
 export function getJavaPath(java: runtimes = "jre-legacy") {
     return join(getRuntimes(), java, "bin", getOS() == "windows" ? "java.exe" : "java");
 }
-
+/**
+ * Compiles all manifest objects GMLL knows about into a giant array. This will include almost all fabric versions and any installed version of forge.
+ * GMLL can still launch a version if it is not within this folder, although it is not recommended
+ * @returns a list of Manifest files GMLL knows definitely exist. 
+ */
 export function getManifests(): manifest[] {
     isInitialized();
     var versionManifest = [];
@@ -41,7 +36,7 @@ export function getManifests(): manifest[] {
     })
     return versionManifest;
 }
-
+/**Find a specific manifest based on a version id string. */
 function findManifest(version: string, manifests: manifest[]) {
     const v = version.toLocaleLowerCase().trim();
     const manifest = manifests.find(e => { try { return e.id.toLocaleLowerCase().trim() == v } catch { return false; } }) || { id: version, type: "unknown" };
@@ -60,23 +55,20 @@ export function getManifest(version: string) {
     return findManifest(version, manifests);
 }
 
-/**
- * 
- * @returns {{ "release": string, "snapshot": string }};
- */
-export function getLatest() {
+/**Gets the latest release and snapshot builds.*/
+export function getLatest(): { "release": string, "snapshot": string } {
     isInitialized();
     const file = join(getMeta().index, "latest.json");
     if (existsSync(file))
         return JSON.parse(readFileSync(file).toString());
     else return { "release": "1.17.1", "snapshot": "21w42a" };
 }
-
-export function getClientID() {
+/**Used to get a unique ID to recognise this machine. Used by mojang in some snapshot builds.*/
+export function getClientID(forceNew: boolean = false) {
     isInitialized();
     const path = join(getMeta().index, "ID.txt");
     var data: string;
-    if (!existsSync(path)) {
+    if (!existsSync(path) || forceNew) {
         data = stringify({
             Date: Date.now(),
             UUID: randomUUID(),
@@ -91,11 +83,9 @@ export function getClientID() {
     }
     return data;
 }
-
-/**
- * @param {String | String[] | null} file
- */
-export async function installForge(file: string | string[] | null) {
+/**Installs a provided version of forge from a provided installer. Only works with forge*/
+export async function installForge(file: string | string[] | null): Promise<void> {
+    isInitialized();
     await runtime("java-runtime-beta");
 
     const javaPath = getJavaPath("java-runtime-beta");
@@ -114,5 +104,5 @@ export async function installForge(file: string | string[] | null) {
     s.stderr.on('data', (chunk) => emit("jvm.stderr", "Forgiac", chunk));
     await new Promise(e => s.on('exit', e));
 
-    return await new Promise(exit => s.on("exit", exit));
+//    return await new Promise(e => s.on("exit", e));
 }

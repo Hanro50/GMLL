@@ -8,6 +8,13 @@ import { execSync } from "child_process";
 import { downloadable } from "./get";
 import { cmd as _cmd } from '7zip-min';
 
+
+export function getFetch(): (input: RequestInfo, init?: RequestInit) => Promise<Response> {
+    return Fetch;
+}
+
+
+
 export function getOS() {
     const OS = platform();
     switch (OS) {
@@ -108,31 +115,39 @@ export function compare(o: Partial<downloadable>, json = false) {
     }
     if (o.sha1) {
         const sha1 = createHash('sha1').update(jfile ? jfile : fs.readFileSync(loc)).digest("hex");
-        if (o.sha1 != sha1) {
-            console.log("[GMLL]: " + sha1 + " vs " + o.sha1 + " : " + o.key); return false;
+        let checksums: string[] = [];
+        if (typeof o.sha1 == "string") checksums.push(o.sha1); else checksums = o.sha1;
+
+        for (var chk = 0; chk < checksums.length; chk++) {
+            if (checksums[chk] == sha1) return true;
+
         }
+        console.log("[GMLL]: " + sha1 + " vs " + o.sha1 + " : " + o.key);
+        return false;
     }
     return true;
 }
 export function loadSave<T>(url: string, file: string, strict = false): Promise<T> {
     return new Promise(async res => {
         let data: T;
-        const rg = await Fetch(url);
-        if (rg.status == 200) {
-            if (strict) {
-                const text = await rg.text();
-                write(file, text);
-                data = JSON.parse(text);
+        try {
+            const rg = await Fetch(url);
+            if (rg.status == 200) {
+                if (strict) {
+                    const text = await rg.text();
+                    write(file, text);
+                    data = JSON.parse(text);
+                }
+                else {
+                    data = await rg.json() as T;
+                    writeJSON(file, data);
+                }
+                res(data);
             }
-            else {
-                data = await rg.json() as T;
-                writeJSON(file, data);
-            }
+        } catch (e) {
+            console.log(getErr(e));
         }
-        else {
-            data = JSON.parse(fs.readFileSync(file).toString()) as T;
-        }
-        res(data);
+        res(JSON.parse(fs.readFileSync(file).toString()) as T);
     })
 }
 /**
@@ -177,14 +192,18 @@ export function writeJSON(file: string, data: Object | Object[]) {
 
 }
 /**Used to throw error messages that are easy to find in a busy terminal */
-export function throwErr(message: any) {
+export function getErr(message: any) {
     const header = "\n\n\x1b[31m\x1b[1m[--------------ERROR--------------ERROR--------------!GMLL!--------------ERROR--------------ERROR--------------]\x1b[0m\n\n";
-    throw header + message + header;
+    return header + message + header;
+}
+/**Used to throw error messages that are easy to find in a busy terminal */
+export function throwErr(message: any) {
+    throw getErr(message);
 }
 
 export function classPathResolver(name: string) {
     const namespec = name.split(":");
-   //console.log(namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + ".jar")
+    //console.log(namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + ".jar")
     return namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + ".jar";
 }
 
@@ -228,12 +247,14 @@ export async function mutator(o: downloadable, main: boolean = false): Promise<d
 
 
 export async function chkFileDownload(o: downloadable): Promise<Buffer> {
-    if (!compare(o)) await new Promise(async e => {
+    if (!compare(o)) await new Promise(e => {
         mkdir(o.path);
         const file = fs.createWriteStream(join(o.path, o.name))
-        const res = await Fetch(o.url);
-        res.body.pipe(file, { end: true });
-        file.on("close", e);
+        Fetch(o.url).then(res => {
+            if (!res.ok) throw res; 
+            res.body.pipe(file, { end: true });
+            file.on("close", e);
+        })
     });
     o = await mutator(o, true);
     return fs.readFileSync(join(o.path, o.name));

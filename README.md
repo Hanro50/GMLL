@@ -32,6 +32,53 @@ init().then(...);
 import { init } from "gmll";
 await init();
 ```
+# <b>Quick start</b>
+## Import the module
+GMLL contains a commonJS and a ES6 versions of every internal component
+```js
+//ES6 
+import * as gmll from "gmll";
+//commonJS
+const gmll = require("gmll");
+```
+
+
+## initialize
+GMLL needs to download some manifest files and check the integraty of said files. This step stops GMLL from needing to do it everytime you want to launch something. 
+```js
+//async or ES6 
+await gmll.init();
+//sync or commonJS
+gmll.init().then(()=>{...});
+```
+## create an instance
+GMLL works with instances. Do note an instance is basically an installation of the game. The name given to the instance is used as it's ID. 
+```js
+const int = new gmll.instance({ version: "1.18.1", name: "my Instance" });
+```
+## get a login token \<Check out <a href="https://www.npmjs.com/package/msmc">MSMC</a>>
+Piracy is bad, so it is best to get a GMLL login token. Luckily the author of GMLL maintains a library just for that!
+```js
+//async
+const token = gmll.wrapper.msmc2token(await fastLaunch("raw", console.log);
+//sync 
+fastLaunch("raw", console.log).then(e=>{
+   const token = gmll.wrapper.msmc2token(e));
+   ...
+})
+```
+## Luanch the game
+Just like that you've launched the game. This will do a background check to see if everything is in place for a launch. The token we got in the step above.
+```js
+int.launch(token);
+```
+
+## Save and reload an instance!
+GMLL will store instance settings internally!
+```js
+int.save();
+const int2 = gmll.instance.get("my Instance");
+```
 
 # <b>Modules</b>
 # index
@@ -133,7 +180,6 @@ The "setLauncher" is asynchronous as it will reinitialize GMLL for you when it i
 <tr><td>runtimes</td><td>Contains the index files GMLL uses to download a set runtime required by a set version. The vanilla provided indexes are checked against a sha hash. Although custom runtime indexes are left alone and will be ignored unless a set version of minecraft requests it.<br><br>  <b style="color:red">Warning:</b>Contents of these indexes are different per platform. Just take that into account as you need to insure the right index is placed here for the set platform your launcher is currently running on.</td></tr>
 <tr><td>index</td><td>Contains miscellaneous index files used by GMLL to get other index files or to store internal data GMLL uses to function. Please ignore unless you're developing an addon for GMLL.</td></tr>
 <tr><td>profiles</td><td>Where instance config data is saved when you run the "save()" function on the profile object. </td></tr>
-<tr><td>temp</td><td>Temp directory for various files. Best to ignore.</td></tr>
 <tr><td>folder</td><td>Gets the root launcher folder. Useful for addons.</td></tr>
 </table>
 

@@ -1,11 +1,18 @@
 /**
  * ---------------------------------------------------------------------------------------------
+ * imports 
+ * ---------------------------------------------------------------------------------------------
+ */
+import { initialize } from "./modules/config.js";
+import { version } from "os";
+import { options } from "./modules/objects/instance.js";
+
+
+/**
+ * ---------------------------------------------------------------------------------------------
  * TYPES 
  * ---------------------------------------------------------------------------------------------
  */
-
-import { options } from "./modules/handler.js";
-
 export type version_type = "old_alpha" | "old_beta" | "release" | "snapshot" | "fabric" | "forge" | "custom" | "unknown";
 export type user_type = "msa" | "mojang" | "legacy";
 export type jarTypes = "client" | "client_mappings" | "server" | "server_mappings" | "windows_server";
@@ -139,6 +146,7 @@ export interface assets {
 }
 
 export interface library {
+    checksums: string[];
     name: string,
     downloads?: {
         artifact: artifact,
@@ -158,6 +166,8 @@ export interface library {
         windows?: string,
         osx?: string
     }
+    serverreq?: boolean,
+    clientreq?: boolean
 
 
 }
@@ -167,12 +177,8 @@ export interface library {
  * ---------------------------------------------------------------------------------------------
  */
 
-import { initialize } from "./modules/config.js";
-import { version } from "os";
 
-/**
- * Does a range of required preflight checks. Will cause errors if ignored!
- */
+/**Does a range of required preflight checks. Will cause errors if ignored!*/
 export async function init() { await initialize() }
 /**The core config class. Used to change the locations of files and to get the location of files as well! */
 export * as config from './modules/config.js';

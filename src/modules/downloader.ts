@@ -1,4 +1,4 @@
-import { mkdir, lawyer, getOS, loadSave, compare, assetTag, mklink, rmdir, writeJSON, throwErr, classPathResolver, chkFileDownload2, chkFileDownload, write } from "./internal/util.js";
+import { mkdir, lawyer, getOS, loadSave, compare, assetTag, mklink, rmdir, writeJSON, throwErr, classPathResolver, chkFileDownload2, chkFileDownload, write, getErr, getFetch } from "./internal/util.js";
 import { join } from "path";
 import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig } from "./config.js";
 import { processCMD, failCMD, getSelf, downloadable } from "./internal/get.js"
@@ -8,7 +8,7 @@ const fork = cluster.fork;
 const setupMaster = cluster.setupPrimary || cluster.setupMaster;
 import { cpus, arch } from 'os';
 import { readFileSync, copyFileSync } from "fs";
-import Fetch from "node-fetch";
+const Fetch = getFetch();
 import { assetIndex, assets, manifest, runtimes, version } from "../index.js";
 
 
@@ -69,13 +69,18 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
                 res(await resolve());
             }, 15000 * it);
 
-            const tmpRoot = join(getMeta().temp);
-            rmdir(tmpRoot)
-            mkdir(tmpRoot);
+            //     const tmpRoot = join(getMeta().temp);
+            //   rmdir(tmpRoot)
+            // mkdir(tmpRoot);
             for (let i = 0; i < arr.length; i++) {
-                const tmp = join(tmpRoot, i + ".json");
-                writeJSON(tmp, arr[i]);
-                const w = fork({ "file": tmp });
+                //   const tmp = join(tmpRoot, i + ".json");
+                // writeJSON(tmp, arr[i]);
+                let cpu = { length: arr[i].length };
+                for (var i7 = 0; i7 < arr[i].length; i7++) {
+                    cpu["gmll_" + i7] = JSON.stringify(arr[i][i7]);
+                }
+                console.log(cpu)
+                const w = fork(cpu);
                 workers.push(w);
                 w.on('message', (msg) => {
                     if (!msg.cmd) return;
@@ -101,7 +106,11 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
     }
     return resolve();
 }
-
+/**
+ * Installs a set version of Java locally.
+ * @param runtime the name of the Java runtime. Based on the names Mojang gave them.
+ * @returns This is an asyn function!
+ */
 export function runtime(runtime: runtimes) {
     const meta = getMeta();
     const file = join(meta.runtimes, runtime + ".json");
@@ -155,7 +164,7 @@ export function runtime(runtime: runtimes) {
     });
     return download(arr, 5);
 }
-
+/**Install a set version's assets based on a provided asset index. */
 export async function assets(index: assetIndex) {
     const root = getAssets();
     var findex = join(root, "indexes");
@@ -242,17 +251,31 @@ export async function libraries(version: version) {
                 classPath.push(join(dload.path, dload.name));
                 arr.push(dload);
             }
-        } else if (e.url) {
+        } else {
+            if (!e.url) e.url = "https://libraries.minecraft.net/";
             const path = classPathResolver(e.name);
             const rawPath = [getlibraries(), ...path.split("/")];
             dload.name = rawPath.pop();
             dload.path = join(...rawPath);
             dload.url = e.url + path;
             //Maven repo
-            const r = await Fetch(e.url + path + ".sha1");
-            dload.sha1 = await r.text();
-            classPath.push(join(dload.path, dload.name));
-            arr.push(dload);
+            for (var i = 0; i < 3; i++) {
+                try {
+                    console.log(e)
+                    if (e.checksums) {
+                        dload.sha1 = e.checksums;
+                    } else {
+                        const r = await Fetch(e.url + path + ".sha1");
+                        if (r.ok) dload.sha1 = await r.text();
+                        else continue;
+                    }
+                    classPath.push(join(dload.path, dload.name));
+                    arr.push(dload);
+                    break;
+                } catch (e) {
+                    console.log(getErr(e));
+                }
+            }
         }
     }
     return await download(arr, 3);
@@ -270,11 +293,11 @@ export async function manifests() {
 
     const mcRuntimes = "https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json";
     const mcVersionManifest = "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json";
-   /*
-    const mcLog4jFix_1 = "https://launcher.mojang.com/v1/objects/dd2b723346a8dcd48e7f4d245f6bf09e98db9696/log4j2_17-111.xml";
-    const mcLog4jFix_2 = "https://launcher.mojang.com/v1/objects/02937d122c86ce73319ef9975b58896fc1b491d1/log4j2_112-116.xml";
-
-*/
+    /*
+     const mcLog4jFix_1 = "https://launcher.mojang.com/v1/objects/dd2b723346a8dcd48e7f4d245f6bf09e98db9696/log4j2_17-111.xml";
+     const mcLog4jFix_2 = "https://launcher.mojang.com/v1/objects/02937d122c86ce73319ef9975b58896fc1b491d1/log4j2_112-116.xml";
+ 
+ */
     const update = getUpdateConfig();
     const meta = getMeta();
     interface jsloaderInf {
@@ -302,22 +325,26 @@ export async function manifests() {
         */
     }
     if (update.includes("fabric")) {
-        const jsgame = await loadSave<[jsgameInf]>(fabricVersions, join(meta.index, "fabric_game.json"));
-        const jsloader = await loadSave<[jsloaderInf]>(fabricLoader, join(meta.index, "fabric_loader.json"));
-        const result = [];
-        jsgame.forEach(game => {
-            const version = game.version;
-            jsloader.forEach(l => {
-                result.push({
-                    id: "fabric-loader-" + l.version + "-" + version,
-                    base: version,
-                    stable: l.stable,
-                    type: "fabric",
-                    url: fabricLoader + version + "/" + l.version + "/profile/json"
+        try {
+            const jsgame = await loadSave<[jsgameInf]>(fabricVersions, join(meta.index, "fabric_game.json"));
+            const jsloader = await loadSave<[jsloaderInf]>(fabricLoader, join(meta.index, "fabric_loader.json"));
+            const result = [];
+            jsgame.forEach(game => {
+                const version = game.version;
+                jsloader.forEach(l => {
+                    result.push({
+                        id: "fabric-loader-" + l.version + "-" + version,
+                        base: version,
+                        stable: l.stable,
+                        type: "fabric",
+                        url: fabricLoader + version + "/" + l.version + "/profile/json"
+                    });
                 });
             });
-        });
-        writeJSON(join(meta.manifests, "fabric.json"), result);
+            writeJSON(join(meta.manifests, "fabric.json"), result);
+        } catch (e) {
+            console.log(getErr(e));
+        }
     }
     if (update.includes("forge")) {
         var libzFolder = join(getlibraries(), ...forgiacPath);
@@ -326,7 +353,7 @@ export async function manifests() {
         var rURL2 = await Fetch(forgiacSHA);
 
         if (rURL2.status == 200) {
-            chkFileDownload({ key: "forgiac", name: "forgiac.jar", url: forgiacURL, path: libzFolder, sha1: await rURL2.text() });
+            await chkFileDownload({ key: "forgiac", name: "forgiac.jar", url: forgiacURL, path: libzFolder, sha1: await rURL2.text() });
         }
     }
     if (update.includes("runtime")) {

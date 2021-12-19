@@ -13,6 +13,8 @@ function combine(ob1: any, ob2: any) {
         }
         else if (typeof ob1[e] == typeof ob2[e]) {
             if (ob1[e] instanceof Array) {
+                let f = []
+
                 ob1[e] = [...ob2[e], ...ob1[e]]
             }
             else if (typeof ob1[e] == "string") {
@@ -45,10 +47,12 @@ export class version {
 
     private constructor(manifest: string | manifest) {
         this.manifest = typeof manifest == "string" ? getManifest(manifest) : manifest;
+        console.log(this.manifest)
         this.json;
         this.name = this.manifest.base || this.manifest.id;
         this.folder = join(getVersions(), this.name);
         this.file = join(this.folder, this.manifest.id + ".json");
+        mkdir(this.folder);
     }
 
     async getJSON(): Promise<_version> {
@@ -62,8 +66,9 @@ export class version {
             rmdir(folder_old);
         }
         if (this.manifest.url) {
-            mkdir(this.folder);
-            this.json = JSON.parse((await chkFileDownload2(this.manifest.url, this.name + ".json", this.folder, this.manifest.sha1)).toString());
+            const f = (await chkFileDownload2(this.manifest.url, this.manifest.id + ".json", this.folder, this.manifest.sha1)).toString();
+
+            this.json = JSON.parse(f);
         } else if (existsSync(this.file)) {
             this.json = JSON.parse(readFileSync(this.file).toString());
         } else {
@@ -71,6 +76,7 @@ export class version {
                 ? "Unknown version, please check spelling of given version ID"
                 : "Version json is missing for this version!");
         }
+
         if (this.json.inheritsFrom) {
             const base = (new version(this.json.inheritsFrom));
             this.json = combine(await base.getJSON(), this.json);
@@ -110,16 +116,19 @@ export class version {
     getJavaPath() {
         return getJavaPath(this.json.javaVersion ? this.json.javaVersion.component : "jre-legacy");
     }
-    getClassPath() {
+    getClassPath(mode: "client" | "server" = "client") {
         const cp = [];
         this.json.libraries.forEach(lib => {
+            if (mode == "client" && lib.hasOwnProperty("clientreq") && !lib.clientreq) return;
+            else if (mode == "server" && !lib.serverreq && lib.hasOwnProperty("clientreq")) return
+
             const p = join(getlibraries(), ...classPathResolver(lib.name).split("/"));
-            if (!cp.includes(p))
-                cp.push(p);
+            if (!cp.includes(p)) cp.push(p);
         });
         const jar = join(this.folder, this.name + ".jar");
         if (existsSync(jar))
             cp.push(jar);
+
         return cp;
     }
 }

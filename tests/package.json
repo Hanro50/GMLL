@@ -3,5 +3,8 @@
         "gmll": "../",
         "msmc": "^3.0.1",
         "node-fetch": "^2.6.6"
+    },
+    "devDependencies": {
+        "@types/node-fetch": "^2.5.12"
     }
 }
