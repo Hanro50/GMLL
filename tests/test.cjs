@@ -8,7 +8,7 @@ config.setRoot(".MC")
 gmll.init().then(async () => {
     const e = await fastLaunch("raw", console.log);
     const token = gmll.wrapper.msmc2token(e);
-    var int = new gmll.instance({ version: "fabric-loader-0.12.11-1.18.1", name: "my Instance" })
+    var int = new gmll.instance({ version: "1.18.1", name: "my Instance" })
     int.save();
     var int3 = gmll.instance.get("my Instance")
     int3.launch(token);

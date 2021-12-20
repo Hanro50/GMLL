@@ -145,7 +145,7 @@ export class version {
             if (mode == "client" && lib.hasOwnProperty("clientreq") && !lib.clientreq) return;
             else if (mode == "server" && !lib.serverreq && lib.hasOwnProperty("clientreq")) return
 
-            const p = join(getlibraries(), ...classPathResolver(lib.name).split("/"));
+            const p = join("libraries", ...classPathResolver(lib.name).split("/"));
             if (!cp.includes(p)) cp.push(p);
         });
         const jar = join(this.folder, this.name + ".jar");

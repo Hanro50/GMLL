@@ -1,7 +1,8 @@
 import { cpSync, readFileSync } from "fs";
 import { spawn } from "child_process";
 import { join } from "path";
-import { defJVM, fsSanitiser, mkdir, mklink, oldJVM, parseArguments, write, writeJSON } from "../internal/util.js";
+import { defJVM, fsSanitiser, mkdir, oldJVM, parseArguments, write, writeJSON } from "../internal/util.js";
+import { mklink } from "../internal/files.js";
 import { cpus, type } from "os";
 import { getClientID, getLatest } from "../handler.js";
 import { emit, getAssets, getInstances, getLauncherVersion, getlibraries, getMeta, getNatives, resolvePath } from "../config.js";
@@ -79,20 +80,22 @@ export default class instance {
     }
 
     async launch(token: token, resolution: { width: string, height: string }) {
+        mklink(getlibraries(), join(this.getPath(), "libraries"));
 
         const version = await this.getVersion();
         await version.install();
         const cp = version.getClassPath();
         var vjson = await version.getJSON();
-        var AssetRoot = getAssets();
+        var assetRoot = getAssets();
+        var assets = "assets";
         const AssetIndex = JSON.parse(readFileSync(join(getAssets(), "indexes", (vjson.assets || "pre-1.6") + ".json")).toString())
 
-        if (AssetIndex.virtual) AssetRoot = join(AssetRoot, "legacy", "virtual");
+        if (AssetIndex.virtual) assetRoot = join(getAssets(), "legacy", "virtual");
         if (AssetIndex.map_to_resources) {
-            AssetRoot = join(AssetRoot, "legacy", "resources");
-            mklink(AssetRoot, join(this.getPath(), "resources"));
-            AssetRoot = join(this.getPath(), "resources");
-        };
+            assetRoot = join(getAssets(), "legacy", "virtual");
+            assets = "resources"
+        }
+        mklink(assetRoot, join(this.getPath(), assets));
 
         const classpath_separator = type() == "Windows_NT" ? ";" : ":";
         const classPath = cp.join(classpath_separator);
@@ -109,7 +112,7 @@ export default class instance {
             version_name: vjson.inheritsFrom || vjson.id,
             game_directory: this.getPath(),
 
-            assets_root: AssetRoot,
+            assets_root: "assets",
             assets_index_name: vjson.assetIndex.id,
 
             auth_uuid: token.profile.id,
@@ -125,7 +128,7 @@ export default class instance {
             launcher_version: getLauncherVersion(),
             classpath: classPath,
             auth_session: "token:" + token.access_token,
-            game_assets: AssetRoot,
+            game_assets: "assets",
 
             classpath_separator: classpath_separator,
             library_directory: getlibraries(),

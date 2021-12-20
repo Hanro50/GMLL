@@ -28,6 +28,7 @@ export function getOS() {
 }
 
 const OS = getOS();
+/**@deprecated */
 export function mkdir(path) {
     if (!fs.existsSync(path)) fs.mkdirSync(path, { recursive: true, });
 }
@@ -35,7 +36,7 @@ export function mkdir(path) {
 export function rmdir(target: string) {
     return fs.rmSync(target, { recursive: true, force: true })
 }
-
+/**@deprecated */
 export function mklink(target: string, path: string) {
     if (fs.existsSync(path)) fs.unlinkSync(path)
     fs.symlinkSync(target, path, "junction");
@@ -96,7 +97,7 @@ export function chkLoadSave<T>(url: string, file: string, sha1: string, size?: n
     }
     return JSON.parse(fs.readFileSync(file).toString());
 }
-
+/**@deprecated */
 export function compare(o: Partial<downloadable>, json = false) {
     const loc = o.name ? join(o.path, o.name) : o.path;
     if (!fs.existsSync(loc)) return false;
@@ -127,6 +128,7 @@ export function compare(o: Partial<downloadable>, json = false) {
     }
     return true;
 }
+/**@deprecated */
 export function loadSave<T>(url: string, file: string, strict = false): Promise<T> {
     return new Promise(async res => {
         let data: T;
@@ -162,17 +164,18 @@ export function assetTag(dir: string, sha1: string) {
 export function fsSanitiser(text: string) {
     return text.normalize("NFKC").trim().toLowerCase().replace(/[\,\!\@\#\$\%\^\&\*\(\)\[\]\{\}\;\:\"\<\>\\\/\?\~\`\'\|\=\+\s\t]/g, "_")
 }
-
+/**@deprecated */
 export function chmod(dir: string) {
     if (type() != "Windows_NT")
         execSync('chmod +x ' + dir)
 }
+/**@deprecated */
 
 export function stringify(json: object) {
     //@ts-ignore
     return JSON.stringify(json, "\n", "\t");
 }
-
+/**@deprecated */
 export function write(file: string, json: string) {
     if (fs.existsSync(file)) {
         //Here for people with SSDs to save on write cycles
@@ -181,12 +184,12 @@ export function write(file: string, json: string) {
     }
     fs.writeFileSync(file, json);
 }
-
+/**@deprecated */
 export function writeRAW(file: string, data: Object | Object[]) {
     write(file, JSON.stringify(data));
 
 }
-
+/**@deprecated */
 export function writeJSON(file: string, data: Object | Object[]) {
     write(file, stringify(data));
 
@@ -245,7 +248,7 @@ export async function mutator(o: downloadable, main: boolean = false): Promise<d
     } catch (e) { }
 }
 
-
+/**@deprecated */
 export async function chkFileDownload(o: downloadable): Promise<Buffer> {
     if (!compare(o)) await new Promise(e => {
         mkdir(o.path);
@@ -260,7 +263,7 @@ export async function chkFileDownload(o: downloadable): Promise<Buffer> {
     return fs.readFileSync(join(o.path, o.name));
 }
 
-
+/**@deprecated */
 export function chkFileDownload2(url: string, name: string, path: string, sha1: string, size?: number): Promise<Buffer> {
     return chkFileDownload({ key: name, url: url, name: name, path: path, sha1: sha1, size: size })
 }
