@@ -5,8 +5,9 @@ import { join } from "path";
 import { arch, platform, type, version } from "os";
 import { launchArgs, rules } from "../../index.js";
 import { execSync } from "child_process";
-import { downloadable } from "./get";
+//import { downloadable } from "./get";
 import { cmd as _cmd } from '7zip-min';
+import { dir } from "../objects/files.js";
 
 
 export function getFetch(): (input: RequestInfo, init?: RequestInit) => Promise<Response> {
@@ -32,7 +33,7 @@ const OS = getOS();
 export function mkdir(path) {
     if (!fs.existsSync(path)) fs.mkdirSync(path, { recursive: true, });
 }
-
+/**@deprecated */
 export function rmdir(target: string) {
     return fs.rmSync(target, { recursive: true, force: true })
 }
@@ -88,7 +89,7 @@ export function parseArguments(val = {}, args: launchArgs = defJVM) {
 }
 
 
-/**@deprecated */
+/**@deprecated */ /*
 export function chkLoadSave<T>(url: string, file: string, sha1: string, size?: number): Promise<T> {
     chkFileDownload
 
@@ -98,6 +99,7 @@ export function chkLoadSave<T>(url: string, file: string, sha1: string, size?: n
     return JSON.parse(fs.readFileSync(file).toString());
 }
 /**@deprecated */
+/*
 export function compare(o: Partial<downloadable>, json = false) {
     const loc = o.name ? join(o.path, o.name) : o.path;
     if (!fs.existsSync(loc)) return false;
@@ -155,10 +157,10 @@ export function loadSave<T>(url: string, file: string, strict = false): Promise<
 /**
  * Generates the sha1 dir listings for assets and compressed runtime files 
  */
-export function assetTag(dir: string, sha1: string) {
-    const file = join(dir, sha1.substr(0, 2));
-    mkdir(file);
-    return join(file);
+export function assetTag(path: dir, sha1: string) {
+    const file = path.getDir(sha1.substr(0, 2));
+    file.mkdir()
+    return file;
 }
 
 export function fsSanitiser(text: string) {
@@ -210,7 +212,7 @@ export function classPathResolver(name: string) {
     return namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + ".jar";
 }
 
-
+/*
 export async function mutator(o: downloadable, main: boolean = false): Promise<downloadable> {
     try {
         var path = o.path;
@@ -249,6 +251,7 @@ export async function mutator(o: downloadable, main: boolean = false): Promise<d
 }
 
 /**@deprecated */
+/*
 export async function chkFileDownload(o: downloadable): Promise<Buffer> {
     if (!compare(o)) await new Promise(e => {
         mkdir(o.path);
@@ -264,7 +267,8 @@ export async function chkFileDownload(o: downloadable): Promise<Buffer> {
 }
 
 /**@deprecated */
+/*
 export function chkFileDownload2(url: string, name: string, path: string, sha1: string, size?: number): Promise<Buffer> {
     return chkFileDownload({ key: name, url: url, name: name, path: path, sha1: sha1, size: size })
 }
-
+*/

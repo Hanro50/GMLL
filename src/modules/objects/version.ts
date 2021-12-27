@@ -4,7 +4,8 @@ import { jarTypes, manifest, version as _version } from "../..";
 import { getlibraries, getVersions, isInitialized } from "../config.js";
 import { assets, runtime, libraries } from "../downloader.js";
 import { getManifest, getJavaPath } from "../handler.js";
-import { chkFileDownload2, throwErr, rmdir, mkdir, chkFileDownload, classPathResolver } from "../internal/util.js";
+import { dir, file } from "./files";
+import {  throwErr, classPathResolver } from "../internal/util.js";
 
 function combine(ob1: any, ob2: any) {
     Object.keys(ob2).forEach(e => {
@@ -34,8 +35,8 @@ export class version {
     json: _version;
     manifest: manifest;
     name: string;
-    folder: string;
-    file: string;
+    folder: dir;
+    file: file;
     synced: boolean;
 
 
@@ -51,24 +52,24 @@ export class version {
         console.log(this.manifest)
         this.json;
         this.name = this.manifest.base || this.manifest.id;
-        this.folder = join(getVersions(), this.name);
-        this.file = join(this.folder, this.manifest.id + ".json");
+        this.folder = getVersions().getDir(this.name);
+        this.file = this.folder.getFile(this.manifest.id + ".json");
         this.synced = true;
-        mkdir(this.folder);
+        this.folder.mkdir();
     }
 
     async getJSON(): Promise<_version> {
-        const folder_old = join(getVersions(), this.manifest.id);
-        const file_old = join(folder_old, this.manifest.id + ".json");
+        const folder_old = getVersions().getDir(this.manifest.id);
+        const file_old = folder_old.getFile(this.manifest.id + ".json");
         if (this.json)
             return this.json;
-        if (this.file != file_old && !existsSync(this.file) && existsSync(file_old)) {
+        if (this.file.sysPath() != file_old.sysPath() && !this.file.exists() && file_old.exists) {
             console.log("[GMLL] Cleaning up versions!")
-            const data = JSON.parse(readFileSync(file_old).toString());
+            const data = file_old.toJSON<_version>();
             this.synced = !data.hasOwnProperty("synced") || data.synced;
             if (this.synced) {
-                copyFileSync(file_old, this.file);
-                rmdir(folder_old);
+                copyFileSync(file_old.sysPath(), this.file.sysPath());
+                folder_old.rm();
             } else {
                 console.log("[GMLL] Detected synced is false. Aborting sync attempted");
                 const base = (new version(this.json.inheritsFrom));
@@ -82,11 +83,13 @@ export class version {
             }
         }
         if (this.manifest.url) {
-            const f = (await chkFileDownload2(this.manifest.url, this.manifest.id + ".json", this.folder, this.manifest.sha1)).toString();
-
-            this.json = JSON.parse(f);
-        } else if (existsSync(this.file)) {
-            this.json = JSON.parse(readFileSync(this.file).toString());
+            const manifest = this.folder.getFile(this.manifest.id + ".json");
+            if (!manifest.sha1(this.manifest.sha1)) {
+                await manifest.download(this.manifest.url)
+                this.json = manifest.toJSON();
+            }
+        } else if (this.file.exists) {
+            this.json = this.file.toJSON();
         } else {
             throwErr(this.manifest.type == "unknown"
                 ? "Unknown version, please check spelling of given version ID"
@@ -94,7 +97,7 @@ export class version {
         }
 
         if (this.json.inheritsFrom || this.manifest.base) {
-            const base = (new version(this.json.inheritsFrom|| this.manifest.base));
+            const base = (new version(this.json.inheritsFrom || this.manifest.base));
             this.json = combine(await base.getJSON(), this.json);
             this.folder = base.folder;
             this.name = base.name;
@@ -124,16 +127,18 @@ export class version {
         await libraries(this.json);
     }
 
-    async getJar(type: jarTypes, jarpath: string, jarname: string) {
+    async getJar(type: jarTypes, jarFile: file) {
         if (this.synced && this.json.hasOwnProperty("downloads")) {
             const download = this.json.downloads[type];
-            return await chkFileDownload({ key: this.manifest.id, name: jarname, path: jarpath, url: download.url, size: download.size, sha1: download.sha1 })
+            if (!jarFile.sha1(download.sha1) || !jarFile.size(download.size)) {
+                return await jarFile.download(download.url);
+            }
         }
     }
     async install() {
         await this.getAssets();
         await this.getLibs();
-        await this.getJar("client", this.folder, this.name + ".jar");
+        await this.getJar("client", this.folder.getFile(this.name + ".jar"));
         await this.getRuntime();
     }
     getJavaPath() {
@@ -148,8 +153,8 @@ export class version {
             const p = join("libraries", ...classPathResolver(lib.name).split("/"));
             if (!cp.includes(p)) cp.push(p);
         });
-        const jar = join(this.folder, this.name + ".jar");
-        if (existsSync(jar))
+        const jar = this.folder.getFile(this.name + ".jar");
+        if (jar.exists())
             cp.push(jar);
 
         return cp;

@@ -1,7 +1,7 @@
-import { mkdir, lawyer, getOS, loadSave, compare, assetTag, mklink, rmdir, writeJSON, throwErr, classPathResolver, chkFileDownload2, chkFileDownload, write, getErr, getFetch } from "./internal/util.js";
+import { lawyer, getOS, assetTag, throwErr, classPathResolver, getErr, getFetch } from "./internal/util.js";
 import { join } from "path";
 import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig } from "./config.js";
-import { processCMD, failCMD, getSelf, downloadable } from "./internal/get.js"
+import { processCMD, failCMD, getSelf } from "./internal/get.js"
 //Handles mass file downloads
 import cluster from "cluster";
 const fork = cluster.fork;
@@ -9,7 +9,8 @@ const setupMaster = cluster.setupPrimary || cluster.setupMaster;
 import { cpus, arch } from 'os';
 import { readFileSync, copyFileSync } from "fs";
 const Fetch = getFetch();
-import { assetIndex, assets, manifest, runtimes, version } from "../index.js";
+import { assetIndex, assets, manifest, runtimeFILE, runtimes, version } from "../index.js";
+import { dir, downloadable, file } from "./objects/files.js";
 
 
 setupMaster({
@@ -29,16 +30,10 @@ setupMaster({
 export function download(obj: Partial<downloadable>[], it: number = 1) {
     if (it < 1) it = 1;
     emit("download.started");
-    obj.sort((a, b) => { return (b.size || 0) - (a.size || 0) });
+    obj.sort((a, b) => { return (b.chk.size || 0) - (a.chk.size || 0) });
     var temp = {};
 
     obj.forEach((e, k) => {
-        e.key = e.key || join(e.path, e.name);
-        if (e.path == null) {
-            process.exit()
-        }
-        mkdir(e.path);
-        if (e.unzip) mkdir(e.unzip.path);
         temp[e.key] = e;
     })
 
@@ -113,50 +108,55 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
  */
 export function runtime(runtime: runtimes) {
     const meta = getMeta();
-    const file = join(meta.runtimes, runtime + ".json");
-    if (!file) {
+    const file = meta.runtimes.getFile(runtime + ".json");
+    if (file.exists()) {
         throwErr("Cannot find runtime");
     }
-    const json = JSON.parse(readFileSync(file).toString()).files;
+    const json = file.toJSON<runtimeFILE>().files;
     var arr = [];
-    const lzma = join(getRuntimes(), "lzma");
-    mkdir(lzma);
+    const lzma = getRuntimes().getDir("lzma");
+    lzma.mkdir();
     Object.keys(json).forEach(key => {
         const obj = json[key];
-        var path = [getRuntimes(), runtime, ...key.split("/")]
-        const FullPath = join(...path);
-        const name = path.pop();
-        const filePath = join(...path);
+        var file = getRuntimes().getFile(runtime, ...key.split("/"));
+        var d = new dir(...file.path);
+
+
         switch (obj.type) {
             case "directory":
-                mkdir(FullPath)
+                d.mkdir();
                 break;
             case "file":
                 var dload: Partial<downloadable> = {};
+                var chk: { size: number; sha1: string; }, unzip: { file: dir; exclude?: string[]; }, url: string;
                 if (obj.downloads.lzma) {
                     const downLoc = assetTag(lzma, obj.downloads.lzma.sha1);
+                    file = downLoc.getFile(obj.downloads.lzma.sha1, key + ".xz");
+                    /*
                     dload.path = join(downLoc, obj.downloads.lzma.sha1);
                     mkdir(dload.path);
                     dload.url = obj.downloads.lzma.url;
                     dload.name = name + ".xz";
                     dload.unzip = { path: filePath, name: name };
                     dload.size = obj.downloads.lzma.size;
-                    dload.sha1 = obj.downloads.lzma.sha1;
+                    dload.sha1 = obj.downloads.lzma.sha1;*/
+                    unzip = { file: d }
+                    url = obj.downloads.lzma.url;
+                    chk = { size: obj.downloads.lzma.size, sha1: obj.downloads.lzma.sha1 };
                 } else {
-                    dload.path = filePath;
-                    dload.url = obj.downloads.raw.url;
-                    dload.name = name;
 
-                    dload.size = obj.downloads.raw.size;
-                    dload.sha1 = obj.downloads.raw.sha1;
+                    url = obj.downloads.raw.url;
+                    chk = { size: obj.downloads.raw.size, sha1: obj.downloads.raw.sha1 }
+
+
                 }
                 dload.executable = obj.executable;
-                dload.key = FullPath;
-                arr.push(dload);
+
+                arr.push(file.toDownloadable(obj.downloads.lzma.url, key, { sha1: obj.downloads.lzma.sha1, size: obj.downloads.lzma.size }, { executable: obj.executable, unzip: unzip }));
                 break;
             case "link":
                 if (getOS() != "windows")
-                    mklink(obj.target, FullPath)
+                    file.link(obj.target.split("/"))
                 break;
             default:
                 break;
@@ -167,9 +167,9 @@ export function runtime(runtime: runtimes) {
 /**Install a set version's assets based on a provided asset index. */
 export async function assets(index: assetIndex) {
     const root = getAssets();
-    var findex = join(root, "indexes");
-    mkdir(findex);
-    const assetIndex = JSON.parse((await chkFileDownload2(index.url, index.id + ".json", findex, index.sha1, index.size)).toString()) as assets;
+    var indexes = root.getDir("indexes").mkdir();
+    var file = indexes.getFile(index.id + ".json");
+    const assetIndex = (await file.download(index.url, { sha1: index.sha1, size: index.size })).toJSON<assets>()
     var downloader: downloadable[] = [];
     const getURL = (obj: { hash: string; size: Number; }) => "http://resources.download.minecraft.net/" + obj.hash.substring(0, 2) + "/" + obj.hash;
     if (assetIndex.map_to_resources) {
@@ -180,22 +180,20 @@ export async function assets(index: assetIndex) {
     Object.entries(assetIndex.objects).forEach(o => {
         const key = o[0];
         const obj = o[1];
-        downloader.push({ key: key, path: assetTag(join(root, "objects"), obj.hash), name: obj.hash, url: getURL(obj), sha1: obj.hash, size: obj.size });
-
+        downloader.push(assetTag(root.getDir("objects"), obj.hash).getFile(obj.hash).toDownloadable(getURL(obj),key,{sha1: obj.hash, size: obj.size}));
     })
     await download(downloader);
 
     if (assetIndex.virtual || assetIndex.map_to_resources) {
-        const file = join(root, "legacy", assetIndex.virtual ? "virtual" : "resources");
-        mkdir(file);
+        const file = root.getDir("legacy", assetIndex.virtual ? "virtual" : "resources").mkdir();
         Object.entries(assetIndex.objects).forEach(o => {
             const key = o[0];
             const obj = o[1];
-            const rawPath = [file, ...key.split("/")]
-            const name = rawPath.pop();
-            const path = join(...rawPath);
-            mkdir(path)
-            copyFileSync(join(assetTag(join(root, "objects"), obj.hash), obj.hash), join(path, name));
+            const finalFile = file.getFile(...key.split("/")).mkdir();
+       
+            const to = assetTag(root.getDir("objects"), obj.hash).getFile(obj.hash)
+            finalFile.copyto(to);
+           // copyFileSync(join(assetTag(join(root, "objects"), obj.hash), obj.hash), join(path, name));
         })
     }
 
@@ -204,14 +202,13 @@ export async function assets(index: assetIndex) {
 export async function libraries(version: version) {
     const arr: Partial<downloadable>[] = [];
     const natives = getNatives();
-    rmdir(natives);
-    mkdir(natives);
+    natives.rm();
+    natives.mkdir();
 
-    const classPath: string[] = [];
     const OS = getOS();
     const libraries = version.libraries;
     for (var key = 0; key < libraries.length; key++) {
-        var dload: Partial<downloadable> = {};
+        var dload: file;
         const e = libraries[key]
         if (e.rules) {
             if (!lawyer(e.rules)) continue;
@@ -219,19 +216,18 @@ export async function libraries(version: version) {
         if (e.downloads) {
             if (e.downloads.classifiers && e.natives && e.natives[OS] && e.downloads.classifiers[e.natives[OS]]) {
                 const art = e.downloads.classifiers[e.natives[OS]];
-                const rawPath = [getlibraries(), ...art.path.split("/")];
-                var dload2: Partial<downloadable> = {};
-
-                dload2.unzip = { exclude: e.extract ? e.extract.exclude : undefined, path: natives };
-                dload2.name = rawPath.pop();
-                dload2.path = join(...rawPath);
-
-                dload2.sha1 = art.sha1;
-                dload2.url = art.url
-                dload2.size = art.size;
-                dload2.key = art.path;
-                classPath.push(join(dload2.path, dload2.name));
-                arr.push(dload2);
+                var dload2 = getlibraries().getFile(art.path);
+                /*
+                                dload2.unzip = { exclude: e.extract ? e.extract.exclude : undefined, path: natives };
+                                dload2.name = rawPath.pop().toString();
+                                dload2.path = join(...rawPath);
+                
+                                dload2.sha1 = art.sha1;
+                                dload2.url = art.url
+                                dload2.size = art.size;
+                                dload2.key = art.path;
+                                */
+                arr.push(dload2.toDownloadable(art.url, art.path, { sha1: art.sha1, size: art.size }, { unzip: { file: natives, exclude: e.extract ? e.extract.exclude : undefined } }));
             }
 
             if (e.downloads.artifact) {
@@ -240,16 +236,15 @@ export async function libraries(version: version) {
                     const path = namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + ".jar";
                     e.downloads.artifact.path = path;
                 }
-                const rawPath = [getlibraries(), ...e.downloads.artifact.path.split("/")];
-                dload.name = rawPath.pop();
-                dload.path = join(...rawPath);
-                mkdir(dload.path);
-                dload.sha1 = e.downloads.artifact.sha1;
-                dload.url = e.downloads.artifact.url
-                dload.size = e.downloads.artifact.size;
-                dload.key = e.downloads.artifact.path;
-                classPath.push(join(dload.path, dload.name));
-                arr.push(dload);
+                dload = getlibraries().getFile(e.downloads.artifact.path);
+                dload.mkdir()
+                /*
+                 dload.sha1 = e.downloads.artifact.sha1;
+                 dload.url = e.downloads.artifact.url
+                 dload.size = e.downloads.artifact.size;
+                 dload.key = e.downloads.artifact.path;
+                 */
+                arr.push(dload.toDownloadable(e.downloads.artifact.url, e.downloads.artifact.path, { sha1: e.downloads.artifact.sha1, size: e.downloads.artifact.size }));
             }
         } else {
             if (!e.url) e.url = "https://libraries.minecraft.net/";
@@ -269,7 +264,6 @@ export async function libraries(version: version) {
                         if (r.ok) dload.sha1 = await r.text();
                         else continue;
                     }
-                    classPath.push(join(dload.path, dload.name));
                     arr.push(dload);
                     break;
                 } catch (e) {
@@ -314,8 +308,8 @@ export async function manifests() {
         const r = await Fetch(mcVersionManifest);
         if (r.status == 200) {
             const json: { versions?: [manifest], latest?: {} } = await r.json();
-            writeJSON(join(meta.index, "latest.json"), json.latest);
-            writeJSON(join(meta.manifests, "vanilla.json"), json.versions);
+            meta.index.getFile("latest.json").write(json.latest);
+            meta.index.getFile("vanilla.json").write(json.versions);
         }
         /*
         const a = await Fetch(mcLog4jFix_1);
@@ -358,7 +352,9 @@ export async function manifests() {
     }
     if (update.includes("runtime")) {
         const meta = getMeta();
-        const manifest = await loadSave(mcRuntimes, join(meta.index, "runtime.json"));
+        const mf = meta.index.getFile("runtime.json")  //  await loadSave(mcRuntimes, join(meta.index, "runtime.json"));
+        mf.download(mcRuntimes)
+        const manifest = mf.toJSON<manifest>();
         var platform: string;
 
         switch (getOS()) {

@@ -2,6 +2,7 @@ import { EventEmitter } from "events";
 import { tmpdir } from "os";
 import { join } from "path";
 import { manifests } from "./downloader.js";
+import { dir } from "./objects/files.js";
 import { getErr, mkdir, throwErr } from "./internal/util.js";
 export type update = "fabric" | "vanilla" | "forge" | "runtime";
 let initialized = false;
@@ -64,7 +65,7 @@ defEvents.on('jvm.stderr', (app, out) => {
 });
 var updateConf: update[] = ["fabric", "vanilla", "forge", "runtime"];
 
-var files: { root: string, assets: string, libraries: string, instances: string, versions: string, runtimes: string, launcher: string, natives: string }
+var files: { root: dir, assets: dir, libraries: dir, instances: dir, versions: dir, runtimes: dir, launcher: dir, natives: dir }
 /**
  * Resets the root folder path and all of it's sub folders
  * @param {String} _root 
@@ -74,43 +75,43 @@ export function setRoot(_root: string, absolutePath = false) {
         _root = join(process.cwd(), _root);
     initialized = false;
     files = {
-        root: _root,
-        assets: join(_root, "assets"),
-        libraries: join(_root, "libraries"),
-        instances: join(_root, "instances"),
-        versions: join(_root, "versions"),
-        runtimes: join(_root, "runtimes"),
-        launcher: join(_root, "launcher"),
-        natives: join(_root, "natives")
+        root: new dir(_root),
+        assets: new dir(_root, "assets"),
+        libraries: new dir(_root, "libraries"),
+        instances: new dir(_root, "instances"),
+        versions: new dir(_root, "versions"),
+        runtimes: new dir(_root, "runtimes"),
+        launcher: new dir(_root, "launcher"),
+        natives: new dir(_root, "natives")
     }
 }
 
 setRoot(".minecraft");
 
-export function setAssets(_assets: string) {
-    mkdir(files.assets);
+export function setAssets(_assets: dir) {
+   files.assets.mkdir();
     files.assets = _assets;
 }
-export function setLibraries(_libraries: string) {
-    mkdir(files.libraries);
+export function setLibraries(_libraries: dir) {
+    files.libraries.mkdir();
     files.libraries = _libraries;
 }
-export function setInstances(_instances: string) {
-    mkdir(files.instances);
+export function setInstances(_instances: dir) {
+    files.instances.mkdir();
     files.instances = _instances;
 }
-export function setRuntimes(_runtimes: string) {
-    mkdir(files.runtimes);
+export function setRuntimes(_runtimes: dir) {
+    files.runtimes.mkdir();
     files.runtimes = _runtimes;
 }
-export async function setLauncher(_launcher: string) {
+export async function setLauncher(_launcher: dir) {
     initialized = false;
     files.launcher = _launcher;
     await initialize();
 }
 
-export function setNatives(_natives: string) {
-    mkdir(_natives);
+export function setNatives(_natives: dir) {
+    _natives.mkdir();
     files.natives = _natives;
 }
 
@@ -135,18 +136,18 @@ export function getRuntimes() {
 }
 export function getMeta() {
     const meta = {
-        manifests: join(files.launcher, "manifests"),
-        runtimes: join(files.launcher, "runtimes"),
-        index: join(files.launcher, "index"),
-        profiles: join(files.launcher, "profiles"),
-      //  temp: join(tmpdir(), "GMLL"),
+        manifests: files.launcher.getDir("manifests"),
+        runtimes: files.launcher.getDir("runtimes"),
+        index: files.launcher.getDir("index"),
+        profiles: files.launcher.getDir("profiles"),
+        //  temp: join(tmpdir(), "GMLL"),
         folder: files.launcher,
     }
     return meta;
 }
 
 export function getNatives() {
-    mkdir(files.natives);
+    files.natives.mkdir();
     return files.natives
 }
 export function emit(tag: string, ...args: Array<Number | String>) {
@@ -191,11 +192,11 @@ export async function initialize() {
 /**Used to resolve relative files in GMLL */
 export function resolvePath(file: string) {//
     return file.
-        replace(/\<assets\>/g, getAssets()).
-        replace(/\<instance\>/g, getInstances()).
-        replace(/\<libraries\>/g, getlibraries()).
-        replace(/\<runtimes\>/g, getRuntimes()).
-        replace(/\<versions\>/g, getVersions());
+        replace(/\<assets\>/g, getAssets().sysPath()).
+        replace(/\<instance\>/g, getInstances().sysPath()).
+        replace(/\<libraries\>/g, getlibraries().sysPath()).
+        replace(/\<runtimes\>/g, getRuntimes().sysPath()).
+        replace(/\<versions\>/g, getVersions().sysPath());
 }
 
 export function setLauncherVersion(_version: string = "0.0.0") {

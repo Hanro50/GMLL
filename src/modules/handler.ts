@@ -2,11 +2,12 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { emit, getInstances, getlibraries, getMeta, getRuntimes, getVersions, isInitialized } from "./config.js";
 import { runtime } from "./downloader.js";
-import { getOS, mkdir, stringify } from "./internal/util.js";
+import { getOS, mkdir } from "./internal/util.js";
 import { manifest, version as _version, runtimes } from "../index.js";
 import { randomUUID, createHash } from "crypto";
 import { networkInterfaces, userInfo } from "os";
 import { spawn } from "child_process";
+import { file, stringify } from "./objects/files.js";
 
 /**
  * Gets the path to an installed version of Java. GMLL manages these versions and they're not provided by the system. 
@@ -14,7 +15,7 @@ import { spawn } from "child_process";
  * @returns The location of the hava executable. 
  */
 export function getJavaPath(java: runtimes = "jre-legacy") {
-    return join(getRuntimes(), java, "bin", getOS() == "windows" ? "java.exe" : "java");
+    return getRuntimes().getFile( java, "bin", getOS() == "windows" ? "java.exe" : "java");
 }
 /**
  * Compiles all manifest objects GMLL knows about into a giant array. This will include almost all fabric versions and any installed version of forge.
@@ -25,9 +26,9 @@ export function getManifests(): manifest[] {
     isInitialized();
     var versionManifest = [];
     const root = getMeta().manifests
-    readdirSync(root).forEach(e => {
-        if (e.endsWith("json")) {
-            var v = JSON.parse(readFileSync(join(root, e)).toString());
+    root.ls().forEach(e => {
+        if (e.sysPath().endsWith("json") && root instanceof file) {
+            var v = root.toJSON<manifest | manifest[]>();
             if (v instanceof Array)
                 versionManifest.push(...v);
             else
@@ -58,17 +59,17 @@ export function getManifest(version: string) {
 /**Gets the latest release and snapshot builds.*/
 export function getLatest(): { "release": string, "snapshot": string } {
     isInitialized();
-    const file = join(getMeta().index, "latest.json");
-    if (existsSync(file))
-        return JSON.parse(readFileSync(file).toString());
+    const file =getMeta().index.getFile("latest.json");
+    if (file.exists())
+        return file.toJSON();
     else return { "release": "1.17.1", "snapshot": "21w42a" };
 }
 /**Used to get a unique ID to recognise this machine. Used by mojang in some snapshot builds.*/
 export function getClientID(forceNew: boolean = false) {
     isInitialized();
-    const path = join(getMeta().index, "ID.txt");
+    const path =getMeta().index.getFile("ID.txt");
     var data: string;
-    if (!existsSync(path) || forceNew) {
+    if (!path.exists()|| forceNew) {
         data = stringify({
             Date: Date.now(),
             UUID: randomUUID(),
@@ -77,9 +78,9 @@ export function getClientID(forceNew: boolean = false) {
             provider: "GMLL",
         });
         data = createHash('sha512').update(data).digest("base64");
-        writeFileSync(path, data);
+        path.write(data);
     } else {
-        data = readFileSync(path).toString();
+        data = path.read();
     }
     return data;
 }
@@ -89,17 +90,17 @@ export async function installForge(file: string | string[] | null): Promise<void
     await runtime("java-runtime-beta");
 
     const javaPath = getJavaPath("java-runtime-beta");
-    const path = join(getInstances(), ".forgiac");
-    const logFile = join(path, "log.txt")
-    const args: string[] = ["-jar", join(getlibraries(), "za", "net", "hanro50", "forgiac", "basic", "forgiac.jar"), " --log", logFile, "--virtual", getVersions(), getlibraries(), "--mk_manifest", getMeta().manifests];
+    const path =getInstances().getDir( ".forgiac");
+    const logFile = path.getFile( "log.txt")
+    const args: string[] = ["-jar", getlibraries().getFile( "za", "net", "hanro50", "forgiac", "basic", "forgiac.jar").sysPath(), " --log", logFile.sysPath(), "--virtual", getVersions().sysPath(), getlibraries().sysPath(), "--mk_manifest", getMeta().manifests.sysPath()];
     if (file) {
         file = (file instanceof Array ? join(...file) : file);
         args.push("--installer", file);
     }
 
-    mkdir(path);
-    emit("jvm.start", "Forgiac", path);
-    const s = spawn(javaPath, args, { "cwd": path })
+    path.mkdir();
+    emit("jvm.start", "Forgiac", path.sysPath());
+    const s = spawn(javaPath.sysPath(), args, { "cwd": path.sysPath() })
     s.stdout.on('data', (chunk) => emit("jvm.stdout", "Forgiac", chunk));
     s.stderr.on('data', (chunk) => emit("jvm.stderr", "Forgiac", chunk));
     await new Promise(e => s.on('exit', e));

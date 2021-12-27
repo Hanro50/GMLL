@@ -55,10 +55,13 @@ export interface manifest {
     overrides?: Partial<version>
 }
 
-export interface artifact {
+export interface urlFile {
     sha1: string,
     url: string,
     size?: number,
+}
+
+export interface artifact extends urlFile {
     id?: string,
     totalSize?: string,
     path?: string,
@@ -101,6 +104,7 @@ export interface version {
     releaseTime: string,
     time: string,
     type: version_type,
+    synced?: boolean,
     inheritsFrom?: string,
     //Not implemented yet
     instance?: {
@@ -170,6 +174,22 @@ export interface library {
     clientreq?: boolean
 
 
+}
+
+export interface launcherFILE {
+    target: string;
+    type: "directory" | "file" | "link"
+    downloads?: {
+        lzma?: urlFile,
+        raw: urlFile
+    },
+    executable?: boolean,
+}
+
+export interface runtimeFILE {
+    files: {
+        [key: string]: launcherFILE
+    }
 }
 /**
  * ---------------------------------------------------------------------------------------------

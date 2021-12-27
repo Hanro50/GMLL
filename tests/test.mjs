@@ -1,4 +1,4 @@
-
+#!/bin/node
 import { wrapper, init, instance } from "gmll";
 import { setRoot } from "gmll/config";
 import { installForge } from "gmll/handler";

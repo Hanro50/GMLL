@@ -10,6 +10,7 @@
     "outDir": "dist/raw",
     "moduleResolution": "Node",
     "resolveJsonModule": true,
+    "target": "ESNext",
     // Generate d.ts files
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
