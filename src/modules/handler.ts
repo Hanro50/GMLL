@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { emit, getInstances, getlibraries, getMeta, getRuntimes, getVersions, isInitialized } from "./config.js";
 import { runtime } from "./downloader.js";
-import { getOS, mkdir } from "./internal/util.js";
+import { getOS } from "./internal/util.js";
 import { manifest, version as _version, runtimes } from "../index.js";
 import { randomUUID, createHash } from "crypto";
 import { networkInterfaces, userInfo } from "os";

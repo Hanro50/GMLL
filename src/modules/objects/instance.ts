@@ -1,8 +1,8 @@
 import { cpSync, readFileSync } from "fs";
 import { spawn } from "child_process";
 import { join } from "path";
-import { defJVM, fsSanitiser, mkdir, oldJVM, parseArguments, write, writeJSON } from "../internal/util.js";
-import { dir, file, mklink } from "./files.js";
+import { defJVM, fsSanitiser, oldJVM, parseArguments, write, writeJSON } from "../internal/util.js";
+import { dir, file } from "./files.js";
 import { cpus, type } from "os";
 import { getClientID, getLatest } from "../handler.js";
 import { emit, getAssets, getInstances, getLauncherVersion, getlibraries, getMeta, getNatives, resolvePath } from "../config.js";
@@ -66,7 +66,7 @@ export default class instance {
         this.ram = opt && opt.ram ? opt.ram : 2;
         this.meta = opt && opt.meta ? opt.meta : undefined;
 
-        mkdir(this.getPath());
+        new dir(this.getPath()).mkdir();
     }
 
     getPath() {
@@ -81,7 +81,7 @@ export default class instance {
     }
 
     async launch(token: token, resolution: { width: string, height: string }) {
-        mklink(getlibraries(), join(this.getPath(), "libraries"));
+        getlibraries().link([this.getPath(), "libraries"]);
 
         const version = await this.getVersion();
         await version.install();
@@ -96,7 +96,7 @@ export default class instance {
             assetRoot = getAssets().getDir("legacy", "virtual");
             assetsFile = "resources"
         }
-        mklink(assetRoot, join(this.getPath(), assetsFile));
+        assetRoot.link([this.getPath(), assetsFile]);
 
         const classpath_separator = type() == "Windows_NT" ? ";" : ":";
         const classPath = cp.join(classpath_separator);

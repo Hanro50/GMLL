@@ -1,7 +1,5 @@
 //Handles mass file downloads
-import { existsSync, readFileSync, createWriteStream } from 'fs';
 import { join } from 'path';
-import Fetch from 'node-fetch';
 import { cmd as _cmd } from '7zip-min';
 /**@ts-ignore */
 import root from './root.cjs';
@@ -25,6 +23,7 @@ if (process.env.length) {
         var retry = 0;
         async function load() {
             await file.process(o);
+            process.send({ cmd: processCMD, key: o.key });
             /*
             let crash = (e) => {
                 if (retry > 3) {
@@ -57,10 +56,15 @@ if (process.env.length) {
             */
         }
         load().catch(e => {
+            if (retry <= 3) {
+                retry++;
+                process.send({ cmd: failCMD, type: "retry", key: o.key, err: e });
+                return;
+            }
+            load();
             console.log("[GMLL]: procedural failure : " + new dir(...o.path));
             process.send({ cmd: failCMD, type: "system", key: o.path, err: e });
             process.send({ cmd: processCMD, key: o.path });
-            return;
         });
     });
 }

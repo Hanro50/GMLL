@@ -4,7 +4,7 @@
  * ---------------------------------------------------------------------------------------------
  */
 import { initialize } from "./modules/config.js";
-import { version } from "os";
+import { type, version } from "os";
 import { options } from "./modules/objects/instance.js";
 
 
@@ -189,6 +189,32 @@ export interface launcherFILE {
 export interface runtimeFILE {
     files: {
         [key: string]: launcherFILE
+    }
+}
+/**
+ * "java-runtime-alpha": [],
+        "java-runtime-beta": [],
+        "jre-legacy": [],
+        "minecraft-java-exe": []
+ */
+export type runtimeManifest ={
+    "availability": {
+        "group": number,
+        "progress": number
+    },
+    "manifest": {
+        "sha1": string,
+        "size": number,
+        "url": string
+    },
+    "version": {
+        "name": string,
+        "released": string
+    }
+}
+export type runtimeManifests = {
+    [key in "gamecore" | "linux" | "linux-i386" | "mac-os" | "windows-x64"|"windows-x86"]: {
+        [key in "java-runtime-beta" | "java-runtime-beta" | "jre-legacy" | "minecraft-java-exe"]: Array<runtimeManifest>
     }
 }
 /**

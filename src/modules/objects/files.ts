@@ -12,7 +12,7 @@ export interface downloadable {
     executable?: boolean,
     key: string,
     chk: {
-        sha1?: string,
+        sha1?: string | string[],
         size?: number
     },
     unzip?: {
@@ -22,13 +22,22 @@ export interface downloadable {
 
 
 }
-
-export function mklink(target: string | dir, path: string | dir) {
-    path = path.toString();
-    target = target.toString();
-    if (existsSync(path)) unlinkSync(path)
-    symlinkSync(target, path, "junction");
+/**
+ * 
+ * @param target Path to create the link in
+ * @param path Path to the file to link to
+ */
+export function mklink(target: string, path: string) {
+    try {
+        if (existsSync(path)) unlinkSync(path)
+        symlinkSync(target, path, "junction");
+    } catch (e) {
+        console.error(e);
+        console.error("Could not create syslink between " + target + "=>" + path)
+    }
 }
+
+
 export function mkdir(path: string) {
     if (!existsSync(path)) mkdirSync(path, { recursive: true, });
 }
@@ -41,21 +50,33 @@ export class dir {
     path: string[];
     constructor(...path: string[]) {
         this.path = [];
+        if (platform() != "win32" && path[0].startsWith("/")) {
+            this.path.push("/")
+        }
         path.forEach(e => {
             this.path.push(...e.split("/"));
         })
+        this.path = this.path.filter((el) => {
+            return el.length > 0;
+        })
+
+
     }
     sysPath() {
-        return join(... this.path);
+        return join(...this.path);
     }
     mkdir() {
-        mkdir(this.sysPath());
+        mkdir(join(...this.path));
         return this;
     }
-    link(path: string | string[]) {
-        if (path instanceof Array)
-            path = join(...path);
-        mklink(this.sysPath(), path)
+    link(linkto: string | string[] | file | dir) {
+        if (linkto instanceof file)
+            linkto = [...linkto.path, linkto.name];
+        if (linkto instanceof dir)
+            linkto = linkto.path;
+        if (linkto instanceof Array)
+            linkto = join(...linkto);
+        mklink(this.sysPath(), linkto);
     }
     /**@override */
     toString() {
@@ -64,7 +85,7 @@ export class dir {
     getDir(..._file: string[]) {
         return new dir(...this.path, ..._file);
     }
-    
+
     getFile(..._file: string[]) {
         return new file(...this.path, ..._file);
     }
@@ -94,21 +115,24 @@ export class file extends dir {
         return readFileSync(this.sysPath()).toString();
     }
     toJSON<T>() {
-        return JSON.parse(readFileSync(this.sysPath()).toString()) as T;
+        if (existsSync(this.sysPath()))
+            return JSON.parse(readFileSync(this.sysPath()).toString()) as T;
+        else throw "No file to read!"
     }
-
-    link(path: string | string[]) {
+    /**@override */
+    link(path: string | string[] | file) {
         if (platform() == "win32") {
             console.warn("[GMLL]: Symlinks in Windows need administrator priviliges!\nThings are about to go wrong!")
         }
-        return super.link(path)
+
+        return super.link(path);
     }
     /**@override */
     sysPath() {
-        return join(...super.path, this.name);
+        return join(...this.path, this.name);
     }
-    copyto(file:file){
-        copyFileSync(this.sysPath(),file.sysPath());
+    copyto(file: file) {
+        copyFileSync(this.sysPath(), file.sysPath());
     }
     sha1(expected: string | string[]) {
         const sha1 = createHash('sha1').update(readFileSync(this.sysPath())).digest("hex");
@@ -123,30 +147,30 @@ export class file extends dir {
         var stats = statSync(this.sysPath());
         return stats.size == expected;
     }
-    async download(url: string, chk?: { sha1?: string, size?: number }) {
-        if (chk) {
-            var download = false;
-            if (chk.sha1 && !this.sha1(chk.sha1))
-                download = true
-            if (chk.size && !this.size(chk.size))
-                download = true
-            if (!download)
-                return this
+    /**Returns true if the file is in missmatch */
+    chkSelf(chk?: { sha1?: string | string[], size?: number }) {
+        if (!this.exists() || !chk) return true
+        if (chk.sha1 && !this.sha1(chk.sha1)) return true
+        if (chk.size && !this.size(chk.size)) return true
 
-        }
-        await new Promise((resolve, reject) => {
-            const file = createWriteStream(this.sysPath());
-            fetch(url).then(res => {
-                if (!res.ok) reject(res.status);
-                res.body.pipe(file, { end: true });
-                file.on("close", resolve);
-            })
-        });
+        return false;
+    }
+
+    async download(url: string, chk?: { sha1?: string | string[], size?: number }) {
+        if (this.chkSelf(chk))
+            await new Promise((resolve, reject) => {
+                const file = createWriteStream(this.sysPath());
+                fetch(url).then(res => {
+                    if (!res.ok) reject(res.status);
+                    res.body.pipe(file, { end: true });
+                    file.on("close", resolve);
+                }).catch(reject)
+            });
         return this;
     }
     chmod() {
         if (type() != "Windows_NT")
-            execSync('chmod +x ' + dir)
+            execSync('chmod +x ' + this.sysPath())
     }
 
     write(data: string | ArrayBuffer | object) {
@@ -154,7 +178,7 @@ export class file extends dir {
             data = stringify(data);
         writeFileSync(this.sysPath(), data);
     }
-    toDownloadable(url: string, key?: string, chk?: { sha1?: string, size?: number }, opt?: { executable?: boolean, unzip?: { file: dir, exclude?: string[] } }) {
+    toDownloadable(url: string, key?: string, chk?: { sha1?: string | string[], size?: number }, opt?: { executable?: boolean, unzip?: { file: dir, exclude?: string[] } }) {
         this.mkdir();
         let d: downloadable = { key: key || [...this.path, this.name].join("/"), name: this.name, path: this.path, url: url, chk: {} }
         if (chk) {

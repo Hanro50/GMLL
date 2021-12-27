@@ -3,7 +3,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { manifests } from "./downloader.js";
 import { dir } from "./objects/files.js";
-import { getErr, mkdir, throwErr } from "./internal/util.js";
+import { getErr, throwErr } from "./internal/util.js";
 export type update = "fabric" | "vanilla" | "forge" | "runtime";
 let initialized = false;
 var version = "0.0.0";
@@ -180,8 +180,8 @@ export function initializationListener(func: () => void | Promise<void>) {
 
 /**Does the basic pre flight checks. */
 export async function initialize() {
-    Object.values(files).forEach(e => { mkdir(e) });
-    Object.values(getMeta()).forEach(e => { mkdir(e) });
+    Object.values(files).forEach(e => { e.mkdir() });
+    Object.values(getMeta()).forEach(e => { e.mkdir() });
     await manifests();
 
     for (var i = 0; i < startUpCalls.length; i++) {

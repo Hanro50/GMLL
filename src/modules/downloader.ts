@@ -1,4 +1,4 @@
-import { lawyer, getOS, assetTag, throwErr, classPathResolver, getErr, getFetch } from "./internal/util.js";
+import { lawyer, getOS, assetTag, throwErr, classPathResolver, getErr } from "./internal/util.js";
 import { join } from "path";
 import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig } from "./config.js";
 import { processCMD, failCMD, getSelf } from "./internal/get.js"
@@ -7,10 +7,10 @@ import cluster from "cluster";
 const fork = cluster.fork;
 const setupMaster = cluster.setupPrimary || cluster.setupMaster;
 import { cpus, arch } from 'os';
-import { readFileSync, copyFileSync } from "fs";
-const Fetch = getFetch();
-import { assetIndex, assets, manifest, runtimeFILE, runtimes, version } from "../index.js";
-import { dir, downloadable, file } from "./objects/files.js";
+//import { readFileSync, copyFileSync } from "fs";
+import Fetch from 'node-fetch';
+import { assetIndex, assets, manifest, runtimeFILE, runtimeManifest, runtimeManifests, runtimes, version } from "../index.js";
+import { dir, downloadable, file, mklink } from "./objects/files.js";
 
 
 setupMaster({
@@ -108,61 +108,66 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
  */
 export function runtime(runtime: runtimes) {
     const meta = getMeta();
-    const file = meta.runtimes.getFile(runtime + ".json");
-    if (file.exists()) {
+    const cfile = meta.runtimes.getFile(runtime + ".json");
+    if (!cfile.exists()) {
         throwErr("Cannot find runtime");
     }
-    const json = file.toJSON<runtimeFILE>().files;
+    const json = cfile.toJSON<runtimeFILE>().files;
     var arr = [];
     const lzma = getRuntimes().getDir("lzma");
     lzma.mkdir();
+    let linkz: { target: string, path: string }[] = [];
     Object.keys(json).forEach(key => {
         const obj = json[key];
-        var file = getRuntimes().getFile(runtime, ...key.split("/"));
-        var d = new dir(...file.path);
+        var _file = getRuntimes().getFile(runtime, ...key.split("/"));
+        var _dir = getRuntimes().getDir(runtime, ...key.split("/"));
+
+        const name = key.split("/").pop();
 
 
         switch (obj.type) {
             case "directory":
-                d.mkdir();
+                _dir.mkdir();
                 break;
             case "file":
-                var dload: Partial<downloadable> = {};
-                var chk: { size: number; sha1: string; }, unzip: { file: dir; exclude?: string[]; }, url: string;
+                var chk: { size: number; sha1: string; }, opt: { executable: boolean; unzip?: { file: dir; exclude?: string[] } }, url: string;
+                opt = { executable: obj.executable }
                 if (obj.downloads.lzma) {
                     const downLoc = assetTag(lzma, obj.downloads.lzma.sha1);
-                    file = downLoc.getFile(obj.downloads.lzma.sha1, key + ".xz");
-                    /*
-                    dload.path = join(downLoc, obj.downloads.lzma.sha1);
-                    mkdir(dload.path);
-                    dload.url = obj.downloads.lzma.url;
-                    dload.name = name + ".xz";
-                    dload.unzip = { path: filePath, name: name };
-                    dload.size = obj.downloads.lzma.size;
-                    dload.sha1 = obj.downloads.lzma.sha1;*/
-                    unzip = { file: d }
+                    _file = downLoc.getFile(obj.downloads.lzma.sha1, name + ".xz");
+                    _file.mkdir();
+
+                    opt.unzip = { file: _file }
                     url = obj.downloads.lzma.url;
                     chk = { size: obj.downloads.lzma.size, sha1: obj.downloads.lzma.sha1 };
                 } else {
 
                     url = obj.downloads.raw.url;
                     chk = { size: obj.downloads.raw.size, sha1: obj.downloads.raw.sha1 }
-
-
                 }
-                dload.executable = obj.executable;
 
-                arr.push(file.toDownloadable(obj.downloads.lzma.url, key, { sha1: obj.downloads.lzma.sha1, size: obj.downloads.lzma.size }, { executable: obj.executable, unzip: unzip }));
+
+                arr.push(_file.toDownloadable(url, name, chk, opt));
                 break;
             case "link":
-                if (getOS() != "windows")
-                    file.link(obj.target.split("/"))
+                _file.mkdir();
+                if (getOS() != "windows") {
+
+                    mklink(join(..._file.path, obj.target), _file.sysPath());
+                }
                 break;
             default:
                 break;
         }
     });
-    return download(arr, 5);
+    return download(arr, 5).then(e => {
+        linkz.forEach(element => {
+
+        });
+        return e;
+    });
+
+
 }
 /**Install a set version's assets based on a provided asset index. */
 export async function assets(index: assetIndex) {
@@ -180,7 +185,7 @@ export async function assets(index: assetIndex) {
     Object.entries(assetIndex.objects).forEach(o => {
         const key = o[0];
         const obj = o[1];
-        downloader.push(assetTag(root.getDir("objects"), obj.hash).getFile(obj.hash).toDownloadable(getURL(obj),key,{sha1: obj.hash, size: obj.size}));
+        downloader.push(assetTag(root.getDir("objects"), obj.hash).getFile(obj.hash).toDownloadable(getURL(obj), key, { sha1: obj.hash, size: obj.size }));
     })
     await download(downloader);
 
@@ -190,10 +195,10 @@ export async function assets(index: assetIndex) {
             const key = o[0];
             const obj = o[1];
             const finalFile = file.getFile(...key.split("/")).mkdir();
-       
+
             const to = assetTag(root.getDir("objects"), obj.hash).getFile(obj.hash)
             finalFile.copyto(to);
-           // copyFileSync(join(assetTag(join(root, "objects"), obj.hash), obj.hash), join(path, name));
+            // copyFileSync(join(assetTag(join(root, "objects"), obj.hash), obj.hash), join(path, name));
         })
     }
 
@@ -249,27 +254,27 @@ export async function libraries(version: version) {
         } else {
             if (!e.url) e.url = "https://libraries.minecraft.net/";
             const path = classPathResolver(e.name);
-            const rawPath = [getlibraries(), ...path.split("/")];
-            dload.name = rawPath.pop();
-            dload.path = join(...rawPath);
-            dload.url = e.url + path;
+            const file = getlibraries().getFile(path); // [getlibraries(), ...path.split("/")];
+
+            var sha1: string | string[];
+
             //Maven repo
             for (var i = 0; i < 3; i++) {
                 try {
                     console.log(e)
                     if (e.checksums) {
-                        dload.sha1 = e.checksums;
+                        sha1 = e.checksums;
                     } else {
                         const r = await Fetch(e.url + path + ".sha1");
-                        if (r.ok) dload.sha1 = await r.text();
+                        if (r.ok) sha1 = await r.text();
                         else continue;
                     }
-                    arr.push(dload);
                     break;
                 } catch (e) {
                     console.log(getErr(e));
                 }
             }
+            arr.push(file.toDownloadable(e.url + path, path, { sha1: sha1 }))
         }
     }
     return await download(arr, 3);
@@ -320,8 +325,8 @@ export async function manifests() {
     }
     if (update.includes("fabric")) {
         try {
-            const jsgame = await loadSave<[jsgameInf]>(fabricVersions, join(meta.index, "fabric_game.json"));
-            const jsloader = await loadSave<[jsloaderInf]>(fabricLoader, join(meta.index, "fabric_loader.json"));
+            const jsgame = (await meta.index.getFile("fabric_game.json").download(fabricVersions)).toJSON<[jsgameInf]>();  //await loadSave<[jsgameInf]>(fabricVersions, join(meta.index, "fabric_game.json"));
+            const jsloader = (await meta.index.getFile("fabric_loader.json").download(fabricLoader)).toJSON<[jsloaderInf]>();  //await loadSave<[jsloaderInf]>(fabricLoader, join(meta.index, "fabric_loader.json"));
             const result = [];
             jsgame.forEach(game => {
                 const version = game.version;
@@ -335,27 +340,29 @@ export async function manifests() {
                     });
                 });
             });
-            writeJSON(join(meta.manifests, "fabric.json"), result);
+            meta.manifests.getFile("fabric.json").write(result);
+            //writeJSON(join(meta.manifests, "fabric.json"), result);
         } catch (e) {
             console.log(getErr(e));
         }
     }
     if (update.includes("forge")) {
-        var libzFolder = join(getlibraries(), ...forgiacPath);
-        mkdir(libzFolder);
+        var libzFolder = getlibraries().getDir(...forgiacPath).mkdir();
+        //   mkdir(libzFolder);
 
         var rURL2 = await Fetch(forgiacSHA);
 
         if (rURL2.status == 200) {
-            await chkFileDownload({ key: "forgiac", name: "forgiac.jar", url: forgiacURL, path: libzFolder, sha1: await rURL2.text() });
+            await libzFolder.getFile("forgiac.jar").download(forgiacURL, { sha1: await rURL2.text() })
+            // await chkFileDownload({ key: "forgiac", name: "forgiac.jar", url: forgiacURL, path: libzFolder, sha1: await rURL2.text() });
         }
     }
     if (update.includes("runtime")) {
         const meta = getMeta();
-        const mf = meta.index.getFile("runtime.json")  //  await loadSave(mcRuntimes, join(meta.index, "runtime.json"));
-        mf.download(mcRuntimes)
-        const manifest = mf.toJSON<manifest>();
-        var platform: string;
+        //  const mf =   //  await loadSave(mcRuntimes, join(meta.index, "runtime.json"));
+        const manifest = (await meta.index.getFile("runtime.json").download(mcRuntimes)).toJSON<runtimeManifests>();
+
+        var platform: "gamecore" | "linux" | "linux-i386" | "mac-os" | "windows-x64" | "windows-x86";
 
         switch (getOS()) {
             case ("osx"):
@@ -368,14 +375,14 @@ export async function manifests() {
         }
         for (const key of Object.keys(manifest[platform])) {
             if (manifest[platform][key].length < 1) continue;
-            var obj = manifest[platform][key][0].manifest;
-            obj.key = key;
-            obj.path = meta.runtimes;
-            obj.name = key + ".json";
-            obj.size = undefined;
-            if (!compare(obj)) {
-                await loadSave(obj.url, join(obj.path, obj.name), true);
-            }
+            var obj = manifest[platform][key][0] as runtimeManifest;
+            // obj.key = key;
+            // obj.path = meta.runtimes;
+            // obj.name = key + ".json";
+            await meta.runtimes.getFile(key + ".json").download(obj.manifest.url, obj.manifest);
+            //if (!compare(obj)) {
+            //     await loadSave(obj.url, join(obj.path, obj.name), true);
+            // }
         }
     }
 
