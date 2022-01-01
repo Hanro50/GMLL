@@ -96,7 +96,7 @@ export default class instance {
         return asset
     }
 
-    setIcon(x32?: string, x16?: string, mac?: string) {
+    setIcon(x32?: string | file, x16?: string | file, mac?: string | file) {
         if (x32) {
             const x32Icon = this.injectAsset("icons/icon_32x32.png", x32);
             this.assets.objects["minecraft/icons/icon_32x32.png"] = x32Icon;
