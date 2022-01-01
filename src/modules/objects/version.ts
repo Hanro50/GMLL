@@ -5,7 +5,7 @@ import { getlibraries, getVersions, isInitialized } from "../config.js";
 import { assets, runtime, libraries } from "../downloader.js";
 import { getManifest, getJavaPath } from "../handler.js";
 import { dir, file } from "./files";
-import {  throwErr, classPathResolver } from "../internal/util.js";
+import { throwErr, classPathResolver } from "../internal/util.js";
 
 function combine(ob1: any, ob2: any) {
     Object.keys(ob2).forEach(e => {
@@ -83,19 +83,15 @@ export class version {
             }
         }
         if (this.manifest.url) {
-            const manifest = this.folder.getFile(this.manifest.id + ".json");
-            if (!manifest.sha1(this.manifest.sha1)) {
-                await manifest.download(this.manifest.url)
-                this.json = manifest.toJSON();
-            }
-        } else if (this.file.exists) {
+            this.json = (await this.folder.getFile(this.manifest.id + ".json").download(this.manifest.url, { sha1: this.manifest.sha1 })).toJSON();
+        } else if (this.file.exists()) {
             this.json = this.file.toJSON();
         } else {
             throwErr(this.manifest.type == "unknown"
                 ? "Unknown version, please check spelling of given version ID"
                 : "Version json is missing for this version!");
         }
-
+        console.log(this.json, this.manifest)
         if (this.json.inheritsFrom || this.manifest.base) {
             const base = (new version(this.json.inheritsFrom || this.manifest.base));
             this.json = combine(await base.getJSON(), this.json);
@@ -146,6 +142,7 @@ export class version {
     }
     getClassPath(mode: "client" | "server" = "client") {
         const cp = [];
+        //cp.push(join("libraries", "inject-1.0-SNAPSHOT.jar"));
         this.json.libraries.forEach(lib => {
             if (mode == "client" && lib.hasOwnProperty("clientreq") && !lib.clientreq) return;
             else if (mode == "server" && !lib.serverreq && lib.hasOwnProperty("clientreq")) return

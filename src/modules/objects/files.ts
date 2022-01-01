@@ -9,7 +9,7 @@ export interface downloadable {
     name: string,
     path: string[],
     url: string,
-    executable?: boolean,
+
     key: string,
     chk: {
         sha1?: string | string[],
@@ -17,8 +17,10 @@ export interface downloadable {
     },
     unzip?: {
         file: string[],
+
         exclude?: string[]
-    }
+    },
+    executable?: boolean | string,
 
 
 }
@@ -95,6 +97,9 @@ export class dir {
     exists() {
         return existsSync(this.sysPath());
     }
+    javaPath() {
+        return this.path.join("/");
+    }
     ls() {
         let res: Array<dir | file> = [];
         readdirSync(this.sysPath()).forEach(e => {
@@ -105,6 +110,9 @@ export class dir {
     }
 }
 export class file extends dir {
+    dir(): dir {
+        return new dir(...this.path);
+    }
     name: string;
     constructor(...path: string[]) {
         super(...path);
@@ -131,10 +139,16 @@ export class file extends dir {
     sysPath() {
         return join(...this.path, this.name);
     }
+
+    /**@override */
+    javaPath() {
+        return [...this.path, this.name].join("/");
+    }
     copyto(file: file) {
         copyFileSync(this.sysPath(), file.sysPath());
     }
     sha1(expected: string | string[]) {
+        if (!this.exists()) return false
         const sha1 = createHash('sha1').update(readFileSync(this.sysPath())).digest("hex");
         let checksums: string[] = [];
         if (typeof expected == "string") checksums.push(expected); else checksums = expected;
@@ -144,12 +158,13 @@ export class file extends dir {
         return false;
     }
     size(expected: number) {
+        if (!this.exists()) return false
         var stats = statSync(this.sysPath());
         return stats.size == expected;
     }
     /**Returns true if the file is in missmatch */
     chkSelf(chk?: { sha1?: string | string[], size?: number }) {
-        if (!this.exists() || !chk) return true
+        if (!chk || !this.exists()) return true
         if (chk.sha1 && !this.sha1(chk.sha1)) return true
         if (chk.size && !this.size(chk.size)) return true
 
@@ -178,7 +193,7 @@ export class file extends dir {
             data = stringify(data);
         writeFileSync(this.sysPath(), data);
     }
-    toDownloadable(url: string, key?: string, chk?: { sha1?: string | string[], size?: number }, opt?: { executable?: boolean, unzip?: { file: dir, exclude?: string[] } }) {
+    toDownloadable(url: string, key?: string, chk?: { sha1?: string | string[], size?: number }, opt?: { executable?: boolean | string, unzip?: { file: dir, exclude?: string[] } }) {
         this.mkdir();
         let d: downloadable = { key: key || [...this.path, this.name].join("/"), name: this.name, path: this.path, url: url, chk: {} }
         if (chk) {
@@ -194,14 +209,19 @@ export class file extends dir {
 
         return d;
     }
+
     static async process(json: downloadable) {
-        const f = new this(...json.path, json.name);
+        let f = new this(...json.path, json.name);
         await f.download(json.url, json.chk);
-        if (json.unzip) {
-            f.unzip(new dir(...json.unzip.file), json.unzip.exclude);
-        }
+        if (json.unzip)
+            await f.unzip(new dir(...json.unzip.file), json.unzip.exclude);
+
         if (json.executable) {
-            f.chmod();
+            if (typeof json.executable == "boolean")
+                f.chmod();
+            else
+                new file(json.executable).chmod();
+
         }
     }
     unzip(path: dir, exclude?: string[]) {
@@ -213,5 +233,6 @@ export class file extends dir {
                 com.push("-xr!" + f);
             })
         }
+        return new Promise<void>(e => _cmd(com, (err: any) => { if (err) console.log(err); e() }));
     }
 }

@@ -130,14 +130,16 @@ export function runtime(runtime: runtimes) {
                 _dir.mkdir();
                 break;
             case "file":
-                var chk: { size: number; sha1: string; }, opt: { executable: boolean; unzip?: { file: dir; exclude?: string[] } }, url: string;
+                var chk: { size: number; sha1: string; }, opt: { executable?: boolean | string; unzip?: { file: dir; exclude?: string[] } }, url: string;
                 opt = { executable: obj.executable }
                 if (obj.downloads.lzma) {
+                    opt.unzip = { file: _file.dir() }
+                    opt.executable = _file.javaPath();
                     const downLoc = assetTag(lzma, obj.downloads.lzma.sha1);
                     _file = downLoc.getFile(obj.downloads.lzma.sha1, name + ".xz");
                     _file.mkdir();
 
-                    opt.unzip = { file: _file }
+
                     url = obj.downloads.lzma.url;
                     chk = { size: obj.downloads.lzma.size, sha1: obj.downloads.lzma.sha1 };
                 } else {
@@ -181,7 +183,12 @@ export async function assets(index: assetIndex) {
         assetIndex.objects["icons/icon_16x16.png"] = { "hash": "bdf48ef6b5d0d23bbb02e17d04865216179f510a", "size": 3665 };
         assetIndex.objects["icons/icon_32x32.png"] = { "hash": "92750c5f93c312ba9ab413d546f32190c56d6f1f", "size": 5362 };
         assetIndex.objects["icons/minecraft.icns"] = { "hash": "991b421dfd401f115241601b2b373140a8d78572", "size": 114786 };
+
+        assetIndex.objects["minecraft/icons/icon_16x16.png"] = { "hash": "bdf48ef6b5d0d23bbb02e17d04865216179f510a", "size": 3665 };
+        assetIndex.objects["minecraft/icons/icon_32x32.png"] = { "hash": "92750c5f93c312ba9ab413d546f32190c56d6f1f", "size": 5362 };
+        assetIndex.objects["minecraft/icons/minecraft.icns"] = { "hash": "991b421dfd401f115241601b2b373140a8d78572", "size": 114786 };
     }
+
     Object.entries(assetIndex.objects).forEach(o => {
         const key = o[0];
         const obj = o[1];
@@ -194,9 +201,9 @@ export async function assets(index: assetIndex) {
         Object.entries(assetIndex.objects).forEach(o => {
             const key = o[0];
             const obj = o[1];
-            const finalFile = file.getFile(...key.split("/")).mkdir();
+            const to = file.getFile(...key.split("/")).mkdir();
 
-            const to = assetTag(root.getDir("objects"), obj.hash).getFile(obj.hash)
+            const finalFile = assetTag(root.getDir("objects"), obj.hash).getFile(obj.hash)
             finalFile.copyto(to);
             // copyFileSync(join(assetTag(join(root, "objects"), obj.hash), obj.hash), join(path, name));
         })
@@ -314,7 +321,7 @@ export async function manifests() {
         if (r.status == 200) {
             const json: { versions?: [manifest], latest?: {} } = await r.json();
             meta.index.getFile("latest.json").write(json.latest);
-            meta.index.getFile("vanilla.json").write(json.versions);
+            meta.manifests.getFile("vanilla.json").write(json.versions);
         }
         /*
         const a = await Fetch(mcLog4jFix_1);

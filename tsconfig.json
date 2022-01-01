@@ -20,6 +20,7 @@
     // Removing this would place the .d.ts files
     // next to the .js files
     "removeComments": true,
+    "sourceMap": true,
     "rootDir": "src/"
   }
 }

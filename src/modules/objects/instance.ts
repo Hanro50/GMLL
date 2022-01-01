@@ -5,7 +5,7 @@ import { defJVM, fsSanitiser, oldJVM, parseArguments, write, writeJSON } from ".
 import { dir, file } from "./files.js";
 import { cpus, type } from "os";
 import { getClientID, getLatest } from "../handler.js";
-import { emit, getAssets, getInstances, getLauncherVersion, getlibraries, getMeta, getNatives, resolvePath } from "../config.js";
+import { emit, getAssets, getInstances, getLauncherVersion, getlibraries, getMeta, getNatives, getVersions, resolvePath } from "../config.js";
 import { assetIndex, assets, launchArgs, user_type } from "../../index.js";
 import { version } from "./version.js";
 const defArgs = [
@@ -82,7 +82,6 @@ export default class instance {
 
     async launch(token: token, resolution: { width: string, height: string }) {
         getlibraries().link([this.getPath(), "libraries"]);
-
         const version = await this.getVersion();
         await version.install();
         const cp = version.getClassPath();
@@ -151,11 +150,11 @@ export default class instance {
             }*/
         }
         var jvmArgs = parseArguments(args, rawJVMargs);
-
-        var gameArgs = vjson.arguments ? parseArguments(args, vjson.arguments.game) : "";
+        var gameArgs = "--title testing!"
+        gameArgs += vjson.arguments ? parseArguments(args, vjson.arguments.game) : "";
         gameArgs += vjson.minecraftArguments ? " " + vjson.minecraftArguments : "";
 
-        var launchCom = jvmArgs + " " + vjson.mainClass + " " + gameArgs;
+        var launchCom = jvmArgs + " " +/* "za.net.hanro50.inject.App"+*/ vjson.mainClass + " " + gameArgs;
 
         Object.keys(args).forEach(key => {
             const regex = new RegExp(`\\\$\{${key}\}`, "g")
@@ -165,7 +164,7 @@ export default class instance {
         //console.log(version.json.libraries)
         // console.log(launchCom.trim().split(" "))
         console.log(javaPath + " " + launchCom)
-        const s = spawn(javaPath.sysPath(), launchCom.trim().split(" "), { "cwd": this.getPath() })
+        const s = spawn(javaPath.sysPath(), launchCom.trim().split(" "), { "cwd": this.getPath()})
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
     }

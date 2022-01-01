@@ -27,8 +27,8 @@ export function getManifests(): manifest[] {
     var versionManifest = [];
     const root = getMeta().manifests
     root.ls().forEach(e => {
-        if (e.sysPath().endsWith("json") && root instanceof file) {
-            var v = root.toJSON<manifest | manifest[]>();
+        if (e.sysPath().endsWith("json") && e instanceof file) {
+            var v = e.toJSON<manifest | manifest[]>();
             if (v instanceof Array)
                 versionManifest.push(...v);
             else
