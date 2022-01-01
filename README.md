@@ -42,6 +42,9 @@ import * as gmll from "gmll";
 const gmll = require("gmll");
 ```
 
+## a word on the docs
+GMLL is to big to maintain an up to date dev doc with the current amount of resources awarded to the project. Instead, please see the included JSDocs in the comments in the type files. Since those will be exponetially easier to maintain and will likely provide the information specific to what you require a function to do. 
+
 
 ## initialize
 GMLL needs to download some manifest files and check the integraty of said files. This step stops GMLL from needing to do it everytime you want to launch something. 

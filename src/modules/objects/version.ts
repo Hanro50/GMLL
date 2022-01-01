@@ -6,7 +6,7 @@ import { assets, runtime, libraries } from "../downloader.js";
 import { getManifest, getJavaPath } from "../handler.js";
 import { dir, file } from "./files";
 import { throwErr, classPathResolver } from "../internal/util.js";
-
+/**Takes two different version.json files and combines them */
 function combine(ob1: any, ob2: any) {
     Object.keys(ob2).forEach(e => {
         if (!ob1[e]) {
@@ -30,7 +30,11 @@ function combine(ob1: any, ob2: any) {
     })
     return ob1;
 }
-
+/**
+ * Version data is unique. Each version of the game will generate an unique version object. 
+ * Take note however. GMLL,unlike the default launcher, will store version data in the same folder as the version it is based upon. 
+ * If forge still works, but you cannot find the file connected to it...this is why.
+ */
 export class version {
     json: _version;
     manifest: manifest;
@@ -39,14 +43,17 @@ export class version {
     file: file;
     synced: boolean;
 
-
+    /**Gets a set version based on a given manifest or version string. Either do not have to be contained within the manifest database. */
     static async get(manifest: string | manifest): Promise<version> {
         isInitialized();
         const v = new version(manifest);
         await v.getJSON();
         return v;
     }
-
+    /**
+     * @deprecated DO NOT USE CONSTRUCTOR DIRECTLY. FOR INTERNAL USE ONLY! 
+     * @see {@link get} : This is the method that should instead be used
+     */
     private constructor(manifest: string | manifest) {
         this.manifest = typeof manifest == "string" ? getManifest(manifest) : manifest;
         console.log(this.manifest)
@@ -57,7 +64,10 @@ export class version {
         this.synced = true;
         this.folder.mkdir();
     }
-
+    /**
+     * @returns Gets the version json file. 
+     * @see {@link json} for synchronious way to access this. The {@link get} method already calls this function and saves it accordingly. 
+     */
     async getJSON(): Promise<_version> {
         const folder_old = getVersions().getDir(this.manifest.id);
         const file_old = folder_old.getFile(this.manifest.id + ".json");
@@ -102,7 +112,9 @@ export class version {
 
         return this.json;
     }
-
+    /**
+     * Installs the asset files for a set version
+     */
     async getAssets() {
         if (!this.json.assetIndex) {
             const base = await (new version("1.0")).getJSON();

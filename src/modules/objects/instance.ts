@@ -47,7 +47,10 @@ export interface options {
     /**Custom data your launcher can use */
     meta?: any
 }
-
+/**
+ * An instance is what the name intails. An instance of the game Minecraft containing Minecraft specific data.
+ * This information on where the game is stored and the like. The mods installed and what not. 
+ */
 export default class instance {
     name: string;
     version: string;
@@ -59,7 +62,11 @@ export default class instance {
         const json = new file(getMeta().profiles.toString(), fsSanitiser(name + ".json")).toJSON<options>();
         return new instance(json);
     }
-    constructor(opt: options) {
+    /**
+     * 
+     * @param opt This parameter contains information vital to constructing the instance. That being said, GMLL will never the less pull in default values if it is emited
+     */
+    constructor(opt?: options) {
         this.version = opt && opt.version ? opt.version : getLatest().release;
         this.name = opt && opt.name ? opt.name : this.version;
         this.path = opt && opt.path ? opt.path : join("<instance>", fsSanitiser(this.name));
@@ -68,22 +75,48 @@ export default class instance {
 
         new dir(this.getPath()).mkdir();
     }
-
+    /**
+     * 
+     * @returns A absolute path leading to this instance
+     */
     getPath() {
         return resolvePath(this.path);
     }
-
+    /**
+     * 
+     * @returns An object containing the version data this instance is based on
+     * @see {@link install} if you want to initiate that version object first!
+     */
     async getVersion() {
         return await version.get(this.version)
     }
+    /**
+     * Saves the instance data. Can be used to automatically get the instance again by using it's name
+     * @see {@link get} for more info
+     */
     save() {
         getMeta().profiles.getFile(fsSanitiser(this.name + ".json")).write(this);
     }
-
-    async launch(token: token, resolution: { width: string, height: string }) {
-        getlibraries().link([this.getPath(), "libraries"]);
+    /**
+     * Runs the installer script without launching MC
+     * @returns The instance's version object. 
+     * @see {@link getVersion} if you just want the instance's version
+     */
+    async install() {
         const version = await this.getVersion();
         await version.install();
+        return version;
+    }
+    /**
+     * This function is used to launch the game. It also runs the install script for you. 
+     * This essentially does an integraty check. 
+     * @param token The player login token
+     * @param resolution Optional information defining the game's resolution
+     */
+    async launch(token: token, resolution?: { width: string, height: string }) {
+        getlibraries().link([this.getPath(), "libraries"]);
+        const version = await this.install();
+
         const cp = version.getClassPath();
         var vjson = await version.getJSON();
         var assetRoot = getAssets();
@@ -164,7 +197,7 @@ export default class instance {
         //console.log(version.json.libraries)
         // console.log(launchCom.trim().split(" "))
         console.log(javaPath + " " + launchCom)
-        const s = spawn(javaPath.sysPath(), launchCom.trim().split(" "), { "cwd": this.getPath()})
+        const s = spawn(javaPath.sysPath(), launchCom.trim().split(" "), { "cwd": this.getPath() })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
     }
