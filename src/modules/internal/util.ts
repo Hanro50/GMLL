@@ -1,20 +1,13 @@
 import { createHash } from "crypto";
-import Fetch from "node-fetch";
+
 import fs from "fs";
 import { join } from "path";
 import { arch, platform, type, version } from "os";
 import { launchArgs, rules } from "../../index.js";
 import { execSync } from "child_process";
-import { downloadable } from "./get";
+//import { downloadable } from "./get";
 import { cmd as _cmd } from '7zip-min';
-
-
-export function getFetch(): (input: RequestInfo, init?: RequestInit) => Promise<Response> {
-    return Fetch;
-}
-
-
-
+import { dir } from "../objects/files.js";
 export function getOS() {
     const OS = platform();
     switch (OS) {
@@ -28,19 +21,6 @@ export function getOS() {
 }
 
 const OS = getOS();
-/**@deprecated */
-export function mkdir(path) {
-    if (!fs.existsSync(path)) fs.mkdirSync(path, { recursive: true, });
-}
-
-export function rmdir(target: string) {
-    return fs.rmSync(target, { recursive: true, force: true })
-}
-/**@deprecated */
-export function mklink(target: string, path: string) {
-    if (fs.existsSync(path)) fs.unlinkSync(path)
-    fs.symlinkSync(target, path, "junction");
-}
 
 export function lawyer(rules: rules, properties: any = {}): boolean {
     let end = true, end2 = false;
@@ -86,79 +66,13 @@ export function parseArguments(val = {}, args: launchArgs = defJVM) {
     })
     return out
 }
-
-
-/**@deprecated */
-export function chkLoadSave<T>(url: string, file: string, sha1: string, size?: number): Promise<T> {
-    chkFileDownload
-
-    if (!compare({ key: file, path: file, sha1: sha1, size: size }, true)) {
-        return loadSave(url, file, true);
-    }
-    return JSON.parse(fs.readFileSync(file).toString());
-}
-/**@deprecated */
-export function compare(o: Partial<downloadable>, json = false) {
-    const loc = o.name ? join(o.path, o.name) : o.path;
-    if (!fs.existsSync(loc)) return false;
-
-    let stats: { size: number };
-    let jfile: string;
-    if (json) {
-        jfile = JSON.stringify(JSON.parse(fs.readFileSync(loc).toString()));
-        stats = { size: jfile.length }
-
-    }
-    else stats = fs.statSync(loc);
-    if (o.size && stats.size != o.size) {
-        if (stats.size > 0) console.log("[GMLL]: " + stats.size + " vs " + o.size + " : " + o.key);
-        return false;
-    }
-    if (o.sha1) {
-        const sha1 = createHash('sha1').update(jfile ? jfile : fs.readFileSync(loc)).digest("hex");
-        let checksums: string[] = [];
-        if (typeof o.sha1 == "string") checksums.push(o.sha1); else checksums = o.sha1;
-
-        for (var chk = 0; chk < checksums.length; chk++) {
-            if (checksums[chk] == sha1) return true;
-
-        }
-        console.log("[GMLL]: " + sha1 + " vs " + o.sha1 + " : " + o.key);
-        return false;
-    }
-    return true;
-}
-/**@deprecated */
-export function loadSave<T>(url: string, file: string, strict = false): Promise<T> {
-    return new Promise(async res => {
-        let data: T;
-        try {
-            const rg = await Fetch(url);
-            if (rg.status == 200) {
-                if (strict) {
-                    const text = await rg.text();
-                    write(file, text);
-                    data = JSON.parse(text);
-                }
-                else {
-                    data = await rg.json() as T;
-                    writeJSON(file, data);
-                }
-                res(data);
-            }
-        } catch (e) {
-            console.log(getErr(e));
-        }
-        res(JSON.parse(fs.readFileSync(file).toString()) as T);
-    })
-}
 /**
  * Generates the sha1 dir listings for assets and compressed runtime files 
  */
-export function assetTag(dir: string, sha1: string) {
-    const file = join(dir, sha1.substr(0, 2));
-    mkdir(file);
-    return join(file);
+export function assetTag(path: dir, sha1: string) {
+    const file = path.getDir(sha1.substr(0, 2));
+    file.mkdir()
+    return file;
 }
 
 export function fsSanitiser(text: string) {
@@ -197,7 +111,7 @@ export function writeJSON(file: string, data: Object | Object[]) {
 /**Used to throw error messages that are easy to find in a busy terminal */
 export function getErr(message: any) {
     const header = "\n\n\x1b[31m\x1b[1m[--------------ERROR--------------ERROR--------------!GMLL!--------------ERROR--------------ERROR--------------]\x1b[0m\n\n";
-    return header + message + header;
+    return header + message + header + Error().stack;
 }
 /**Used to throw error messages that are easy to find in a busy terminal */
 export function throwErr(message: any) {
@@ -210,7 +124,7 @@ export function classPathResolver(name: string) {
     return namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + ".jar";
 }
 
-
+/*
 export async function mutator(o: downloadable, main: boolean = false): Promise<downloadable> {
     try {
         var path = o.path;
@@ -249,6 +163,7 @@ export async function mutator(o: downloadable, main: boolean = false): Promise<d
 }
 
 /**@deprecated */
+/*
 export async function chkFileDownload(o: downloadable): Promise<Buffer> {
     if (!compare(o)) await new Promise(e => {
         mkdir(o.path);
@@ -264,7 +179,89 @@ export async function chkFileDownload(o: downloadable): Promise<Buffer> {
 }
 
 /**@deprecated */
+/*
 export function chkFileDownload2(url: string, name: string, path: string, sha1: string, size?: number): Promise<Buffer> {
     return chkFileDownload({ key: name, url: url, name: name, path: path, sha1: sha1, size: size })
 }
+*/
+/**@deprecated 
+export function mkdir(path) {
+    if (!fs.existsSync(path)) fs.mkdirSync(path, { recursive: true, });
+}*/
+/**@deprecated 
+export function rmdir(target: string) {
+    return fs.rmSync(target, { recursive: true, force: true })
+}*/
+/**@deprecated 
+export function mklink(target: string, path: string) {
+    if (fs.existsSync(path)) fs.unlinkSync(path)
+    fs.symlinkSync(target, path, "junction");
+}
+*/
 
+
+/**@deprecated */ /*
+export function chkLoadSave<T>(url: string, file: string, sha1: string, size?: number): Promise<T> {
+    chkFileDownload
+
+    if (!compare({ key: file, path: file, sha1: sha1, size: size }, true)) {
+        return loadSave(url, file, true);
+    }
+    return JSON.parse(fs.readFileSync(file).toString());
+}
+/**@deprecated */
+/*
+export function compare(o: Partial<downloadable>, json = false) {
+    const loc = o.name ? join(o.path, o.name) : o.path;
+    if (!fs.existsSync(loc)) return false;
+
+    let stats: { size: number };
+    let jfile: string;
+    if (json) {
+        jfile = JSON.stringify(JSON.parse(fs.readFileSync(loc).toString()));
+        stats = { size: jfile.length }
+
+    }
+    else stats = fs.statSync(loc);
+    if (o.size && stats.size != o.size) {
+        if (stats.size > 0) console.log("[GMLL]: " + stats.size + " vs " + o.size + " : " + o.key);
+        return false;
+    }
+    if (o.sha1) {
+        const sha1 = createHash('sha1').update(jfile ? jfile : fs.readFileSync(loc)).digest("hex");
+        let checksums: string[] = [];
+        if (typeof o.sha1 == "string") checksums.push(o.sha1); else checksums = o.sha1;
+
+        for (var chk = 0; chk < checksums.length; chk++) {
+            if (checksums[chk] == sha1) return true;
+
+        }
+        console.log("[GMLL]: " + sha1 + " vs " + o.sha1 + " : " + o.key);
+        return false;
+    }
+    return true;
+}
+/**@deprecated 
+export function loadSave<T>(url: string, file: string, strict = false): Promise<T> {
+    return new Promise(async res => {
+        let data: T;
+        try {
+            const rg = await Fetch(url);
+            if (rg.status == 200) {
+                if (strict) {
+                    const text = await rg.text();
+                    write(file, text);
+                    data = JSON.parse(text);
+                }
+                else {
+                    data = await rg.json() as T;
+                    writeJSON(file, data);
+                }
+                res(data);
+            }
+        } catch (e) {
+            console.log(getErr(e));
+        }
+        res(JSON.parse(fs.readFileSync(file).toString()) as T);
+    })
+}*/

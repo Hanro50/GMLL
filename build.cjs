@@ -1,3 +1,4 @@
+#!/bin/node
 const { execSync } = require("child_process");
 const { writeFileSync, rmSync, WriteStream } = require("fs");
 const { join } = require("path");

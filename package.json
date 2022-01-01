@@ -23,6 +23,9 @@
             ],
             "objects/version": [
                 "./dist/ts/modules/objects/version.d.ts"
+            ],
+            "objects/files": [
+                "./dist/ts/modules/objects/files.d.ts"
             ]
         }
     },
@@ -53,19 +56,23 @@
         },
         "./objects/version": {
             "import": "./dist/mjs/modules/objects/version.js",
-            "require": "./dist/cjs/modules/objects/version.js",
-            "@types": "./@types/objects/version.d.ts"
+            "require": "./dist/cjs/modules/objects/version.js"
+        },
+        "./objects/files": {
+            "import": "./dist/mjs/modules/objects/files.js",
+            "require": "./dist/cjs/modules/objects/files.js"
         }
     },
     "main": "dist/cjs/index.js",
     "module": "dist/mjs/index.js",
     "dependencies": {
         "7zip-min": "^1.4.0",
-        "node-fetch": "^2.6.1",
+        "node-fetch": "^2.6.6",
         "tslib": "^2.3.1"
     },
     "devDependencies": {
         "@types/node": "^16.11.10",
+        "@types/node-fetch": "^2.5.12",
         "@typescript-eslint/eslint-plugin": "^5.6.0",
         "@typescript-eslint/parser": "^5.6.0",
         "eslint": "^8.4.1"

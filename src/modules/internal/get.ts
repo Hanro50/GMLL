@@ -1,11 +1,9 @@
 //Handles mass file downloads
-import { existsSync, readFileSync, createWriteStream } from 'fs';
 import { join } from 'path';
-import Fetch from 'node-fetch';
 import { cmd as _cmd } from '7zip-min';
-import { mutator, compare, throwErr } from './util.js';
 /**@ts-ignore */
 import root from './root.cjs';
+import { dir, downloadable, file } from '../objects/files.js';
 export const processCMD = "download.progress";
 export const failCMD = "download.fail";
 
@@ -13,25 +11,10 @@ export const failCMD = "download.fail";
 export function getSelf(): string {
     return join(root, "get.js");
 }
-export interface downloadable {
-    path: string,
-    url: string,
-    name: string,
-    unzip?: {
-        exclude?: string[],
-        name?: string,
-        path: string
-    }
-    size?: number,
-    sha1?: string | string[],
-    executable?: boolean,
-    /**Internally used to identify object: 
-           * May not be constant */
-    key: string
-}
+
 //console.log(process.env)
 if (process.env.length) {
-  //  console.log(process.env)
+    //  console.log(process.env)
     const keys: downloadable[] = [];
     for (var i = 0; i < new Number(process.env.length); i++) {
         keys.push(JSON.parse(process.env["gmll_" + i]));
@@ -39,10 +22,9 @@ if (process.env.length) {
     keys.forEach(o => {
         var retry = 0;
         async function load() {
-            if (compare(o)) {
-                await mutator(o);
-                process.send({ cmd: processCMD, key: o.key }); return
-            };
+            await file.process(o);
+            process.send({ cmd: processCMD, key: o.key });
+            /*
             let crash = (e) => {
                 if (retry > 3) {
                     process.send({ cmd: processCMD, key: o.key });
@@ -71,12 +53,18 @@ if (process.env.length) {
             download.then(() => process.send({ cmd: processCMD, key: o.key }));
 
             download.catch(crash);
+            */
         }
         load().catch(e => {
-            console.log("[GMLL]: procedural failure : " + o.key);
-            process.send({ cmd: failCMD, type: "system", key: o.key, err: e });
-            process.send({ cmd: processCMD, key: o.key });
-            return;
+            if (retry <= 3) {
+                retry++;
+                process.send({ cmd: failCMD, type: "retry", key: o.key, err: e });
+                return;
+            }
+            load();
+            console.log("[GMLL]: procedural failure : " + new dir(...o.path));
+            process.send({ cmd: failCMD, type: "system", key: o.path, err: e });
+            process.send({ cmd: processCMD, key: o.path });
         });
     });
 }

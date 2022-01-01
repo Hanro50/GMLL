@@ -10,6 +10,7 @@
     "outDir": "dist/raw",
     "moduleResolution": "Node",
     "resolveJsonModule": true,
+    "target": "ESNext",
     // Generate d.ts files
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
@@ -19,6 +20,7 @@
     // Removing this would place the .d.ts files
     // next to the .js files
     "removeComments": true,
+    "sourceMap": true,
     "rootDir": "src/"
   }
 }

@@ -1,4 +1,4 @@
-
+#!/bin/node
 const gmll = require("gmll");
 const config = require("gmll/config");
 const d = require("gmll/downloader");

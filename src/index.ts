@@ -4,7 +4,7 @@
  * ---------------------------------------------------------------------------------------------
  */
 import { initialize } from "./modules/config.js";
-import { version } from "os";
+import { type, version } from "os";
 import { options } from "./modules/objects/instance.js";
 
 
@@ -55,10 +55,13 @@ export interface manifest {
     overrides?: Partial<version>
 }
 
-export interface artifact {
+export interface urlFile {
     sha1: string,
     url: string,
     size?: number,
+}
+
+export interface artifact extends urlFile {
     id?: string,
     totalSize?: string,
     path?: string,
@@ -101,6 +104,7 @@ export interface version {
     releaseTime: string,
     time: string,
     type: version_type,
+    synced?: boolean,
     inheritsFrom?: string,
     //Not implemented yet
     instance?: {
@@ -170,6 +174,48 @@ export interface library {
     clientreq?: boolean
 
 
+}
+
+export interface launcherFILE {
+    target: string;
+    type: "directory" | "file" | "link"
+    downloads?: {
+        lzma?: urlFile,
+        raw: urlFile
+    },
+    executable?: boolean,
+}
+
+export interface runtimeFILE {
+    files: {
+        [key: string]: launcherFILE
+    }
+}
+/**
+ * "java-runtime-alpha": [],
+        "java-runtime-beta": [],
+        "jre-legacy": [],
+        "minecraft-java-exe": []
+ */
+export type runtimeManifest ={
+    "availability": {
+        "group": number,
+        "progress": number
+    },
+    "manifest": {
+        "sha1": string,
+        "size": number,
+        "url": string
+    },
+    "version": {
+        "name": string,
+        "released": string
+    }
+}
+export type runtimeManifests = {
+    [key in "gamecore" | "linux" | "linux-i386" | "mac-os" | "windows-x64"|"windows-x86"]: {
+        [key in "java-runtime-beta" | "java-runtime-beta" | "jre-legacy" | "minecraft-java-exe"]: Array<runtimeManifest>
+    }
 }
 /**
  * ---------------------------------------------------------------------------------------------
