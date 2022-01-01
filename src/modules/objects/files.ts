@@ -48,14 +48,20 @@ export function stringify(json: object) {
     //@ts-ignore
     return JSON.stringify(json, "\n", "\t");
 }
+const isWin = platform() == "win32";
+
 export class dir {
     path: string[];
     constructor(...path: string[]) {
         this.path = [];
-        if (platform() != "win32" && path[0].startsWith("/")) {
+
+        if (!isWin && path[0].startsWith("/")) {
             this.path.push("/")
         }
         path.forEach(e => {
+            if (isWin){
+                e.replace(/\\/g,"/")
+            }
             this.path.push(...e.split("/"));
         })
         this.path = this.path.filter((el) => {
@@ -149,7 +155,7 @@ export class file extends dir {
     }
     sha1(expected: string | string[]) {
         if (!this.exists()) return false
-        const sha1 = createHash('sha1').update(readFileSync(this.sysPath())).digest("hex");
+        const sha1 = this.getHash();
         let checksums: string[] = [];
         if (typeof expected == "string") checksums.push(expected); else checksums = expected;
         for (var chk = 0; chk < checksums.length; chk++) {
@@ -157,10 +163,15 @@ export class file extends dir {
         }
         return false;
     }
+    getHash() {
+        return createHash('sha1').update(readFileSync(this.sysPath())).digest("hex");
+    }
+    getSize() {
+        return statSync(this.sysPath()).size;
+    }
     size(expected: number) {
         if (!this.exists()) return false
-        var stats = statSync(this.sysPath());
-        return stats.size == expected;
+        return this.getSize() == expected;
     }
     /**Returns true if the file is in missmatch */
     chkSelf(chk?: { sha1?: string | string[], size?: number }) {

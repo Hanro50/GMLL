@@ -143,8 +143,10 @@ export interface version {
     }
 }
 
+
+
 export interface assets {
-    "objects": { [key: string]: { "hash": string, "size": number } },
+    "objects": { [key: string]: { "hash": string, "size": number, "ignore"?:boolean } },
     map_to_resources?: boolean,
     virtual?: boolean
 }

@@ -1,4 +1,4 @@
-import { lawyer, getOS, assetTag, throwErr, classPathResolver, getErr } from "./internal/util.js";
+import { lawyer, getOS, assetTag, throwErr, classPathResolver, getErr, combine, processAssets } from "./internal/util.js";
 import { join } from "path";
 import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig } from "./config.js";
 import { processCMD, failCMD, getSelf } from "./internal/get.js"
@@ -162,12 +162,7 @@ export function runtime(runtime: runtimes) {
                 break;
         }
     });
-    return download(arr, 5).then(e => {
-        linkz.forEach(element => {
-
-        });
-        return e;
-    });
+    return download(arr, 5);
 
 
 }
@@ -176,40 +171,39 @@ export async function assets(index: assetIndex) {
     const root = getAssets();
     var indexes = root.getDir("indexes").mkdir();
     var file = indexes.getFile(index.id + ".json");
-    const assetIndex = (await file.download(index.url, { sha1: index.sha1, size: index.size })).toJSON<assets>()
+    let assetIndex = (await file.download(index.url, { sha1: index.sha1, size: index.size })).toJSON<assets>()
     var downloader: downloadable[] = [];
     const getURL = (obj: { hash: string; size: Number; }) => "http://resources.download.minecraft.net/" + obj.hash.substring(0, 2) + "/" + obj.hash;
-    if (assetIndex.map_to_resources) {
-        assetIndex.objects["icons/icon_16x16.png"] = { "hash": "bdf48ef6b5d0d23bbb02e17d04865216179f510a", "size": 3665 };
-        assetIndex.objects["icons/icon_32x32.png"] = { "hash": "92750c5f93c312ba9ab413d546f32190c56d6f1f", "size": 5362 };
-        assetIndex.objects["icons/minecraft.icns"] = { "hash": "991b421dfd401f115241601b2b373140a8d78572", "size": 114786 };
 
-        assetIndex.objects["minecraft/icons/icon_16x16.png"] = { "hash": "bdf48ef6b5d0d23bbb02e17d04865216179f510a", "size": 3665 };
-        assetIndex.objects["minecraft/icons/icon_32x32.png"] = { "hash": "92750c5f93c312ba9ab413d546f32190c56d6f1f", "size": 5362 };
-        assetIndex.objects["minecraft/icons/minecraft.icns"] = { "hash": "991b421dfd401f115241601b2b373140a8d78572", "size": 114786 };
+    if (assetIndex.map_to_resources) {
+        let addin = (path: string | number, sck: { hash: string; size: number; }) => {
+            if (!assetIndex[path]) {
+                assetIndex.objects[path] = sck;
+            }
+        }
+        addin("icons/icon_16x16.png", { "hash": "bdf48ef6b5d0d23bbb02e17d04865216179f510a", "size": 3665 });
+        addin("icons/icon_32x32.png", { "hash": "92750c5f93c312ba9ab413d546f32190c56d6f1f", "size": 5362 });
+        addin("icons/minecraft.icns", { "hash": "991b421dfd401f115241601b2b373140a8d78572", "size": 114786 });
+
+        addin("minecraft/icons/icon_16x16.png", { "hash": "bdf48ef6b5d0d23bbb02e17d04865216179f510a", "size": 3665 });
+        addin("minecraft/icons/icon_32x32.png", { "hash": "92750c5f93c312ba9ab413d546f32190c56d6f1f", "size": 5362 });
+        addin("minecraft/icons/minecraft.icns", { "hash": "991b421dfd401f115241601b2b373140a8d78572", "size": 114786 });
     }
 
     Object.entries(assetIndex.objects).forEach(o => {
         const key = o[0];
         const obj = o[1];
-        downloader.push(assetTag(root.getDir("objects"), obj.hash).getFile(obj.hash).toDownloadable(getURL(obj), key, { sha1: obj.hash, size: obj.size }));
+        if (!obj.ignore)
+            downloader.push(assetTag(root.getDir("objects"), obj.hash).getFile(obj.hash).toDownloadable(getURL(obj), key, { sha1: obj.hash, size: obj.size }));
+
     })
     await download(downloader);
 
-    if (assetIndex.virtual || assetIndex.map_to_resources) {
-        const file = root.getDir("legacy", assetIndex.virtual ? "virtual" : "resources").mkdir();
-        Object.entries(assetIndex.objects).forEach(o => {
-            const key = o[0];
-            const obj = o[1];
-            const to = file.getFile(...key.split("/")).mkdir();
-
-            const finalFile = assetTag(root.getDir("objects"), obj.hash).getFile(obj.hash)
-            finalFile.copyto(to);
-            // copyFileSync(join(assetTag(join(root, "objects"), obj.hash), obj.hash), join(path, name));
-        })
-    }
+    processAssets(assetIndex);
 
 }
+
+
 
 export async function libraries(version: version) {
     const arr: Partial<downloadable>[] = [];

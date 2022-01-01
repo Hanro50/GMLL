@@ -3,11 +3,12 @@ import { createHash } from "crypto";
 import fs from "fs";
 import { join } from "path";
 import { arch, platform, type, version } from "os";
-import { launchArgs, rules } from "../../index.js";
+import { assetIndex, assets, launchArgs, rules } from "../../index.js";
 import { execSync } from "child_process";
 //import { downloadable } from "./get";
 import { cmd as _cmd } from '7zip-min';
 import { dir } from "../objects/files.js";
+import { getAssets } from "../config.js";
 export function getOS() {
     const OS = platform();
     switch (OS) {
@@ -124,6 +125,45 @@ export function classPathResolver(name: string) {
     return namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + ".jar";
 }
 
+/**Takes two different version.json files and combines them */
+export function combine(ob1: any, ob2: any) {
+    Object.keys(ob2).forEach(e => {
+        if (!ob1[e]) {
+            ob1[e] = ob2[e]
+        }
+        else if (typeof ob1[e] == typeof ob2[e]) {
+            if (ob1[e] instanceof Array) {
+                let f = []
+
+                ob1[e] = [...ob2[e], ...ob1[e]]
+            }
+            else if (typeof ob1[e] == "string") {
+                ob1[e] = ob2[e];
+            }
+            else if (ob1[e] instanceof Object) {
+                ob1[e] = combine(ob1[e], ob2[e]);
+            }
+        } else {
+            ob1[e] = ob2[e];
+        }
+    })
+    return ob1;
+}
+
+export function processAssets(assetIndex:assets){
+    if (assetIndex.virtual || assetIndex.map_to_resources) {
+        const root = getAssets();
+        const file = root.getDir("legacy", assetIndex.virtual ? "virtual" : "resources").mkdir();
+        Object.entries(assetIndex.objects).forEach(o => {
+            const key = o[0];
+            const obj = o[1];
+            const to = file.getFile(...key.split("/")).mkdir();
+            const finalFile = assetTag(root.getDir("objects"), obj.hash).getFile(obj.hash)
+            finalFile.copyto(to);
+            // copyFileSync(join(assetTag(join(root, "objects"), obj.hash), obj.hash), join(path, name));
+        })
+    }
+}
 /*
 export async function mutator(o: downloadable, main: boolean = false): Promise<downloadable> {
     try {

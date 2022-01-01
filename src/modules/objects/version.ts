@@ -1,35 +1,12 @@
 import { existsSync, copyFileSync, readFileSync } from "fs";
 import { join } from "path";
-import { jarTypes, manifest, version as _version } from "../..";
+import { assets as _assets, jarTypes, manifest, version as _version } from "../..";
 import { getlibraries, getVersions, isInitialized } from "../config.js";
 import { assets, runtime, libraries } from "../downloader.js";
 import { getManifest, getJavaPath } from "../handler.js";
 import { dir, file } from "./files";
-import { throwErr, classPathResolver } from "../internal/util.js";
-/**Takes two different version.json files and combines them */
-function combine(ob1: any, ob2: any) {
-    Object.keys(ob2).forEach(e => {
-        if (!ob1[e]) {
-            ob1[e] = ob2[e]
-        }
-        else if (typeof ob1[e] == typeof ob2[e]) {
-            if (ob1[e] instanceof Array) {
-                let f = []
+import { throwErr, classPathResolver, combine } from "../internal/util.js";
 
-                ob1[e] = [...ob2[e], ...ob1[e]]
-            }
-            else if (typeof ob1[e] == "string") {
-                ob1[e] = ob2[e];
-            }
-            else if (ob1[e] instanceof Object) {
-                ob1[e] = combine(ob1[e], ob2[e]);
-            }
-        } else {
-            ob1[e] = ob2[e];
-        }
-    })
-    return ob1;
-}
 /**
  * Version data is unique. Each version of the game will generate an unique version object. 
  * Take note however. GMLL,unlike the default launcher, will store version data in the same folder as the version it is based upon. 
@@ -42,6 +19,7 @@ export class version {
     folder: dir;
     file: file;
     synced: boolean;
+    override?: _assets;
 
     /**Gets a set version based on a given manifest or version string. Either do not have to be contained within the manifest database. */
     static async get(manifest: string | manifest): Promise<version> {
@@ -143,6 +121,7 @@ export class version {
             }
         }
     }
+
     async install() {
         await this.getAssets();
         await this.getLibs();

@@ -1,7 +1,7 @@
 import { cpSync, readFileSync } from "fs";
 import { spawn } from "child_process";
 import { join } from "path";
-import { defJVM, fsSanitiser, oldJVM, parseArguments, write, writeJSON } from "../internal/util.js";
+import { assetTag, combine, defJVM, fsSanitiser, oldJVM, parseArguments, processAssets, throwErr, write, writeJSON } from "../internal/util.js";
 import { dir, file } from "./files.js";
 import { cpus, type } from "os";
 import { getClientID, getLatest } from "../handler.js";
@@ -46,6 +46,8 @@ export interface options {
     ram?: Number,
     /**Custom data your launcher can use */
     meta?: any
+    /**Asset index injection */
+    assets?: assets
 }
 /**
  * An instance is what the name intails. An instance of the game Minecraft containing Minecraft specific data.
@@ -57,6 +59,7 @@ export default class instance {
     ram: Number;
     meta: any;
     private path: string;
+    assets: Partial<assets>;
     static get(name: string) {
 
         const json = new file(getMeta().profiles.toString(), fsSanitiser(name + ".json")).toJSON<options>();
@@ -72,8 +75,40 @@ export default class instance {
         this.path = opt && opt.path ? opt.path : join("<instance>", fsSanitiser(this.name));
         this.ram = opt && opt.ram ? opt.ram : 2;
         this.meta = opt && opt.meta ? opt.meta : undefined;
-
+        this.assets = opt && opt.assets ? opt.assets : {};
         new dir(this.getPath()).mkdir();
+    }
+    /**
+     * Inject custom assets into the game.
+     * @param key The asset key
+     * @param path The path to the asset file in questions...it must exist!
+     */
+    injectAsset(key: string, path: string | file) {
+        if (typeof path == "string") {
+            path = new file(path);
+        }
+        if (!path.exists()) throwErr("Cannot find file");
+        const hash = path.getHash();
+        path.copyto(assetTag(getAssets().getDir("objects"), hash).getFile(hash));
+        if (!this.assets.objects) this.assets.objects = {};
+        const asset = { hash: hash, size: path.getSize(), ignore: true };
+        this.assets.objects[key] = asset;
+        return asset
+    }
+
+    setIcon(x32?: string, x16?: string, mac?: string) {
+        if (x32) {
+            const x32Icon = this.injectAsset("icons/icon_32x32.png", x32);
+            this.assets.objects["minecraft/icons/icon_32x32.png"] = x32Icon;
+        }
+        if (x16) {
+            const x16Icon = this.injectAsset("icons/icon_16x16.png", x16);
+            this.assets.objects["minecraft/icons/icon_16x16.png"] = x16Icon;
+        }
+        if (mac) {
+            const macIcon = this.injectAsset("icons/minecraft.icns", mac);
+            this.assets.objects["minecraft/icons/minecraft.icns"] = macIcon;
+        }
     }
     /**
      * 
@@ -120,8 +155,16 @@ export default class instance {
         const cp = version.getClassPath();
         var vjson = await version.getJSON();
         var assetRoot = getAssets();
+
         var assetsFile = "assets";
-        const AssetIndex = getAssets().getFile("indexes", (vjson.assets || "pre-1.6") + ".json").toJSON<assets>();
+        let AssetIndex = getAssets().getFile("indexes", (vjson.assets || "pre-1.6") + ".json").toJSON<assets>();
+        let assets_index_name = vjson.assetIndex.id;
+        if (this.assets.objects) {
+            AssetIndex = combine(AssetIndex, this.assets);
+            assets_index_name = (fsSanitiser(assets_index_name + "_" + this.name))
+            getAssets().getFile("indexes", (assets_index_name + ".json")).write(AssetIndex);
+            processAssets(AssetIndex);
+        }
 
         if (AssetIndex.virtual) assetRoot = getAssets().getDir("legacy", "virtual");
         if (AssetIndex.map_to_resources) {
@@ -132,6 +175,7 @@ export default class instance {
 
         const classpath_separator = type() == "Windows_NT" ? ";" : ":";
         const classPath = cp.join(classpath_separator);
+
         const args = {
             ram: this.ram,
             cores: cpus().length,
@@ -144,10 +188,9 @@ export default class instance {
             auth_player_name: token.profile.name,
             version_name: vjson.inheritsFrom || vjson.id,
             game_directory: this.getPath(),
-
-            assets_root: "assets",
-            assets_index_name: vjson.assetIndex.id,
-
+     
+            assets_root: assetsFile,
+            assets_index_name: assets_index_name,
             auth_uuid: token.profile.id,
             user_type: token.profile.type,
             auth_xuid: token.profile.xuid,
@@ -161,7 +204,7 @@ export default class instance {
             launcher_version: getLauncherVersion(),
             classpath: classPath,
             auth_session: "token:" + token.access_token,
-            game_assets: "assets",
+            game_assets: assetsFile,
 
             classpath_separator: classpath_separator,
             library_directory: getlibraries(),
@@ -183,11 +226,12 @@ export default class instance {
             }*/
         }
         var jvmArgs = parseArguments(args, rawJVMargs);
-        var gameArgs = "--title testing!"
-        gameArgs += vjson.arguments ? parseArguments(args, vjson.arguments.game) : "";
+
+        let gameArgs = vjson.arguments ? parseArguments(args, vjson.arguments.game) : "";
         gameArgs += vjson.minecraftArguments ? " " + vjson.minecraftArguments : "";
 
-        var launchCom = jvmArgs + " " +/* "za.net.hanro50.inject.App"+*/ vjson.mainClass + " " + gameArgs;
+        var launchCom = jvmArgs + " " +/* "za.net.hanro50.inject.App"+*/ vjson.mainClass + (!gameArgs.startsWith(" ") ? " " : "") + gameArgs;
+        console.log(gameArgs)
 
         Object.keys(args).forEach(key => {
             const regex = new RegExp(`\\\$\{${key}\}`, "g")
