@@ -1,2 +1,2 @@
 #!/bin/bash
-node build.cjs
+npm run build
