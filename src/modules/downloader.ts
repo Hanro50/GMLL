@@ -74,7 +74,7 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
                 for (var i7 = 0; i7 < arr[i].length; i7++) {
                     cpu["gmll_" + i7] = JSON.stringify(arr[i][i7]);
                 }
-                console.log(cpu)
+               // console.log(cpu)
                 const w = fork(cpu);
                 workers.push(w);
                 w.on('message', (msg) => {
@@ -262,7 +262,7 @@ export async function libraries(version: version) {
             //Maven repo
             for (var i = 0; i < 3; i++) {
                 try {
-                    console.log(e)
+                  //  console.log(e)
                     if (e.checksums) {
                         sha1 = e.checksums;
                     } else {

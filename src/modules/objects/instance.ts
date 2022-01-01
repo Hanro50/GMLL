@@ -240,7 +240,7 @@ export default class instance {
         emit("jvm.start", "Minecraft", this.getPath());
         //console.log(version.json.libraries)
         // console.log(launchCom.trim().split(" "))
-        console.log(javaPath + " " + launchCom)
+       // console.log(javaPath + " " + launchCom)
         const s = spawn(javaPath.sysPath(), launchCom.trim().split(" "), { "cwd": this.getPath() })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));

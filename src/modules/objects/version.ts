@@ -34,7 +34,7 @@ export class version {
      */
     private constructor(manifest: string | manifest) {
         this.manifest = typeof manifest == "string" ? getManifest(manifest) : manifest;
-        console.log(this.manifest)
+      //  console.log(this.manifest)
         this.json;
         this.name = this.manifest.base || this.manifest.id;
         this.folder = getVersions().getDir(this.name);
@@ -66,7 +66,7 @@ export class version {
                 this.name = data.id;
                 this.folder = folder_old;
                 this.file = file_old;
-                console.log(this.json)
+            //    console.log(this.json)
                 return this.json;
             }
         }
@@ -79,14 +79,14 @@ export class version {
                 ? "Unknown version, please check spelling of given version ID"
                 : "Version json is missing for this version!");
         }
-        console.log(this.json, this.manifest)
+      //  console.log(this.json, this.manifest)
         if (this.json.inheritsFrom || this.manifest.base) {
             const base = (new version(this.json.inheritsFrom || this.manifest.base));
             this.json = combine(await base.getJSON(), this.json);
             this.folder = base.folder;
             this.name = base.name;
         }
-        console.log(this.json)
+    //    console.log(this.json)
 
         return this.json;
     }

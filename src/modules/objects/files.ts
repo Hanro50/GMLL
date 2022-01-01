@@ -59,9 +59,8 @@ export class dir {
             this.path.push("/")
         }
         path.forEach(e => {
-            if (isWin){
-                e.replace(/\\/g,"/")
-            }
+            if (isWin)
+                e = e.replace(/\\/g, '/')
             this.path.push(...e.split("/"));
         })
         this.path = this.path.filter((el) => {
