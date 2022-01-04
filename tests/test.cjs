@@ -15,3 +15,4 @@ gmll.init().then(async () => {
 
 
 
+const {instance} = require("gmll/objects/instance")

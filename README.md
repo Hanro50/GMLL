@@ -1,13 +1,13 @@
-# <b>GMLL</b>
+# GMLL
 <a href="https://github.com/Hanro50/GMLL/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/msmc" alt="MIT license"/></a>
 <a href="https://www.npmjs.com/package/gmll"><img src="https://img.shields.io/npm/v/gmll" alt="Version Number"/></a>
 <a href="https://github.com/Hanro50/gmll/"><img src="https://img.shields.io/github/stars/hanro50/gmll" alt="Github Stars"/></a><br/>
 A generic Minecraft Launcher Library 
 
-# <b>Module type</b>
+# Module type
 GMLL is a hybrid module. However as such, you should best avoid trying to use GMLL as both a ES6 and a CommonJS module in the same project. 
 
-# <b>Support</b>
+# Support
 No support will be given to launchers that seek to grant access to Minecraft to individuals whom do not posses a valid Minecraft License. In other words, don't launch Minecraft if a user has not logged in with an account that owns the game at least once. I'm not in the mood to get sued. -Hanro
 
 Other then that. There's a channel dedicated to GMLL on the MSMC support Discord server. Click the following badge to join.
@@ -18,7 +18,14 @@ Other then that. There's a channel dedicated to GMLL on the MSMC support Discord
 </div>
 PS: If you find a bug, don't be afraid to report it on Github or Discord!  
 
-# <b>Initialization</b>
+# File systems
+When running under Windows. GMLL only supports NTFS. GMLL will not work under FAT32, FAT16, exFAT or any other non NTFS based file system commonly used by Windows what so ever.
+
+Linux and Mac users should not encounter this issue as on these systems, symlinks can be made by users whom are not system administrators. 
+
+If your launcher is installed onto a drive which in of itself is not formated as NTFS, but your launcher tells GMLL to generate it's files on a partition that is formated as NTFS. It _should_ work. A shortcut to the user's AppData folder is "%appdata%\\\<name of your launcher\>". Just incase...
+
+# Initialization
 The library relies on a collection core files that are dynamically downloaded from the internet to function. GMLL thus has two states it can be within. Initialized and uninitialized. GMLL will refuse to launch minecraft if it is not properly initialized. 
 
 Before initialization. You'll likely want to load the config module and modify the paths GMLL uses. This is recommended as the initialization method will also create any folders required by GMLL to function. Essentially if you keep finding GMLL is generating random .minecraft folders, this is likely why. See the header "Config" under modules.
@@ -32,7 +39,7 @@ init().then(...);
 import { init } from "gmll";
 await init();
 ```
-# <b>Quick start</b>
+# Quick start
 ## Import the module
 GMLL contains a commonJS and a ES6 versions of every internal component
 ```js
@@ -45,74 +52,123 @@ const gmll = require("gmll");
 ## a word on the docs
 GMLL is to big to maintain an up to date dev doc with the current amount of resources awarded to the project. Instead, please see the included JSDocs in the comments in the type files. Since those will be exponetially easier to maintain and will likely provide the information specific to what you require a function to do. 
 
+## Quick start 
+This quick start will use MSMC for authentication. Full disclosure, GMLL endorses MSMC by virtue of the two projects sharing an author. 
 
-## initialize
-GMLL needs to download some manifest files and check the integraty of said files. This step stops GMLL from needing to do it everytime you want to launch something. 
+ES6:
 ```js
-//async or ES6 
-await gmll.init();
-//sync or commonJS
-gmll.init().then(()=>{...});
+//All modules can be accessed from the main GMLL index file
+import { wrapper, init, instance } from "gmll";
+//GMLL supports sub modules 
+import { setRoot } from "gmll/config";
+import { installForge } from "gmll/handler";
+import { fastLaunch } from "msmc";
+//Changes where GMLL puts the ".minecraft" gmll creates (will default to a folder called .minecraft in the same folder in your root process directory)
+setRoot(".MC")
+//Gets GMLL to fetch some critical files it needs to function 
+await init();
+//Prompts GMLL to ask the user to install forge. This command can be fed the path to a forge installer as well 
+installForge();
+//Gets the login token for use in launching the game
+const token = wrapper.msmc2token(await fastLaunch("raw", console.log));
+//GMLL uses the concept of instances. Essentially containerised minecraft installations 
+const i = new instance({ version: "1.18.1" });
+//Save the instance for use later, will go into more detail in later parts of the docs
+i.save();
+//Launches the game with the token we got earlier. GMLL will download and install any library it needs 
+i.launch(token);
+
 ```
-## create an instance
-GMLL works with instances. Do note an instance is basically an installation of the game. The name given to the instance is used as it's ID. 
+CommonJS:
 ```js
-const int = new gmll.instance({ version: "1.18.1", name: "my Instance" });
-```
-## get a login token \<Check out <a href="https://www.npmjs.com/package/msmc">MSMC</a>>
-Piracy is bad, so it is best to get a GMLL login token. Luckily the author of GMLL maintains a library just for that!
-```js
-//async
-const token = gmll.wrapper.msmc2token(await fastLaunch("raw", console.log);
-//sync 
-fastLaunch("raw", console.log).then(e=>{
-   const token = gmll.wrapper.msmc2token(e));
-   ...
+//Like in ES6 we can use sub-modules 
+const gmll = require("gmll");
+const config = require("gmll/config");
+const { fastLaunch } = require("msmc");
+//Changes where GMLL puts the ".minecraft" gmll creates (will default to a folder called .minecraft in the same folder in your root process directory)
+config.setRoot(".MC")
+//The init call does some fetch operations internally. Thus it needs to be async 
+gmll.init().then(async () => {
+    const e = await fastLaunch("raw", console.log);
+    //Converts the login token to something GMLL understands 
+    const token = gmll.wrapper.msmc2token(e);
+    //GMLL uses the concept of instances. Essentially containerised minecraft installations 
+    let int = new gmll.instance({ version: "1.18.1" })
+    //This method is a high level override for setting custom icons for the game. May not work with older versions of Minecraft
+    int.setIcon("icon_32x32.png","icon_16x16.png")
+    //Launches the game with the token we got earlier. GMLL will download and install any library it needs 
+    int.launch(token);
 })
 ```
-## Luanch the game
-Just like that you've launched the game. This will do a background check to see if everything is in place for a launch. The token we got in the step above.
-```js
-int.launch(token);
+# Instances 
+An instance contains all the local files of a launcher profile. Your texture, resource, mod and data packs are all contained within a folder declared by an "instance". GMLL has an instance manager built into it and can easily keep track of multiple instances for you. 
+
+## Instance constructor
+GMLL's instance object accepts one parameter of type options. This is also the format GMLL will save instances in internally. 
+```ts
+export interface options {
+    /**The name of the instance */
+    name?: string,
+    /**The version of the game to load */
+    version?: string,
+    /**The installation path */
+    path?: string,
+    /**Ram in GB */
+    ram?: Number,
+    /**Custom data your launcher can use */
+    meta?: any
+    /**Asset index injection */
+    assets?: assets
+}
 ```
-
-## Save and reload an instance!
-GMLL will store instance settings internally!
+## loading and saving
 ```js
-int.save();
-const int2 = gmll.instance.get("my Instance");
-```
-
-# <b>Modules</b>
-# index
-```js
-//ES6 
-import * as gmll from "gmll";
-//commonJS
-const gmll = require("gmll");
-```
-The main module you will load upon pulling in GMLL. It contains fallback hooks for every other module in GMLL as well as the init function witch will initialize GMLL. See content under the header "Initialization". 
-
-This module also contains shortcuts for setting up an the code needed to launch a new instance. Namely a direct export for the instance, player and instance options. 
-
-For example
-```js
-//Let's assume the next part is in an async function!
-//Needed to make sure all the needed files are downloaded
-await gmll.init();
-//The player profile and login token
-const token = {
-     profile: {
-        id:"id",
-        name: "Player",
-        xuid: 5556345345,
-        type: "msa",
-        demo: true},
-    access_token: "Some token"};
-//Launches the game
-new gmll.instance({ version: "1.18" }.launch(token);
+//CommonJS
+const {instance} = require("gmll/objects/instance");
+//ES6
+import {instance} from "gmll/objects/instance";
 ...
+const i = new instance({ version: "1.18.1",name:"MY INSTANCE" });
+//GMLL won't save instances automatically. Could hurt SSD users
+i.save();
+...
+//some random code
+...
+//We have loaded the instance we created earlier back and can now launch it
+const i777 = instance.get("MY INSTANCE"); 
+i777.launch(token);
 ```
+
+## Custom icons and assets
+Warning: borked in general on Mac and Linux for releases between 1.13 and 1.18.1 (<a href="https://bugs.mojang.com/browse/MCL-15163">MCL-15163?</a>)
+
+Can be used to insert a matching launcher icon or replace a random song with Rick Ashley's <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Never going to give you up</a>. This will copy the files provided into Minecraft's asset index and create a custom asset index file matching the modifications. GMLL does take care to emulate vanilla here in how assets are added to the index to avoid collisions. 
+
+Should be a predefined asset in Minecraft's asset index for the version the set instance launches. 
+```js
+//CommonJS
+const {instance} = require("gmll/objects/instance");
+//ES6
+import {instance} from "gmll/objects/instance";
+const i777 = instance.get("MY INSTANCE"); 
+i777.injectAsset("minecraft/sounds/ambient/cave/cave1.ogg", "path/to/rick/roll.ogg");
+i777.setIcon("path/to/32x32.png","path/to/16x16.png","path/to/mac.icns")
+```
+
+## Install \<Advanced!>
+The install command on the instance does a range of preflight checks. From making sure the instance has the java version it currently needs already installed to downloading the version json, assets, libraries and what not the instance needs to launch. It does not compile the asset index for the index beforehand if there are custom assets. This function is called by the launch function as well. 
+```js
+//CommonJS
+const {instance} = require("gmll/objects/instance");
+//ES6
+import {instance} from "gmll/objects/instance";
+const i777 = instance.get("MY INSTANCE"); 
+i777.install();
+```
+# Warning!
+From the point forward. It will be assumed that you have a basic understanding of how JavaScript works. Not every element will be showed like it was with the previous documentation!
+
+
 # config
 ```js
 //ES6 
@@ -233,9 +289,21 @@ export function initializationListener(func: () => void | Promise<void>):void;
 //Does some preflight checks and is actually called by the "init" function in the index file. This can be called directly and will be no different then calling "init" in the index file.
 export async function initialize();
 ```
-Some random, but useful functions. 
 
-# downloader
-GMLL's internal download manager
+# handler
+```js
+//ES6 
+import * as config from "gmll/handler";
+//commonJS
+const handler = require("gmll/handler");
+//fallback 
+const handler = gmll.handler; 
+```
+The handler object contains a fair amount of static functions used by GMLL. There are some lower level functions included here that are used by different parts of GMLL internally. 
+
+## manifests 
+```js
+```
+
 # WIP Docs
-Still being worked on actively. Stay tuned...
+Still being worked on actively. Stay tuned.

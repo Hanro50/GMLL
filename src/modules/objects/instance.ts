@@ -5,8 +5,8 @@ import { assetTag, combine, defJVM, fsSanitiser, oldJVM, parseArguments, process
 import { dir, file } from "./files.js";
 import { cpus, type } from "os";
 import { getClientID, getLatest } from "../handler.js";
-import { emit, getAssets, getInstances, getLauncherVersion, getlibraries, getMeta, getNatives, getVersions, resolvePath } from "../config.js";
-import { assetIndex, assets, launchArgs, user_type } from "../../index.js";
+import { emit, getAssets, getLauncherVersion, getlibraries, getMeta, getNatives, getVersions, resolvePath } from "../config.js";
+import { assets, launchArgs, user_type } from "../../index.js";
 import { version } from "./version.js";
 const defArgs = [
     "-Xms${ram}G",
@@ -188,7 +188,7 @@ export default class instance {
             auth_player_name: token.profile.name,
             version_name: vjson.inheritsFrom || vjson.id,
             game_directory: this.getPath(),
-     
+
             assets_root: assetsFile,
             assets_index_name: assets_index_name,
             auth_uuid: token.profile.id,
@@ -240,7 +240,7 @@ export default class instance {
         emit("jvm.start", "Minecraft", this.getPath());
         //console.log(version.json.libraries)
         // console.log(launchCom.trim().split(" "))
-       // console.log(javaPath + " " + launchCom)
+        // console.log(javaPath + " " + launchCom)
         const s = spawn(javaPath.sysPath(), launchCom.trim().split(" "), { "cwd": this.getPath() })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
