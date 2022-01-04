@@ -1,3 +1,7 @@
+
+
+
+
 /**
  * ---------------------------------------------------------------------------------------------
  * imports 
@@ -146,7 +150,7 @@ export interface version {
 
 
 export interface assets {
-    "objects": { [key: string]: { "hash": string, "size": number, "ignore"?:boolean } },
+    "objects": { [key: string]: { "hash": string, "size": number, "ignore"?: boolean } },
     map_to_resources?: boolean,
     virtual?: boolean
 }
@@ -199,7 +203,7 @@ export interface runtimeFILE {
         "jre-legacy": [],
         "minecraft-java-exe": []
  */
-export type runtimeManifest ={
+export type runtimeManifest = {
     "availability": {
         "group": number,
         "progress": number
@@ -215,7 +219,7 @@ export type runtimeManifest ={
     }
 }
 export type runtimeManifests = {
-    [key in "gamecore" | "linux" | "linux-i386" | "mac-os" | "windows-x64"|"windows-x86"]: {
+    [key in "gamecore" | "linux" | "linux-i386" | "mac-os" | "windows-x64" | "windows-x86"]: {
         [key in "java-runtime-beta" | "java-runtime-beta" | "jre-legacy" | "minecraft-java-exe"]: Array<runtimeManifest>
     }
 }
@@ -241,3 +245,4 @@ export * as wrapper from "./modules/wrapper.js";
 export { default as instance } from "./modules/objects/instance.js";
 export { token as token } from "./modules/objects/instance.js";
 export { options as options } from "./modules/objects/instance.js";
+
