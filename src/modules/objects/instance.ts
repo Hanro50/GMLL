@@ -1,13 +1,15 @@
-import { cpSync, readFileSync } from "fs";
 import { spawn } from "child_process";
 import { join } from "path";
-import { assetTag, combine, defJVM, fsSanitiser, oldJVM, parseArguments, processAssets, throwErr, write, writeJSON } from "../internal/util.js";
-import { dir, file } from "./files.js";
+import { assetTag, combine, defJVM, fsSanitiser, oldJVM, parseArguments, processAssets, throwErr } from "../internal/util.js";
+import { dir, downloadable, file } from "./files.js";
 import { cpus, type } from "os";
 import { getClientID, getLatest } from "../handler.js";
-import { emit, getAssets, getLauncherVersion, getlibraries, getMeta, getNatives, getVersions, resolvePath } from "../config.js";
-import { assets, launchArgs, user_type } from "../../index.js";
+import { emit, getAssets, getLauncherVersion, getlibraries, getMeta, getNatives, resolvePath } from "../config.js";
+import { assets, launchArgs, manifest, user_type, version as version_type } from "../../index.js";
 import { version } from "./version.js";
+
+import { pack, cmd } from '7zip-min';
+
 const defArgs = [
     "-Xms${ram}G",
     "-Xmx${ram}G",
@@ -157,6 +159,7 @@ export default class instance {
         var assetRoot = getAssets();
 
         var assetsFile = "assets";
+        assetRoot.link([this.getPath(), assetsFile]);
         let AssetIndex = getAssets().getFile("indexes", (vjson.assets || "pre-1.6") + ".json").toJSON<assets>();
         let assets_index_name = vjson.assetIndex.id;
         if (this.assets.objects) {
@@ -166,12 +169,11 @@ export default class instance {
             processAssets(AssetIndex);
         }
 
-        if (AssetIndex.virtual) assetRoot = getAssets().getDir("legacy", "virtual");
-        if (AssetIndex.map_to_resources) {
-            assetRoot = getAssets().getDir("legacy", "virtual");
+        if (AssetIndex.virtual || AssetIndex.map_to_resources) {
+            assetRoot = getAssets().getDir("legacy", AssetIndex.virtual ? "virtual" : "resources");
             assetsFile = "resources"
+            assetRoot.link([this.getPath(), assetsFile]);
         }
-        assetRoot.link([this.getPath(), assetsFile]);
 
         const classpath_separator = type() == "Windows_NT" ? ";" : ":";
         const classPath = cp.join(classpath_separator);
@@ -244,5 +246,104 @@ export default class instance {
         const s = spawn(javaPath.sysPath(), launchCom.trim().split(" "), { "cwd": this.getPath() })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
+    }
+    /**Wraps up an instance in a prepackaged format that can be easily uploaded to a server for distribution 
+     * @param baseUrl The base URL the generated files will be stored within on your server. For example http\:\/\/yourawesomdomain.net\/path\/to\/files\/
+     * @param save The file GMLL will generate the final files on. 
+     * @param name The name that should be used to identify the generated version files
+    */
+    async wrap(baseUrl: string, save: dir, name: string = ("custom_" + this.name)) {
+        const seperate = ["resourcepacks", "texturepacks", "mods", "coremods", "shaderpacks"]
+        const bunlde = ["saves"]
+        const blacklist = ["usercache.json", "realms_persistence.json", "logs"]
+        const me = new dir(this.getPath());
+        const resources: downloadable[] = [];
+        const packAsync = (pathToDirOrFile: string, pathToArchive: string) => new Promise<Error | null>(res => pack(pathToDirOrFile, pathToArchive, res));
+
+        const cp = (d: dir, path: string[]) => {
+            console.log(d.exists())
+            if (d.exists()) {
+                d.ls().forEach(e => {
+                    if (e instanceof file) {
+                        const f = new file(save.javaPath(), ...path, e.name)
+                        e.copyto(f.mkdir())
+                        resources.push({ key: [...path, e.name].join("/"), name: e.name, path: path, url: [baseUrl, ...path, e.name].join("/"), chk: { sha1: f.getHash(), size: f.getSize() } });
+                    } else if (!e.islink()) {
+                        const path2 = [...path, e.path[e.path.length - 1]];
+                        cp(e, path2);
+                    }
+                })
+            }
+        }
+        seperate.forEach(e => {
+            cp(me.getDir(e), [e]);
+        })
+        const data = save.getDir(".data").mkdir();
+        console.log(1)
+        for (var i = 0; i < bunlde.length; i++) {
+            console.log(2)
+            const e = bunlde[i]
+            const ls = me.getDir(e).ls();
+            for (var k = 0; k < ls.length; k++) {
+                console.log(3)
+                const e2 = ls[k]
+                if (!e2.islink() && e2 instanceof dir) {
+                    console.log(4)
+                    const name = e2.getName()
+                    const zip = e + "_" + k + ".zip";
+                    const file = data.getFile(zip)
+                    const err = await packAsync(e2.sysPath(), file.sysPath());
+                    if (err) console.log(err);
+                    resources.push({ dynamic: e == "saves", unzip: { file: [e, name] }, key: [e, name].join("/"), name: zip, path: [".data"], url: [baseUrl, ".data", zip].join("/"), chk: { sha1: file.getHash(), size: file.getSize() } });
+                }
+            }
+        }
+
+        const ls2 = me.ls()
+        const zip = "misc.zip";
+        const mzip = data.getFile(zip).mkdir();
+        const avoid = [...seperate, ...bunlde, ...blacklist]
+        if (this.assets) {
+            const assetz = me.getDir("assets").mkdir();
+            Object.values(this.assets.objects).forEach((e) => {
+                assetTag(getAssets().getDir("objects"), e.hash).getFile(e.hash).copyto(assetTag(assetz.getDir("objects"), e.hash).mkdir().getFile(e.hash))
+            })
+            const err = await packAsync(assetz.sysPath(), mzip.sysPath());
+            if (err) console.log(err);
+            assetz.rm();
+        }
+
+        for (var k = 0; k < ls2.length; k++) {
+            const e = ls2[k];
+            console.log(e.getName() + ":" + e.islink())
+            if (!e.islink() && !avoid.includes(e.getName()) && !e.getName().startsWith(".")) {
+                const err = await packAsync(e.sysPath(), mzip.sysPath());
+                if (err) console.log(err);
+
+            }
+        }
+        resources.push({ unzip: { file: mzip.path }, key: "misc", name: "misc.zip", path: [".data", zip], url: [baseUrl, ".data", zip].join("/"), chk: { sha1: mzip.getHash(), size: mzip.getSize() } });
+
+        const ver: Partial<version_type> = {
+            instance: {
+                restart_Multiplier: 1,
+                files: resources,
+                assets: this.assets
+            },
+            inheritsFrom: this.version,
+            id: name
+        }
+        const verfile = save.getDir(".meta").mkdir().getFile("version.json");
+        verfile.write(ver);
+
+        const manifest: manifest = {
+            id: name, type: "custom", sha1: verfile.getHash(), base: this.version, url: baseUrl + "/" + ".meta/version.json", "_comment": "Drop this into gmll's manifest folder",
+        }
+        save.getFile("manifest_" + fsSanitiser(name) + ".json").write(manifest);
+        delete manifest._comment;
+        save.getFile(".meta", "manifest.json").write(manifest);
+        save.getFile(".meta", "manifest.json.sha1").write(save.getFile(".meta", "manifest.json").getHash())
+        save.getFile(".meta", "api.json").write({ version: 1, "_comment": "Here for future proofing incase we need to introduce a breaking change to this system." });
+        return ver;
     }
 }

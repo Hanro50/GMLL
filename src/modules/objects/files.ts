@@ -1,6 +1,6 @@
 import { join } from "path";
 import fetch from "node-fetch";
-import { existsSync, mkdirSync, unlinkSync, symlinkSync, readFileSync, createWriteStream, statSync, writeFileSync, read, rmSync, readdirSync, copyFileSync } from 'fs';
+import { existsSync, mkdirSync, unlinkSync, symlinkSync, readFileSync, createWriteStream, statSync, writeFileSync, read, rmSync, readdirSync, copyFileSync, lstatSync } from 'fs';
 import { createHash } from "crypto";
 import { platform, type } from "os";
 import { execSync } from "child_process";
@@ -21,7 +21,7 @@ export interface downloadable {
         exclude?: string[]
     },
     executable?: boolean | string,
-
+    dynamic?: boolean
 
 }
 /**
@@ -51,6 +51,9 @@ export function stringify(json: object) {
 const isWin = platform() == "win32";
 
 export class dir {
+    islink() {
+        return lstatSync(this.sysPath()).isSymbolicLink();
+    }
     path: string[];
     constructor(...path: string[]) {
         this.path = [];
@@ -113,6 +116,9 @@ export class dir {
         })
         return res;
     }
+    getName() {
+        return this.path[this.path.length - 1]
+    }
 }
 export class file extends dir {
     dir(): dir {
@@ -132,6 +138,11 @@ export class file extends dir {
             return JSON.parse(readFileSync(this.sysPath()).toString()) as T;
         else throw "No file to read!"
     }
+    /**@override */
+    getName() {
+        return this.name;
+    }
+
     /**@override */
     link(path: string | string[] | file) {
         if (platform() == "win32") {
@@ -216,16 +227,18 @@ export class file extends dir {
                 d.unzip = { file: opt.unzip.file.path, exclude: opt.unzip.exclude };
             }
         }
-
         return d;
     }
 
     static async process(json: downloadable) {
         let f = new this(...json.path, json.name);
+        if (json.dynamic && f.exists()) {
+            return;
+        }
         await f.download(json.url, json.chk);
-        if (json.unzip)
+        if (json.unzip) {
             await f.unzip(new dir(...json.unzip.file), json.unzip.exclude);
-
+        }
         if (json.executable) {
             if (typeof json.executable == "boolean")
                 f.chmod();

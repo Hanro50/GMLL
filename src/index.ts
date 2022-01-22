@@ -9,7 +9,8 @@
  */
 import { initialize } from "./modules/config.js";
 import { type, version } from "os";
-import { options } from "./modules/objects/instance.js";
+import instance, { options } from "./modules/objects/instance.js";
+import { downloadable } from "./modules/objects/files.js";
 
 
 /**
@@ -56,7 +57,9 @@ export interface manifest {
      *Used when pulling files from sources that have incompatibilities with the vanilla launcher methods.
      */
     //Not implemented yet
-    overrides?: Partial<version>
+    overrides?: Partial<version>,
+    //Here to provide usage instructions
+    "_comment"?:string
 }
 
 export interface urlFile {
@@ -119,31 +122,14 @@ export interface version {
          * Timer is reset every time GMLL downloads and saves a file successfully 
          */
         restart_Multiplier?: Number,
-        files: [{
-            /**Path relative to instance folder separated with "/"*/
-            path: string,
-            /**The name of the downloadable file*/
-            url: string,
-            /**Used to unzip files. Ignore the name field if it's not a single file in the zip. */
-            unzip?: {
-                exclude?: string[],
-                /**
-                 * Path relative to instance folder separated with "/"
-                 * The location GMLL should extract the files to. 
-                 * Leave as "/" to denote the root of the instance directory
-                 */
-                path: string
-            }
-            /**Used to check if the downloaded and cloud versions of a file are the same*/
-            size?: number,
-            /**Used to check if the downloaded and cloud versions of a file are the same*/
-            sha1?: string,
-            /**
-             * Dynamic files are expected to experience change and should be ignored if they already exist. 
-             * An example being game settings or world saves. You will be able to override this with a function in the future!
-             */
-            dynamic?: boolean
-        }]
+        /**
+         * The files that need to be download for a set instance
+         */
+        files: downloadable[];
+        /**
+         * Assets to inject into any instance made with this version file.
+         */
+        assets: Partial<assets>;
     }
 }
 
