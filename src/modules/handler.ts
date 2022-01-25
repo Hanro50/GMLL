@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "fs";
+
 import { join } from "path";
 import { emit, getInstances, getlibraries, getMeta, getRuntimes, getVersions, isInitialized } from "./config.js";
 import { runtime } from "./downloader.js";
@@ -8,6 +8,7 @@ import { randomUUID, createHash } from "crypto";
 import { networkInterfaces, userInfo } from "os";
 import { spawn } from "child_process";
 import { file, stringify } from "./objects/files.js";
+import instance from "./objects/instance";
 
 /**
  * Gets the path to an installed version of Java. GMLL manages these versions and they're not provided by the system. 
@@ -15,7 +16,7 @@ import { file, stringify } from "./objects/files.js";
  * @returns The location of the hava executable. 
  */
 export function getJavaPath(java: runtimes = "jre-legacy") {
-    return getRuntimes().getFile( java, "bin", getOS() == "windows" ? "java.exe" : "java");
+    return getRuntimes().getFile(java, "bin", getOS() == "windows" ? "java.exe" : "java");
 }
 /**
  * Compiles all manifest objects GMLL knows about into a giant array. This will include almost all fabric versions and any installed version of forge.
@@ -59,7 +60,7 @@ export function getManifest(version: string) {
 /**Gets the latest release and snapshot builds.*/
 export function getLatest(): { "release": string, "snapshot": string } {
     isInitialized();
-    const file =getMeta().index.getFile("latest.json");
+    const file = getMeta().index.getFile("latest.json");
     if (file.exists())
         return file.toJSON();
     else return { "release": "1.17.1", "snapshot": "21w42a" };
@@ -67,9 +68,9 @@ export function getLatest(): { "release": string, "snapshot": string } {
 /**Used to get a unique ID to recognise this machine. Used by mojang in some snapshot builds.*/
 export function getClientID(forceNew: boolean = false) {
     isInitialized();
-    const path =getMeta().index.getFile("ID.txt");
+    const path = getMeta().index.getFile("ID.txt");
     var data: string;
-    if (!path.exists()|| forceNew) {
+    if (!path.exists() || forceNew) {
         data = stringify({
             Date: Date.now(),
             UUID: randomUUID(),
@@ -90,9 +91,9 @@ export async function installForge(file: string | string[] | null): Promise<void
     await runtime("java-runtime-beta");
 
     const javaPath = getJavaPath("java-runtime-beta");
-    const path =getInstances().getDir( ".forgiac");
-    const logFile = path.getFile( "log.txt")
-    const args: string[] = ["-jar", getlibraries().getFile( "za", "net", "hanro50", "forgiac", "basic", "forgiac.jar").sysPath(), " --log", logFile.sysPath(), "--virtual", getVersions().sysPath(), getlibraries().sysPath(), "--mk_manifest", getMeta().manifests.sysPath()];
+    const path = getInstances().getDir(".forgiac");
+    const logFile = path.getFile("log.txt")
+    const args: string[] = ["-jar", getlibraries().getFile("za", "net", "hanro50", "forgiac", "basic", "forgiac.jar").sysPath(), " --log", logFile.sysPath(), "--virtual", getVersions().sysPath(), getlibraries().sysPath(), "--mk_manifest", getMeta().manifests.sysPath()];
     if (file) {
         file = (file instanceof Array ? join(...file) : file);
         args.push("--installer", file);
@@ -105,5 +106,21 @@ export async function installForge(file: string | string[] | null): Promise<void
     s.stderr.on('data', (chunk) => emit("jvm.stderr", "Forgiac", chunk));
     await new Promise(e => s.on('exit', e));
 
-//    return await new Promise(e => s.on("exit", e));
+    //    return await new Promise(e => s.on("exit", e));
+}
+/**
+ * Imports a modpack off the internet compatible with GMLL via a link.
+ * See the {@link instance.wrap()  wrapper function} to generate the files to upload to your web server to make this work  
+ * @param url the afformentioned link. 
+ */
+export async function importLink(url: string) {
+    const r = await fetch(url + "/.meta/api.json");
+    if (!r.ok)
+        throw "Could not find the api doc";
+    const v = await r.json() as { version: number };
+    if (v.version != 1) {
+        throw "Incompatible version ID detected";
+    }
+    const manifest = getMeta().manifests
+
 }

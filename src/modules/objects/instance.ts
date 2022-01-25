@@ -342,8 +342,8 @@ export default class instance {
         save.getFile("manifest_" + fsSanitiser(name) + ".json").write(manifest);
         delete manifest._comment;
         save.getFile(".meta", "manifest.json").write(manifest);
-        save.getFile(".meta", "manifest.json.sha1").write(save.getFile(".meta", "manifest.json").getHash())
-        save.getFile(".meta", "api.json").write({ version: 1, "_comment": "Here for future proofing incase we need to introduce a breaking change to this system." });
+        //save.getFile(".meta", "manifest.json.sha1").write(save.getFile(".meta", "manifest.json").getHash())
+        save.getFile(".meta", "api.json").write({ name: name, version: 1, sha: save.getFile(".meta", "manifest.json").getHash(), "_comment": "Here for future proofing incase we need to introduce a breaking change to this system." });
         return ver;
     }
 }
