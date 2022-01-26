@@ -2,12 +2,10 @@ import { lawyer, getOS, assetTag, throwErr, classPathResolver, getErr, combine, 
 import { join } from "path";
 import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig } from "./config.js";
 import { processCMD, failCMD, getSelf } from "./internal/get.js"
-//Handles mass file downloads
 import cluster from "cluster";
 const fork = cluster.fork;
 const setupMaster = cluster.setupPrimary || cluster.setupMaster;
 import { cpus, arch } from 'os';
-//import { readFileSync, copyFileSync } from "fs";
 import Fetch from 'node-fetch';
 import { assetIndex, assets, manifest, runtimeFILE, runtimeManifest, runtimeManifests, runtimes, version } from "../index.js";
 import { dir, downloadable, file, mklink } from "./objects/files.js";
@@ -40,7 +38,6 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
     function resolve() {
         var active = true;
         const totalItems = Object.values(temp).length;
-        // console.trace();
         return new Promise<void>(res => {
             const numCPUs = cpus().length;
             emit("download.setup", numCPUs);
@@ -64,17 +61,13 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
                 res(await resolve());
             }, 15000 * it);
 
-            //     const tmpRoot = join(getMeta().temp);
-            //   rmdir(tmpRoot)
-            // mkdir(tmpRoot);
             for (let i = 0; i < arr.length; i++) {
-                //   const tmp = join(tmpRoot, i + ".json");
-                // writeJSON(tmp, arr[i]);
+          
                 let cpu = { length: arr[i].length };
                 for (var i7 = 0; i7 < arr[i].length; i7++) {
                     cpu["gmll_" + i7] = JSON.stringify(arr[i][i7]);
                 }
-               // console.log(cpu)
+
                 const w = fork(cpu);
                 workers.push(w);
                 w.on('message', (msg) => {
@@ -223,16 +216,6 @@ export async function libraries(version: version) {
             if (e.downloads.classifiers && e.natives && e.natives[OS] && e.downloads.classifiers[e.natives[OS]]) {
                 const art = e.downloads.classifiers[e.natives[OS]];
                 var dload2 = getlibraries().getFile(art.path);
-                /*
-                                dload2.unzip = { exclude: e.extract ? e.extract.exclude : undefined, path: natives };
-                                dload2.name = rawPath.pop().toString();
-                                dload2.path = join(...rawPath);
-                
-                                dload2.sha1 = art.sha1;
-                                dload2.url = art.url
-                                dload2.size = art.size;
-                                dload2.key = art.path;
-                                */
                 arr.push(dload2.toDownloadable(art.url, art.path, { sha1: art.sha1, size: art.size }, { unzip: { file: natives, exclude: e.extract ? e.extract.exclude : undefined } }));
             }
 
@@ -244,12 +227,6 @@ export async function libraries(version: version) {
                 }
                 dload = getlibraries().getFile(e.downloads.artifact.path);
                 dload.mkdir()
-                /*
-                 dload.sha1 = e.downloads.artifact.sha1;
-                 dload.url = e.downloads.artifact.url
-                 dload.size = e.downloads.artifact.size;
-                 dload.key = e.downloads.artifact.path;
-                 */
                 arr.push(dload.toDownloadable(e.downloads.artifact.url, e.downloads.artifact.path, { sha1: e.downloads.artifact.sha1, size: e.downloads.artifact.size }));
             }
         } else {
@@ -293,11 +270,6 @@ export async function manifests() {
 
     const mcRuntimes = "https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json";
     const mcVersionManifest = "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json";
-    /*
-     const mcLog4jFix_1 = "https://launcher.mojang.com/v1/objects/dd2b723346a8dcd48e7f4d245f6bf09e98db9696/log4j2_17-111.xml";
-     const mcLog4jFix_2 = "https://launcher.mojang.com/v1/objects/02937d122c86ce73319ef9975b58896fc1b491d1/log4j2_112-116.xml";
- 
- */
     const update = getUpdateConfig();
     const meta = getMeta();
     interface jsloaderInf {
@@ -317,17 +289,11 @@ export async function manifests() {
             meta.index.getFile("latest.json").write(json.latest);
             meta.manifests.getFile("vanilla.json").write(json.versions);
         }
-        /*
-        const a = await Fetch(mcLog4jFix_1);
-        write(join(meta.index, "log4j-fix-1.xml"), await a.text());
-        const ab = await Fetch(mcLog4jFix_2);
-        write(join(meta.index, "log4j-fix-2.xml"), await ab.text());
-        */
     }
     if (update.includes("fabric")) {
         try {
-            const jsgame = (await meta.index.getFile("fabric_game.json").download(fabricVersions)).toJSON<[jsgameInf]>();  //await loadSave<[jsgameInf]>(fabricVersions, join(meta.index, "fabric_game.json"));
-            const jsloader = (await meta.index.getFile("fabric_loader.json").download(fabricLoader)).toJSON<[jsloaderInf]>();  //await loadSave<[jsloaderInf]>(fabricLoader, join(meta.index, "fabric_loader.json"));
+            const jsgame = (await meta.index.getFile("fabric_game.json").download(fabricVersions)).toJSON<[jsgameInf]>(); 
+            const jsloader = (await meta.index.getFile("fabric_loader.json").download(fabricLoader)).toJSON<[jsloaderInf]>(); 
             const result = [];
             jsgame.forEach(game => {
                 const version = game.version;
@@ -342,25 +308,21 @@ export async function manifests() {
                 });
             });
             meta.manifests.getFile("fabric.json").write(result);
-            //writeJSON(join(meta.manifests, "fabric.json"), result);
         } catch (e) {
             console.log(getErr(e));
         }
     }
     if (update.includes("forge")) {
         var libzFolder = getlibraries().getDir(...forgiacPath).mkdir();
-        //   mkdir(libzFolder);
 
         var rURL2 = await Fetch(forgiacSHA);
 
         if (rURL2.status == 200) {
             await libzFolder.getFile("forgiac.jar").download(forgiacURL, { sha1: await rURL2.text() })
-            // await chkFileDownload({ key: "forgiac", name: "forgiac.jar", url: forgiacURL, path: libzFolder, sha1: await rURL2.text() });
         }
     }
     if (update.includes("runtime")) {
         const meta = getMeta();
-        //  const mf =   //  await loadSave(mcRuntimes, join(meta.index, "runtime.json"));
         const manifest = (await meta.index.getFile("runtime.json").download(mcRuntimes)).toJSON<runtimeManifests>();
 
         var platform: "gamecore" | "linux" | "linux-i386" | "mac-os" | "windows-x64" | "windows-x86";
@@ -377,13 +339,7 @@ export async function manifests() {
         for (const key of Object.keys(manifest[platform])) {
             if (manifest[platform][key].length < 1) continue;
             var obj = manifest[platform][key][0] as runtimeManifest;
-            // obj.key = key;
-            // obj.path = meta.runtimes;
-            // obj.name = key + ".json";
             await meta.runtimes.getFile(key + ".json").download(obj.manifest.url, obj.manifest);
-            //if (!compare(obj)) {
-            //     await loadSave(obj.url, join(obj.path, obj.name), true);
-            // }
         }
     }
 

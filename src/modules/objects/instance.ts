@@ -9,6 +9,7 @@ import { assets, launchArgs, manifest, user_type, version as version_type } from
 import { version } from "./version.js";
 
 import { pack, cmd } from '7zip-min';
+import { download } from "../downloader.js";
 
 const defArgs = [
     "-Xms${ram}G",
@@ -47,9 +48,15 @@ export interface options {
     /**Ram in GB */
     ram?: Number,
     /**Custom data your launcher can use */
-    meta?: any
+    meta?: any,
     /**Asset index injection */
-    assets?: assets
+    assets?: assets,
+    /**Define a custom java path. 
+     * @warning It is recommended to let GMLL handle this for you. It is solely changable to achieve parody with the vanilla launcher. 
+     * Changing this can easily break older versions of forge, cause grathical corruption, crash legacy versions of minecraft, cause issues with arm Macs and a whole host of random BS.  
+     * If brought up in the support channels for GMLL, you'll be asked to set this to it's default value if we see that you have changed it.
+     */
+    javaPath?: "default" | string;
 }
 /**
  * An instance is what the name intails. An instance of the game Minecraft containing Minecraft specific data.
@@ -62,6 +69,7 @@ export default class instance {
     meta: any;
     private path: string;
     assets: Partial<assets>;
+    javaPath: "default" | string;
     static get(name: string) {
 
         const json = new file(getMeta().profiles.toString(), fsSanitiser(name + ".json")).toJSON<options>();
@@ -78,6 +86,7 @@ export default class instance {
         this.ram = opt && opt.ram ? opt.ram : 2;
         this.meta = opt && opt.meta ? opt.meta : undefined;
         this.assets = opt && opt.assets ? opt.assets : {};
+        this.javaPath = opt && opt.javaPath ? opt.javaPath : "default";
         new dir(this.getPath()).mkdir();
     }
     /**
@@ -133,6 +142,7 @@ export default class instance {
      */
     save() {
         getMeta().profiles.getFile(fsSanitiser(this.name + ".json")).write(this);
+        return this;
     }
     /**
      * Runs the installer script without launching MC
@@ -142,6 +152,31 @@ export default class instance {
     async install() {
         const version = await this.getVersion();
         await version.install();
+        if (version.json.instance) {
+            let security = false;
+            //patch download files 
+            const insta = version.json.instance;
+            for (var i = 0; i < insta.files.length; i++) {
+                insta.files[i].path = [this.getPath(), ...insta.files[i].path]
+                insta.files[i].path.forEach(e => {
+                    if (e.includes(".."))
+                        security = true;
+                })
+            }
+            if (security) {
+                /**DO NOT REMOVE. 
+                 * 1) This is here to prevent someone escaping the instance sandbox. 
+                 * 2) This stops non standard modpacks causing issues...
+                 * 3) This is here to allow for future security measures
+                 */
+                throw "Security exception!\nFound '..' in file path which is not allowed as it allows one to escape the instance folder"
+            }
+
+            if (insta.assets) {
+                this.assets = combine(insta.assets, this.assets);
+            }
+            await download(insta.files, insta.restart_Multiplier || 1)
+        }
         return version;
     }
     /**
@@ -213,7 +248,7 @@ export default class instance {
             user_properties: JSON.stringify(token.profile.properties || {})
 
         }
-        const javaPath = version.getJavaPath();
+        const javaPath = this.javaPath == "default" ? version.getJavaPath() : new file(this.javaPath);
         const rawJVMargs: launchArgs = defArgs;
         rawJVMargs.push(...(vjson.arguments ? vjson.arguments.jvm : defJVM));
         if (version.manifest.releaseTime) {
@@ -221,11 +256,7 @@ export default class instance {
             if (date < Date.parse("2012-11-18T22:00:00+00:00")) {
                 rawJVMargs.push(...oldJVM);
 
-            }/* else if (date < Date.parse("2021-12-10T08:23:00+00:00")&&date > Date.parse("2013-09-19T15:52:37+00:00")) {
-                const log4j = date < Date.parse( "2017-05-10T11:37:17+00:00") ? "log4j-fix-1.xml" : "log4j-fix-2.xml"
-                cpSync(join(getMeta().index, log4j), join(this.getPath(), log4j));
-                rawJVMargs.push("-Dlog4j.configurationFile=" + log4j);
-            }*/
+            }
         }
         var jvmArgs = parseArguments(args, rawJVMargs);
 
@@ -240,9 +271,6 @@ export default class instance {
             launchCom = launchCom.replace(regex, args[key])
         })
         emit("jvm.start", "Minecraft", this.getPath());
-        //console.log(version.json.libraries)
-        // console.log(launchCom.trim().split(" "))
-        // console.log(javaPath + " " + launchCom)
         const s = spawn(javaPath.sysPath(), launchCom.trim().split(" "), { "cwd": this.getPath() })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
@@ -328,7 +356,8 @@ export default class instance {
             instance: {
                 restart_Multiplier: 1,
                 files: resources,
-                assets: this.assets
+                assets: this.assets,
+                meta: this.meta
             },
             inheritsFrom: this.version,
             id: name
@@ -342,7 +371,6 @@ export default class instance {
         save.getFile("manifest_" + fsSanitiser(name) + ".json").write(manifest);
         delete manifest._comment;
         save.getFile(".meta", "manifest.json").write(manifest);
-        //save.getFile(".meta", "manifest.json.sha1").write(save.getFile(".meta", "manifest.json").getHash())
         save.getFile(".meta", "api.json").write({ name: name, version: 1, sha: save.getFile(".meta", "manifest.json").getHash(), "_comment": "Here for future proofing incase we need to introduce a breaking change to this system." });
         return ver;
     }

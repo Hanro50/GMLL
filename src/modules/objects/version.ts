@@ -86,8 +86,6 @@ export class version {
             this.folder = base.folder;
             this.name = base.name;
         }
-    //    console.log(this.json)
-
         return this.json;
     }
     /**
@@ -133,7 +131,6 @@ export class version {
     }
     getClassPath(mode: "client" | "server" = "client") {
         const cp = [];
-        //cp.push(join("libraries", "inject-1.0-SNAPSHOT.jar"));
         this.json.libraries.forEach(lib => {
             if (mode == "client" && lib.hasOwnProperty("clientreq") && !lib.clientreq) return;
             else if (mode == "server" && !lib.serverreq && lib.hasOwnProperty("clientreq")) return

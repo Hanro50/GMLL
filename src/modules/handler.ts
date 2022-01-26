@@ -2,13 +2,12 @@
 import { join } from "path";
 import { emit, getInstances, getlibraries, getMeta, getRuntimes, getVersions, isInitialized } from "./config.js";
 import { runtime } from "./downloader.js";
-import { getOS } from "./internal/util.js";
-import { manifest, version as _version, runtimes } from "../index.js";
+import { fsSanitiser, getOS } from "./internal/util.js";
+import { manifest, version as _version, runtimes, apiDoc } from "../index.js";
 import { randomUUID, createHash } from "crypto";
 import { networkInterfaces, userInfo } from "os";
 import { spawn } from "child_process";
 import { file, stringify } from "./objects/files.js";
-import instance from "./objects/instance";
 
 /**
  * Gets the path to an installed version of Java. GMLL manages these versions and they're not provided by the system. 
@@ -105,22 +104,25 @@ export async function installForge(file: string | string[] | null): Promise<void
     s.stdout.on('data', (chunk) => emit("jvm.stdout", "Forgiac", chunk));
     s.stderr.on('data', (chunk) => emit("jvm.stderr", "Forgiac", chunk));
     await new Promise(e => s.on('exit', e));
-
-    //    return await new Promise(e => s.on("exit", e));
 }
+import instance from "./objects/instance";
 /**
  * Imports a modpack off the internet compatible with GMLL via a link.
  * See the {@link instance.wrap()  wrapper function} to generate the files to upload to your web server to make this work  
  * @param url the afformentioned link. 
  */
-export async function importLink(url: string) {
+export async function importLink(url: string): Promise<manifest>;
+export async function importLink(url: string, name: string): Promise<instance>;
+export async function importLink(url: string, name?: string): Promise<instance | manifest> {
     const r = await fetch(url + "/.meta/api.json");
     if (!r.ok)
         throw "Could not find the api doc";
-    const v = await r.json() as { version: number };
+    const v = await r.json() as apiDoc;
     if (v.version != 1) {
         throw "Incompatible version ID detected";
     }
-    const manifest = getMeta().manifests
-
+    const manfile = "GMLL_" + fsSanitiser(v.name)
+    const manifest = (await getMeta().manifests.getFile(manfile).download(url + "/.meta/manifest.json", { sha1: v.sha })).toJSON<manifest>();
+    if (!name) return manifest;
+    return new instance({ version: manfile, name: name }).save();
 }

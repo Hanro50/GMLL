@@ -59,7 +59,7 @@ export interface manifest {
     //Not implemented yet
     overrides?: Partial<version>,
     //Here to provide usage instructions
-    "_comment"?:string
+    "_comment"?: string
 }
 
 export interface urlFile {
@@ -76,7 +76,12 @@ export interface artifact extends urlFile {
 export interface assetIndex extends artifact {
     id: string
 }
-
+export interface apiDoc {
+    name: string,
+    version: number,
+    sha: string,
+    "_comment": string
+}
 export interface version {
     arguments?: {
         "game": launchArgs
@@ -121,7 +126,7 @@ export interface version {
          * Formula restart_Multiplier x 15 seconds = amount of time before assuming crash.
          * Timer is reset every time GMLL downloads and saves a file successfully 
          */
-        restart_Multiplier?: Number,
+        restart_Multiplier?: number,
         /**
          * The files that need to be download for a set instance
          */
@@ -130,6 +135,11 @@ export interface version {
          * Assets to inject into any instance made with this version file.
          */
         assets: Partial<assets>;
+        /**
+         * Custom meta data. Here to be used by launcher developers, GMLL won't interact with this!
+         * Usefull for providing more info about a modpack
+         */
+        meta: any
     }
 }
 
