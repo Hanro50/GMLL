@@ -8,7 +8,7 @@ import { randomUUID, createHash } from "crypto";
 import { networkInterfaces, userInfo } from "os";
 import { spawn } from "child_process";
 import { file, stringify } from "./objects/files.js";
-
+import fetch from "node-fetch";
 /**
  * Gets the path to an installed version of Java. GMLL manages these versions and they're not provided by the system. 
  * @param java the name of the Java runtime. Based on the names Mojang gave them.
@@ -121,8 +121,8 @@ export async function importLink(url: string, name?: string): Promise<instance |
     if (v.version != 1) {
         throw "Incompatible version ID detected";
     }
-    const manfile = "GMLL_" + fsSanitiser(v.name)
+    const manfile = fsSanitiser(v.name)+".json"
     const manifest = (await getMeta().manifests.getFile(manfile).download(url + "/.meta/manifest.json", { sha1: v.sha })).toJSON<manifest>();
     if (!name) return manifest;
-    return new instance({ version: manfile, name: name }).save();
+    return new instance({ version: manifest.id, name: name }).save();
 }

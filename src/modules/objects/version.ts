@@ -51,7 +51,7 @@ export class version {
         const file_old = folder_old.getFile(this.manifest.id + ".json");
         if (this.json)
             return this.json;
-        if (this.file.sysPath() != file_old.sysPath() && !this.file.exists() && file_old.exists) {
+        if (this.file.sysPath() != file_old.sysPath() && !this.file.exists() && file_old.exists()) {
             console.log("[GMLL] Cleaning up versions!")
             const data = file_old.toJSON<_version>();
             this.synced = !data.hasOwnProperty("synced") || data.synced;

@@ -150,6 +150,10 @@ export default class instance {
      * @see {@link getVersion} if you just want the instance's version
      */
     async install() {
+        //Making links
+        getlibraries().link([this.getPath(), "libraries"]);
+        getAssets().link([this.getPath(),  "assets"]);
+        
         const version = await this.getVersion();
         await version.install();
         if (version.json.instance) {
@@ -162,6 +166,10 @@ export default class instance {
                     if (e.includes(".."))
                         security = true;
                 })
+                new dir(...insta.files[i].path).mkdir()
+                if (insta.files[i].unzip){
+                    insta.files[i].unzip.file = [this.getPath(), ...insta.files[i].unzip.file]
+                }
             }
             if (security) {
                 /**DO NOT REMOVE. 
@@ -186,7 +194,7 @@ export default class instance {
      * @param resolution Optional information defining the game's resolution
      */
     async launch(token: token, resolution?: { width: string, height: string }) {
-        getlibraries().link([this.getPath(), "libraries"]);
+        
         const version = await this.install();
 
         const cp = version.getClassPath();
@@ -194,7 +202,7 @@ export default class instance {
         var assetRoot = getAssets();
 
         var assetsFile = "assets";
-        assetRoot.link([this.getPath(), assetsFile]);
+        
         let AssetIndex = getAssets().getFile("indexes", (vjson.assets || "pre-1.6") + ".json").toJSON<assets>();
         let assets_index_name = vjson.assetIndex.id;
         if (this.assets.objects) {
@@ -281,6 +289,7 @@ export default class instance {
      * @param name The name that should be used to identify the generated version files
     */
     async wrap(baseUrl: string, save: dir, name: string = ("custom_" + this.name)) {
+        await this.install();
         const seperate = ["resourcepacks", "texturepacks", "mods", "coremods", "shaderpacks"]
         const bunlde = ["saves"]
         const blacklist = ["usercache.json", "realms_persistence.json", "logs"]
@@ -322,7 +331,7 @@ export default class instance {
                     const file = data.getFile(zip)
                     const err = await packAsync(e2.sysPath(), file.sysPath());
                     if (err) console.log(err);
-                    resources.push({ dynamic: e == "saves", unzip: { file: [e, name] }, key: [e, name].join("/"), name: zip, path: [".data"], url: [baseUrl, ".data", zip].join("/"), chk: { sha1: file.getHash(), size: file.getSize() } });
+                    resources.push({ dynamic: e == "saves", unzip: { file: [e] }, key: [e, name].join("/"), name: zip, path: [".data"], url: [baseUrl, ".data", zip].join("/"), chk: { sha1: file.getHash(), size: file.getSize() } });
                 }
             }
         }
@@ -332,10 +341,11 @@ export default class instance {
         const mzip = data.getFile(zip).mkdir();
         const avoid = [...seperate, ...bunlde, ...blacklist]
         if (this.assets) {
-            const assetz = me.getDir("assets").mkdir();
+            const assetz = save.getDir("assets").mkdir();
             Object.values(this.assets.objects).forEach((e) => {
                 assetTag(getAssets().getDir("objects"), e.hash).getFile(e.hash).copyto(assetTag(assetz.getDir("objects"), e.hash).mkdir().getFile(e.hash))
             })
+            console.log(assetz.sysPath())
             const err = await packAsync(assetz.sysPath(), mzip.sysPath());
             if (err) console.log(err);
             assetz.rm();
@@ -350,7 +360,7 @@ export default class instance {
 
             }
         }
-        resources.push({ unzip: { file: mzip.path }, key: "misc", name: "misc.zip", path: [".data", zip], url: [baseUrl, ".data", zip].join("/"), chk: { sha1: mzip.getHash(), size: mzip.getSize() } });
+        resources.push({ unzip: { file:[] }, key: "misc", name: "misc.zip", path: [".data"], url: [baseUrl, ".data", zip].join("/"), chk: { sha1: mzip.getHash(), size: mzip.getSize() } });
 
         const ver: Partial<version_type> = {
             instance: {

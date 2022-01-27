@@ -51,6 +51,13 @@ export function stringify(json: object) {
 const isWin = platform() == "win32";
 
 export class dir {
+
+    isRelative() {
+        if (this.path.length<1) return true
+        if (isWin) return !this.path[0].includes(":");
+        return !this.path[0].startsWith("/");
+    }
+
     islink() {
         return lstatSync(this.sysPath()).isSymbolicLink();
     }
@@ -73,6 +80,9 @@ export class dir {
 
     }
     sysPath() {
+        if (this.isRelative()) {
+            return join(process.cwd(), ...this.path);
+        }
         return join(...this.path);
     }
     mkdir() {
@@ -134,9 +144,10 @@ export class file extends dir {
         return readFileSync(this.sysPath()).toString();
     }
     toJSON<T>() {
-        if (existsSync(this.sysPath()))
+        if (this.exists())
             return JSON.parse(readFileSync(this.sysPath()).toString()) as T;
-        else throw "No file to read!"
+        console.trace();
+        throw "No file to read!"
     }
     /**@override */
     getName() {
@@ -153,7 +164,7 @@ export class file extends dir {
     }
     /**@override */
     sysPath() {
-        return join(...this.path, this.name);
+        return join(super.sysPath(), this.name);
     }
 
     /**@override */
