@@ -353,5 +353,6 @@ While GMLL's modpack api supports both forge (via <a href="https://github.com/Ha
 
 It should be mentioned that for GMLL to wrap a forge based modpack. The forge installer will need to be provided as an input. Ignoring this field will treat the modpack as a fabric modpack. While this can still work, you'll need to instruct your user to manually install forge. The reason why you do not need to manually install fabric versions is because GMLL will automatically generate the manifest files needed to install nearly any version of fabric.   
 
+
 # WIP Docs
 Still being worked on actively. Stay tuned.
