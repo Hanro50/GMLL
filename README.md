@@ -39,7 +39,7 @@ init().then(...);
 import { init } from "gmll";
 await init();
 ```
-# Quick start
+# Start here
 ## Import the module
 GMLL contains a commonJS and a ES6 versions of every internal component
 ```js
@@ -100,7 +100,7 @@ gmll.init().then(async () => {
     int.launch(token);
 })
 ```
-# Instances 
+# Handling of instances 
 An instance contains all the local files of a launcher profile. Your texture, resource, mod and data packs are all contained within a folder declared by an "instance". GMLL has an instance manager built into it and can easily keep track of multiple instances for you. 
 
 ## Instance constructor
@@ -168,8 +168,7 @@ i777.install();
 # Warning!
 From the point forward. It will be assumed that you have a basic understanding of how JavaScript works. Not every element will be showed like it was with the previous documentation!
 
-
-# config
+# Configuration 
 ```js
 //ES6 
 import * as config from "gmll/config";
@@ -290,20 +289,69 @@ export function initializationListener(func: () => void | Promise<void>):void;
 export async function initialize();
 ```
 
-# handler
-```js
-//ES6 
-import * as config from "gmll/handler";
-//commonJS
-const handler = require("gmll/handler");
-//fallback 
-const handler = gmll.handler; 
+# modpacks 
+```ts
+//part of gmll/objects/instance
+async function wrap(baseUrl: string, save: dir, name?: string , forge?: { jar: file });
+...
+//part of gmll/handler
+async function importLink(url: string): Promise<manifest>;
+async function importLink(url: string, name: string): Promise<instance>;
+async function importLink(url: string, name?: string): Promise<instance | manifest> 
 ```
-The handler object contains a fair amount of static functions used by GMLL. There are some lower level functions included here that are used by different parts of GMLL internally. 
+GMLL has a built in modpack API it can use to obtain and install modpacks. It also has a function to manually wrap up instances into the required format you need to upload said modpack to a webserver somewhere. Modpacks can still be manually built by hand since the installer can do more then the wrapper will give you access to. 
 
-## manifests 
+## Basic setup
+### Creation:
 ```js
+//Create an instance with the settings you want
+var int = new gmll.instance({ version: "1.18.1" })
+//Customise the asset index for that version like so
+int.setIcon("icon_32x32.png", "icon_16x16.png");
+//Finally create your modpack - this example is what to do for fabric and vanilla packs
+await int.wrap(
+    /**The URL link to the base folder of this modpacks final resting spot*/
+    "https://www.hanro50.net.za/test", 
+    /**The output directory where you want GMLL to compile the files to.*/ 
+    new dir(".wrap"),
+    /**The name of your pack.*/ 
+    "MyAmazingPack"
+    )
+...
+//Alternatively. Here's what to do for Forge based packs
+await int.wrap(
+    /**The URL link to the base folder of this modpacks final resting spot*/
+    "https://www.hanro50.net.za/test", 
+    /**The output directory where you want GMLL to compile the files to.*/ 
+    new dir(".wrap"),
+    /**The name of your pack.*/ 
+    "MyAmazingPack",
+    /**This is a bit more complex here for future proofing. This is just a path to your forge jar*/
+    {jar: new file("path/to/installer/jar")}))
 ```
+### Importing:
+```js
+const e = await fastLaunch("raw", console.log);
+const token = gmll.wrapper.msmc2token(e);
+
+/**This will only install the manifest files for a custom modpack. Making the created version selectable as the base of a new instance.*/
+(await gmll.handler.importLink(
+    /**The link leading to a modpack. Fun fact, this link actually leads to a demo of this whole system*/
+    "https://www.hanro50.net.za/test")).launch(token);
+...
+/**This version of the function will go ahead and create an instance with the name provided.*/
+(await gmll.handler.importLink(
+    /**The link leading to a modpack. Fun fact, this link actually leads to a demo of this whole system*/
+    "https://www.hanro50.net.za/test",
+    /**A custom name for the new instance*/
+    "launcherTest")).launch(token);
+```
+
+## A tale of two modloaders...
+
+While GMLL's modpack api supports both forge (via <a href="https://github.com/Hanro50/Forgiac/">forgiac</a>) and fabric. Fabric is recommended over forge due to a lesser chance of breaking due to changes made to forge by the forge developers. 
+
+It should be mentioned that for GMLL to wrap a forge based modpack. The forge installer will need to be provided as an input. Ignoring this field will treat the modpack as a fabric modpack. While this can still work, you'll need to instruct your user to manually install forge. The reason why you do not need to manually install fabric versions is because GMLL will automatically generate the manifest files needed to install nearly any version of fabric.   
 
 # WIP Docs
 Still being worked on actively. Stay tuned.

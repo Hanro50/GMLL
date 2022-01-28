@@ -139,7 +139,11 @@ export interface version {
          * Custom meta data. Here to be used by launcher developers, GMLL won't interact with this!
          * Usefull for providing more info about a modpack
          */
-        meta: any
+        meta: any;
+        /**
+         * Used to locate the forge installer
+         */
+        forge?: { installer: string[] };
     }
 }
 

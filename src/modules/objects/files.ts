@@ -111,6 +111,7 @@ export class dir {
     }
     rm() {
         rmSync(this.sysPath(), { recursive: true, force: true })
+        return this;
     }
     exists() {
         return existsSync(this.sysPath());

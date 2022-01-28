@@ -85,7 +85,7 @@ export function getClientID(forceNew: boolean = false) {
     return data;
 }
 /**Installs a provided version of forge from a provided installer. Only works with forge*/
-export async function installForge(file: string | string[] | null): Promise<void> {
+export async function installForge(file?: file): Promise<void> {
     isInitialized();
     await runtime("java-runtime-beta");
 
@@ -94,8 +94,7 @@ export async function installForge(file: string | string[] | null): Promise<void
     const logFile = path.getFile("log.txt")
     const args: string[] = ["-jar", getlibraries().getFile("za", "net", "hanro50", "forgiac", "basic", "forgiac.jar").sysPath(), " --log", logFile.sysPath(), "--virtual", getVersions().sysPath(), getlibraries().sysPath(), "--mk_manifest", getMeta().manifests.sysPath()];
     if (file) {
-        file = (file instanceof Array ? join(...file) : file);
-        args.push("--installer", file);
+        args.push("--installer", file.sysPath());
     }
 
     path.mkdir();
@@ -121,7 +120,7 @@ export async function importLink(url: string, name?: string): Promise<instance |
     if (v.version != 1) {
         throw "Incompatible version ID detected";
     }
-    const manfile = fsSanitiser(v.name)+".json"
+    const manfile = fsSanitiser(v.name) + ".json"
     const manifest = (await getMeta().manifests.getFile(manfile).download(url + "/.meta/manifest.json", { sha1: v.sha })).toJSON<manifest>();
     if (!name) return manifest;
     return new instance({ version: manifest.id, name: name }).save();

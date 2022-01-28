@@ -3,13 +3,13 @@ import { join } from "path";
 import { assetTag, combine, defJVM, fsSanitiser, oldJVM, parseArguments, processAssets, throwErr } from "../internal/util.js";
 import { dir, downloadable, file } from "./files.js";
 import { cpus, type } from "os";
-import { getClientID, getLatest } from "../handler.js";
-import { emit, getAssets, getLauncherVersion, getlibraries, getMeta, getNatives, resolvePath } from "../config.js";
+import { getClientID, getJavaPath, getLatest, installForge } from "../handler.js";
+import { emit, getAssets, getInstances, getLauncherVersion, getlibraries, getMeta, getNatives, resolvePath } from "../config.js";
 import { assets, launchArgs, manifest, user_type, version as version_type } from "../../index.js";
 import { version } from "./version.js";
 
 import { pack, cmd } from '7zip-min';
-import { download } from "../downloader.js";
+import { download, runtime } from "../downloader.js";
 
 const defArgs = [
     "-Xms${ram}G",
@@ -128,6 +128,10 @@ export default class instance {
     getPath() {
         return resolvePath(this.path);
     }
+
+    getDir() {
+        return new dir(this.getPath());
+    }
     /**
      * 
      * @returns An object containing the version data this instance is based on
@@ -145,6 +149,13 @@ export default class instance {
         return this;
     }
     /**
+     * This will tell GMLL to rerun some of the install scripts it normally skips upon a second "install" call.
+     * This won't reset worlds or rewrite dynamic files. Use this if, for instance, forge failed to install. 
+     */
+    reinstall() {
+        this.getDir().getFile(".installed.txt").rm();
+    }
+    /**
      * Runs the installer script without launching MC
      * @returns The instance's version object. 
      * @see {@link getVersion} if you just want the instance's version
@@ -152,11 +163,12 @@ export default class instance {
     async install() {
         //Making links
         getlibraries().link([this.getPath(), "libraries"]);
-        getAssets().link([this.getPath(),  "assets"]);
-        
+        getAssets().link([this.getPath(), "assets"]);
+
         const version = await this.getVersion();
         await version.install();
         if (version.json.instance) {
+            const chk = this.getDir().getFile(".installed.txt");
             let security = false;
             //patch download files 
             const insta = version.json.instance;
@@ -167,7 +179,7 @@ export default class instance {
                         security = true;
                 })
                 new dir(...insta.files[i].path).mkdir()
-                if (insta.files[i].unzip){
+                if (insta.files[i].unzip) {
                     insta.files[i].unzip.file = [this.getPath(), ...insta.files[i].unzip.file]
                 }
             }
@@ -180,11 +192,24 @@ export default class instance {
                 throw "Security exception!\nFound '..' in file path which is not allowed as it allows one to escape the instance folder"
             }
 
-            if (insta.assets) {
-                this.assets = combine(insta.assets, this.assets);
-            }
             await download(insta.files, insta.restart_Multiplier || 1)
+            if (!chk.exists()) {
+                if (insta.meta)
+                    this.meta = combine(this.meta, insta.meta);
+                if (insta.assets)
+                    this.assets = combine(insta.assets, this.assets);
+                if (insta.forge) {
+                    const fFile = new file(this.getPath(), ...insta.forge.installer)
+                    if (!fFile.exists()) {
+                        throw "Cannot find forge installer"
+                    }
+                    await installForge(fFile);
+                }
+
+            }
+            chk.write(Date.now().toString());
         }
+
         return version;
     }
     /**
@@ -194,7 +219,7 @@ export default class instance {
      * @param resolution Optional information defining the game's resolution
      */
     async launch(token: token, resolution?: { width: string, height: string }) {
-        
+
         const version = await this.install();
 
         const cp = version.getClassPath();
@@ -202,7 +227,7 @@ export default class instance {
         var assetRoot = getAssets();
 
         var assetsFile = "assets";
-        
+
         let AssetIndex = getAssets().getFile("indexes", (vjson.assets || "pre-1.6") + ".json").toJSON<assets>();
         let assets_index_name = vjson.assetIndex.id;
         if (this.assets.objects) {
@@ -288,7 +313,7 @@ export default class instance {
      * @param save The file GMLL will generate the final files on. 
      * @param name The name that should be used to identify the generated version files
     */
-    async wrap(baseUrl: string, save: dir, name: string = ("custom_" + this.name)) {
+    async wrap(baseUrl: string, save: dir, name: string = ("custom_" + this.name), forge?: { jar: file }) {
         await this.install();
         const seperate = ["resourcepacks", "texturepacks", "mods", "coremods", "shaderpacks"]
         const bunlde = ["saves"]
@@ -360,7 +385,7 @@ export default class instance {
 
             }
         }
-        resources.push({ unzip: { file:[] }, key: "misc", name: "misc.zip", path: [".data"], url: [baseUrl, ".data", zip].join("/"), chk: { sha1: mzip.getHash(), size: mzip.getSize() } });
+        resources.push({ unzip: { file: [] }, key: "misc", name: "misc.zip", path: [".data"], url: [baseUrl, ".data", zip].join("/"), chk: { sha1: mzip.getHash(), size: mzip.getSize() } });
 
         const ver: Partial<version_type> = {
             instance: {
@@ -369,14 +394,50 @@ export default class instance {
                 assets: this.assets,
                 meta: this.meta
             },
-            inheritsFrom: this.version,
+
             id: name
         }
         const verfile = save.getDir(".meta").mkdir().getFile("version.json");
+
+
+        let Fversion = this.version;
+
+        if (forge) {
+            await runtime("java-runtime-beta");
+
+            const javaPath = getJavaPath("java-runtime-beta");
+            const path = save.getDir(".forgiac").rm().mkdir();
+            const manifest = path.getDir("manifest").mkdir();
+            const args: string[] = ["-jar", getlibraries().getFile("za", "net", "hanro50", "forgiac", "basic", "forgiac.jar").sysPath(), "--.minecraft", path.sysPath(), "--mk_manifest", manifest.sysPath(), "--installer", forge.jar.sysPath()];
+
+            path.mkdir();
+            emit("jvm.start", "Forgiac", path.sysPath());
+            const s = spawn(javaPath.sysPath(), args, { "cwd": path.sysPath() })
+            s.stdout.on('data', (chunk) => emit("jvm.stdout", "Forgiac", chunk));
+            s.stderr.on('data', (chunk) => emit("jvm.stderr", "Forgiac", chunk));
+            await new Promise(e => s.on('exit', e));
+
+            const forgiman = manifest.ls()
+            if (forgiman.length < 1) {
+                throw "Manifest file not found?"
+            }
+            const forgi = forgiman[0]
+            if (!(forgi instanceof file)) {
+                throw "Manifest file is a directory?"
+            }
+            const forgePath = save.getDir("forge").mkdir();
+            Fversion = forgi.toJSON<manifest>().id;
+            forge.jar.copyto(forgePath.getFile(forge.jar.getName()));
+            ver.instance.files.push({ key: forge.jar.getName(), name: forge.jar.getName(), path: ["forge"], url: [baseUrl, "forge", forge.jar.getName()].join("/"), chk: { sha1: forge.jar.getHash(), size: forge.jar.getSize() } })
+            ver.instance.forge = { installer: ["forge", forge.jar.getName()] };
+
+            path.rm();
+        }
+        ver.inheritsFrom = Fversion;
         verfile.write(ver);
 
         const manifest: manifest = {
-            id: name, type: "custom", sha1: verfile.getHash(), base: this.version, url: baseUrl + "/" + ".meta/version.json", "_comment": "Drop this into gmll's manifest folder",
+            id: name, type: "custom", sha1: verfile.getHash(), base: Fversion, url: baseUrl + "/" + ".meta/version.json", "_comment": "Drop this into gmll's manifest folder",
         }
         save.getFile("manifest_" + fsSanitiser(name) + ".json").write(manifest);
         delete manifest._comment;
