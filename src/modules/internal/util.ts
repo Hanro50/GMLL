@@ -150,7 +150,7 @@ export function combine(ob1: any, ob2: any) {
     return ob1;
 }
 
-export function processAssets(assetIndex:assets){
+export function processAssets(assetIndex: assets) {
     if (assetIndex.virtual || assetIndex.map_to_resources) {
         const root = getAssets();
         const file = root.getDir("legacy", assetIndex.virtual ? "virtual" : "resources").mkdir();

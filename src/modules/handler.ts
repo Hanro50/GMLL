@@ -1,5 +1,4 @@
 
-import { join } from "path";
 import { emit, getInstances, getlibraries, getMeta, getRuntimes, getVersions, isInitialized } from "./config.js";
 import { runtime } from "./downloader.js";
 import { fsSanitiser, getOS } from "./internal/util.js";
@@ -9,6 +8,8 @@ import { networkInterfaces, userInfo } from "os";
 import { spawn } from "child_process";
 import { file, stringify } from "./objects/files.js";
 import fetch from "node-fetch";
+import instance from "./objects/instance.js";
+
 /**
  * Gets the path to an installed version of Java. GMLL manages these versions and they're not provided by the system. 
  * @param java the name of the Java runtime. Based on the names Mojang gave them.
@@ -104,7 +105,6 @@ export async function installForge(file?: file): Promise<void> {
     s.stderr.on('data', (chunk) => emit("jvm.stderr", "Forgiac", chunk));
     await new Promise(e => s.on('exit', e));
 }
-import instance from "./objects/instance";
 /**
  * Imports a modpack off the internet compatible with GMLL via a link.
  * See the {@link instance.wrap()  wrapper function} to generate the files to upload to your web server to make this work  

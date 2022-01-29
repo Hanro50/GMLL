@@ -226,7 +226,7 @@ export default class instance {
         var vjson = await version.getJSON();
         var assetRoot = getAssets();
 
-        var assetsFile = "assets";
+        var assetsFile = this.getDir().getDir("assets");
 
         let AssetIndex = getAssets().getFile("indexes", (vjson.assets || "pre-1.6") + ".json").toJSON<assets>();
         let assets_index_name = vjson.assetIndex.id;
@@ -239,8 +239,8 @@ export default class instance {
 
         if (AssetIndex.virtual || AssetIndex.map_to_resources) {
             assetRoot = getAssets().getDir("legacy", AssetIndex.virtual ? "virtual" : "resources");
-            assetsFile = "resources"
-            assetRoot.link([this.getPath(), assetsFile]);
+            assetsFile = this.getDir().getFile("resources").rm();
+            assetRoot.link(assetsFile);
         }
 
         const classpath_separator = type() == "Windows_NT" ? ";" : ":";
@@ -284,13 +284,13 @@ export default class instance {
         const javaPath = this.javaPath == "default" ? version.getJavaPath() : new file(this.javaPath);
         const rawJVMargs: launchArgs = defArgs;
         rawJVMargs.push(...(vjson.arguments ? vjson.arguments.jvm : defJVM));
-        if (version.manifest.releaseTime) {
-            const date = Date.parse(version.manifest.releaseTime);
-            if (date < Date.parse("2012-11-18T22:00:00+00:00")) {
-                rawJVMargs.push(...oldJVM);
+        // if (version.manifest.releaseTime) {
+        //    const date = Date.parse(version.manifest.releaseTime);
+        //   if (date < Date.parse("2012-11-18T22:00:00+00:00")) {
+        ////     rawJVMargs.push(...oldJVM);
 
-            }
-        }
+        //  }
+        //  }
         var jvmArgs = parseArguments(args, rawJVMargs);
 
         let gameArgs = vjson.arguments ? parseArguments(args, vjson.arguments.game) : "";

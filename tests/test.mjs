@@ -12,7 +12,7 @@ installForge();
 
 const token = wrapper.msmc2token(await fastLaunch("raw", console.log));
 
-const i = new instance({ version: "1.6.4-Forge9.11.1.1345" });
+const i = new instance({ version: "b1.8" });
 i.save();
 i.launch(token);
 
