@@ -109,7 +109,6 @@ export function runtime(runtime: runtimes) {
     var arr = [];
     const lzma = getRuntimes().getDir("lzma");
     lzma.mkdir();
-    let linkz: { target: string, path: string }[] = [];
     Object.keys(json).forEach(key => {
         const obj = json[key];
         var _file = getRuntimes().getFile(runtime, ...key.split("/"));
@@ -142,12 +141,11 @@ export function runtime(runtime: runtimes) {
                 }
 
 
-                arr.push(_file.toDownloadable(url, name, chk, opt));
+                arr.push(_file.toDownloadable(url, key, chk, opt));
                 break;
             case "link":
                 _file.mkdir();
                 if (getOS() != "windows") {
-
                     mklink(join(..._file.path, obj.target), _file.sysPath());
                 }
                 break;
@@ -261,8 +259,8 @@ export async function libraries(version: version) {
 
 
 export async function manifests() {
-    const forgiacURL = "https://github.com/Hanro50/Forgiac/releases/download/1.7-SNAPSHOT/Forgiac-basic-1.7-SNAPSHOT.jar";
-    const forgiacSHA = "https://github.com/Hanro50/Forgiac/releases/download/1.7-SNAPSHOT/Forgiac-basic-1.7-SNAPSHOT.jar.sha1";
+    const forgiacURL = "https://github.com/Hanro50/Forgiac/releases/download/1.8-SNAPSHOT/basic-1.8-SNAPSHOT.jar";
+    const forgiacSHA = "https://github.com/Hanro50/Forgiac/releases/download/1.8-SNAPSHOT/basic-1.8-SNAPSHOT.jar.sha1";
     const forgiacPath = ["za", "net", "hanro50", "forgiac", "basic"];
 
     const fabricLoader = "https://meta.fabricmc.net/v2/versions/loader/";
@@ -312,6 +310,7 @@ export async function manifests() {
             console.log(getErr(e));
         }
     }
+  
     if (update.includes("forge")) {
         var libzFolder = getlibraries().getDir(...forgiacPath).mkdir();
 
@@ -326,14 +325,13 @@ export async function manifests() {
         const manifest = (await meta.index.getFile("runtime.json").download(mcRuntimes)).toJSON<runtimeManifests>();
 
         var platform: "gamecore" | "linux" | "linux-i386" | "mac-os" | "windows-x64" | "windows-x86";
-
         switch (getOS()) {
             case ("osx"):
                 platform = "mac-os"; break;
             case ("linux"):
                 platform = arch() == "x64" ? "linux" : "linux-i386"; break;
             case ("windows"):
-                platform = arch() == "x64" ? "windows-x64" : "windows-x86"; break;
+                platform = arch() == "x64"|| process.env.hasOwnProperty('PROCESSOR_ARCHITEW6432') ? "windows-x64" : "windows-x86"; break;
             default: throw ("Unsupported operating system");
         }
         for (const key of Object.keys(manifest[platform])) {

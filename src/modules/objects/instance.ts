@@ -164,11 +164,14 @@ export default class instance {
         //Making links
         getlibraries().link([this.getPath(), "libraries"]);
         getAssets().link([this.getPath(), "assets"]);
-
         const version = await this.getVersion();
-        await version.install();
+        console.log(version.json)
         if (version.json.instance) {
             const chk = this.getDir().getFile(".installed.txt");
+
+            if (version.mergeFailure())
+                chk.rm()
+
             let security = false;
             //patch download files 
             const insta = version.json.instance;
@@ -209,6 +212,7 @@ export default class instance {
             }
             chk.write(Date.now().toString());
         }
+        await version.install();
 
         return version;
     }
@@ -349,7 +353,7 @@ export default class instance {
             for (var k = 0; k < ls.length; k++) {
                 console.log(3)
                 const e2 = ls[k]
-                if (!e2.islink() && e2 instanceof dir) {
+                if (!e2.islink() && e2 instanceof dir && e2.exists()) {
                     console.log(4)
                     const name = e2.getName()
                     const zip = e + "_" + k + ".zip";

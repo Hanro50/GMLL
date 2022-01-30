@@ -20,6 +20,7 @@ export class version {
     file: file;
     synced: boolean;
     override?: _assets;
+    private _mergeFailure: boolean;
 
     /**Gets a set version based on a given manifest or version string. Either do not have to be contained within the manifest database. */
     static async get(manifest: string | manifest): Promise<version> {
@@ -34,7 +35,7 @@ export class version {
      */
     private constructor(manifest: string | manifest) {
         this.manifest = typeof manifest == "string" ? getManifest(manifest) : manifest;
-      //  console.log(this.manifest)
+        //  console.log(this.manifest)
         this.json;
         this.name = this.manifest.base || this.manifest.id;
         this.folder = getVersions().getDir(this.name);
@@ -42,31 +43,40 @@ export class version {
         this.synced = true;
         this.folder.mkdir();
     }
+    mergeFailure() {
+        return this._mergeFailure;
+    }
     /**
      * @returns Gets the version json file. 
      * @see {@link json} for synchronious way to access this. The {@link get} method already calls this function and saves it accordingly. 
      */
     async getJSON(): Promise<_version> {
+
         const folder_old = getVersions().getDir(this.manifest.id);
         const file_old = folder_old.getFile(this.manifest.id + ".json");
-        if (this.json)
+        if (this.json && !this._mergeFailure)
             return this.json;
+        this._mergeFailure = false;
         if (this.file.sysPath() != file_old.sysPath() && !this.file.exists() && file_old.exists()) {
             console.log("[GMLL] Cleaning up versions!")
-            const data = file_old.toJSON<_version>();
-            this.synced = !data.hasOwnProperty("synced") || data.synced;
+            this.json = file_old.toJSON<_version>();
+            this.synced = !this.json.hasOwnProperty("synced") || this.json.synced;
             if (this.synced) {
                 copyFileSync(file_old.sysPath(), this.file.sysPath());
                 folder_old.rm();
             } else {
-                console.log("[GMLL] Detected synced is false. Aborting sync attempted");
-                const base = (new version(this.json.inheritsFrom));
-                this.json = combine(await base.getJSON(), this.json);
-                this.json = data
-                this.name = data.id;
-                this.folder = folder_old;
-                this.file = file_old;
-            //    console.log(this.json)
+                try {
+                    console.log("[GMLL] Detected synced is false. Aborting sync attempted");
+                    const base = (new version(this.json.inheritsFrom));
+                    this.json = combine(await base.getJSON(), this.json);
+                    this.json = this.json
+                    this.name = this.json.id;
+                    this.folder = folder_old;
+                    this.file = file_old;
+                } catch (e) {
+                    console.error("[GMLL] Dependency merge failed.");
+                    this._mergeFailure = true;
+                }
                 return this.json;
             }
         }
@@ -79,12 +89,16 @@ export class version {
                 ? "Unknown version, please check spelling of given version ID"
                 : "Version json is missing for this version!");
         }
-      //  console.log(this.json, this.manifest)
         if (this.json.inheritsFrom || this.manifest.base) {
-            const base = (new version(this.json.inheritsFrom || this.manifest.base));
-            this.json = combine(await base.getJSON(), this.json);
-            this.folder = base.folder;
-            this.name = base.name;
+            try {
+                const base = (new version(this.json.inheritsFrom || this.manifest.base));
+                this.json = combine(await base.getJSON(), this.json);
+                this.folder = base.folder;
+                this.name = base.name;
+            } catch (e) {
+                console.error("[GMLL]: Dependency merge failed.");
+                this._mergeFailure = true;
+            }
         }
         return this.json;
     }
@@ -121,6 +135,12 @@ export class version {
     }
 
     async install() {
+        if (this._mergeFailure) {
+            this._mergeFailure = false;
+            console.log("[GMLL]: Correcting earlier dependency merge failure.");
+            delete this.json;
+            this.json = await this.getJSON();
+        }
         await this.getAssets();
         await this.getLibs();
         await this.getJar("client", this.folder.getFile(this.name + ".jar"));

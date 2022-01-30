@@ -1,7 +1,7 @@
 
 import { emit, getInstances, getlibraries, getMeta, getRuntimes, getVersions, isInitialized } from "./config.js";
 import { runtime } from "./downloader.js";
-import { fsSanitiser, getOS } from "./internal/util.js";
+import { fsSanitiser, getOS, throwErr } from "./internal/util.js";
 import { manifest, version as _version, runtimes, apiDoc } from "../index.js";
 import { randomUUID, createHash } from "crypto";
 import { networkInterfaces, userInfo } from "os";
@@ -97,13 +97,16 @@ export async function installForge(file?: file): Promise<void> {
     if (file) {
         args.push("--installer", file.sysPath());
     }
-
+    console.log(args)
     path.mkdir();
     emit("jvm.start", "Forgiac", path.sysPath());
     const s = spawn(javaPath.sysPath(), args, { "cwd": path.sysPath() })
     s.stdout.on('data', (chunk) => emit("jvm.stdout", "Forgiac", chunk));
     s.stderr.on('data', (chunk) => emit("jvm.stderr", "Forgiac", chunk));
-    await new Promise(e => s.on('exit', e));
+    const err = await new Promise(e => s.on('exit', e));
+    if (err != 0) {
+        throwErr("Forge failed to install. Forgiac exited with an error code of " + err)
+    }
 }
 /**
  * Imports a modpack off the internet compatible with GMLL via a link.
@@ -122,6 +125,7 @@ export async function importLink(url: string, name?: string): Promise<instance |
     }
     const manfile = fsSanitiser(v.name) + ".json"
     const manifest = (await getMeta().manifests.getFile(manfile).download(url + "/.meta/manifest.json", { sha1: v.sha })).toJSON<manifest>();
+    console.log(manfile)
     if (!name) return manifest;
     return new instance({ version: manifest.id, name: name }).save();
 }

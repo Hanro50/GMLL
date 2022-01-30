@@ -53,7 +53,7 @@ const isWin = platform() == "win32";
 export class dir {
 
     isRelative() {
-        if (this.path.length<1) return true
+        if (this.path.length < 1) return true
         if (isWin) return !this.path[0].includes(":");
         return !this.path[0].startsWith("/");
     }
@@ -120,11 +120,14 @@ export class dir {
         return this.path.join("/");
     }
     ls() {
+
         let res: Array<dir | file> = [];
-        readdirSync(this.sysPath()).forEach(e => {
-            const stat = statSync(join(this.sysPath(), e));
-            res.push(stat.isFile() ? this.getFile(e) : this.getDir(e));
-        })
+        if (this.exists()) {
+            readdirSync(this.sysPath()).forEach(e => {
+                const stat = statSync(join(this.sysPath(), e));
+                res.push(stat.isFile() ? this.getFile(e) : this.getDir(e));
+            })
+        }
         return res;
     }
     getName() {
