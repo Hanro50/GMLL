@@ -148,13 +148,14 @@ export default class instance {
         }
     }
     /**
-     * 
      * @returns A absolute path leading to this instance
      */
     getPath() {
         return resolvePath(this.path);
     }
-
+  /**
+     * @returns A absolute path leading to this instance in the internal format GMLL uses as a file format
+     */
     getDir() {
         return new dir(this.getPath());
     }
@@ -336,7 +337,8 @@ export default class instance {
      * @param save The file GMLL will generate the final files on. 
      * @param name The name that should be used to identify the generated version files
     */
-    async wrap(baseUrl: string, save: dir, name: string = ("custom_" + this.name), forge?: { jar: file }) {
+    async wrap(baseUrl: string, save: dir | string, name: string = ("custom_" + this.name), forge?: { jar: file | string }) {
+        if (typeof save == "string") save = new dir(save);
         await this.install();
         const seperate = ["resourcepacks", "texturepacks", "mods", "coremods", "shaderpacks"]
         const bunlde = ["saves"]
@@ -349,6 +351,7 @@ export default class instance {
             console.log(d.exists())
             if (d.exists()) {
                 d.ls().forEach(e => {
+                    if (typeof save == "string") save = new dir(save);
                     if (e instanceof file) {
                         const f = new file(save.javaPath(), ...path, e.name)
                         e.copyto(f.mkdir())
@@ -422,6 +425,8 @@ export default class instance {
         const verfile = save.getDir(".meta").mkdir().getFile("version.json");
         let Fversion = this.version;
         if (forge) {
+            if (typeof forge.jar == "string") forge.jar = new file(forge.jar);
+
             await runtime("java-runtime-beta");
 
             const javaPath = getJavaPath("java-runtime-beta");

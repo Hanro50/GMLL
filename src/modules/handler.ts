@@ -91,7 +91,8 @@ export function getClientID(forceNew: boolean = false) {
     return data;
 }
 /**Installs a provided version of forge from a provided installer. Only works with forge*/
-export async function installForge(file?: file): Promise<void> {
+export async function installForge(forgeInstallerJar?: file | string): Promise<void> {
+    if (typeof forgeInstallerJar == "string") forgeInstallerJar = new file(forgeInstallerJar);
     isInitialized();
     await runtime("java-runtime-beta");
 
@@ -99,8 +100,8 @@ export async function installForge(file?: file): Promise<void> {
     const path = getInstances().getDir(".forgiac");
     const logFile = path.getFile("log.txt")
     const args: string[] = ["-jar", getlibraries().getFile("za", "net", "hanro50", "forgiac", "basic", "forgiac.jar").sysPath(), " --log", logFile.sysPath(), "--virtual", getVersions().sysPath(), getlibraries().sysPath(), "--mk_manifest", getMeta().manifests.sysPath()];
-    if (file) {
-        args.push("--installer", file.sysPath());
+    if (forgeInstallerJar) {
+        args.push("--installer", forgeInstallerJar.sysPath());
     }
     console.log(args)
     path.mkdir();

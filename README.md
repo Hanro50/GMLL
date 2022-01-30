@@ -201,7 +201,7 @@ This is primarily due to this module controlling where GMLL will look and pull f
 ## set and get functions
 ### Root
 ```ts
-function setRoot(_root: dir): void;
+function setRoot(_root: dir | string): void;
 ```
 <b style="color:red">Warning:</b> using "setRoot" will mark gmll as uninitialized. It will also reset all other filepaths to their default values based on the given root path. This call is used internally to set the initial filepaths. 
 
@@ -209,37 +209,37 @@ function setRoot(_root: dir): void;
 
 ### Assets
 ```ts
-function setAssets(_assets: dir): void;
+function setAssets(_assets: dir | string): void;
 function getAssets(): string;
 ```
 The location of the assets in GMLL. Internally it should look similar to the vanilla launcher's asset's folder. Apart from the fact that certain folders aren't deleted after GMLL shuts down. 
 ### Libraries
 ```ts
-function setLibraries(_libraries: dir):void;
+function setLibraries(_libraries: dir | string):void;
 function getlibraries(): string;
 ```
 The array of Java libraries Minecraft needs to function correctly. These two commands allow you to specify where GMLL will store them internally. 
 ### Instances
 ```ts
-function setInstances(_instances: dir): void;
+function setInstances(_instances: dir | string): void;
 function getInstances(): string;
 ```
 The default location where GMLL stores the game files used by various versions of minecraft. It will contain the name of the instance which will default to the version id if a set instance is not given a name. 
 ### Versions
 ```ts
-function setVersions(_Versions: dir): void;
+function setVersions(_Versions: dir | string): void;
 function getVersions(): string;
 ```
 The location of the assets in GMLL. Internally it should look similar to the vanilla launcher's asset's folder. Apart from the fact that certain folders aren't deleted after GMLL shuts down. 
 ### Runtimes
 ```ts
-function setRuntimes(_runtimes: dir): void;
+function setRuntimes(_runtimes: dir | string): void;
 function getRuntimes(): string;
 ```
 The "runtimes" folder contains all the java runtimes GMLL knows about. Adding custom runtimes to this folder can technically be done, but isn't recommended. 
 ### Launcher/Meta
 ```ts
-async function setLauncher(_launcher: dir): Promise<void>;
+async function setLauncher(_launcher: dir | string): Promise<void>;
 export declare function getMeta(): {
    manifests: dir;runtimes: dir;index: dir;profiles: dir;temp: dir;folder: dir;
 };
@@ -262,7 +262,7 @@ The "setLauncher" is asynchronous as it will reinitialize GMLL for you when it i
 
 ### Natives
 ```ts
-function setNatives(_natives: dir): void;
+function setNatives(_natives: dir | string): void;
 function getNatives(): string;
 ```
 Where the natives a set version uses should be extracted to. 
@@ -314,7 +314,7 @@ export async function initialize();
 # modpacks 
 ```ts
 //part of gmll/objects/instance
-async function wrap(baseUrl: string, save: dir, name?: string , forge?: { jar: file });
+async function wrap(baseUrl: string, save: dir | string, name?: string , forge?: { jar: file });
 ...
 //part of gmll/handler
 async function importLink(url: string): Promise<manifest>;

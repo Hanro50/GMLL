@@ -72,8 +72,8 @@ var files: { assets: dir, libraries: dir, instances: dir, versions: dir, runtime
  * Resets the root folder path and all of it's sub folders
  * @param {String} _root Essentially where you want to create a new .minecraft folder
  */
-export function setRoot(_root: dir) {
-
+export function setRoot(_root: dir | string) {
+    if (typeof _root == "string") _root = new dir(_root);
     initialized = false;
     files = {
         assets: _root.getDir("assets"),
@@ -91,7 +91,8 @@ setRoot(new dir(".minecraft"));
  * The location of the asset directory. Used to store textures, music and sounds. 
  * @param _assets The location you want the asset directory to be at
  */
-export function setAssets(_assets: dir) {
+export function setAssets(_assets: dir | string) {
+    if (typeof _assets == "string") _assets = new dir(_assets);
     files.assets = _assets;
     files.assets.mkdir();
 }
@@ -99,7 +100,8 @@ export function setAssets(_assets: dir) {
  * Used to store dependencies various versions of Minecraft and modloaders need in order to function.  
  * @param _libraries The location you want the library directory to be at
  */
-export function setLibraries(_libraries: dir) {
+export function setLibraries(_libraries: dir | string) {
+    if (typeof _libraries == "string") _libraries = new dir(_libraries);
     files.libraries = _libraries;
     files.libraries.mkdir();
 }
@@ -107,7 +109,8 @@ export function setLibraries(_libraries: dir) {
  * The default location to store new instances at.  
  * @param _instances The location you want the instance directory to be at
  */
-export function setInstances(_instances: dir) {
+export function setInstances(_instances: dir | string) {
+    if (typeof _instances == "string") _instances = new dir(_instances);
     files.instances = _instances;
     files.instances.mkdir();
 }
@@ -116,7 +119,8 @@ export function setInstances(_instances: dir) {
  * set version of minecraft or a set modeloader needs inorder to function properly
  * @param _versions The location you want the version directory to be at
  */
-export function setVersions(_versions: dir) {
+export function setVersions(_versions: dir | string) {
+    if (typeof _versions == "string") _versions = new dir(_versions);
     files.versions = _versions;
     files.versions.mkdir();
 }
@@ -127,7 +131,8 @@ export function setVersions(_versions: dir) {
  * Java 17 for 1.18+ 
  * @param _runtimes The location you want the runtime directory to be at
  */
-export function setRuntimes(_runtimes: dir) {
+export function setRuntimes(_runtimes: dir | string) {
+    if (typeof _runtimes == "string") _runtimes = new dir(_runtimes);
     files.runtimes = _runtimes;
     files.runtimes.mkdir();
 }
@@ -135,7 +140,8 @@ export function setRuntimes(_runtimes: dir) {
  * GMLL uses this folder to store meta data GMLL uses to control and manage minecraft. 
  * @param _launcher   The location you want the meta directory to be at
  */
-export async function setLauncher(_launcher: dir) {
+export async function setLauncher(_launcher: dir | string) {
+    if (typeof _launcher == "string") _launcher = new dir(_launcher);
     initialized = false;
     files.launcher = _launcher;
     await initialize();
@@ -145,7 +151,8 @@ export async function setLauncher(_launcher: dir) {
  * Essentially used to access functionality outside the scope of what the Java JVM provides 
  * @param _natives The location you want the bin directory to be at
  */
-export function setNatives(_natives: dir) {
+export function setNatives(_natives: dir | string) {
+    if (typeof _natives == "string") _natives = new dir(_natives);
     files.natives = _natives;
     _natives.mkdir();
 }
