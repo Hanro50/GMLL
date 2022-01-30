@@ -241,7 +241,7 @@ The "runtimes" folder contains all the java runtimes GMLL knows about. Adding cu
 ```ts
 async function setLauncher(_launcher: dir | string): Promise<void>;
 export declare function getMeta(): {
-   manifests: dir;runtimes: dir;index: dir;profiles: dir;temp: dir;folder: dir;
+   manifests: dir;runtimes: dir;index: dir;profiles: dir;temp: dir;
 };
 ```
 The launcher folder contains all the core meta data and files GMLL uses. 

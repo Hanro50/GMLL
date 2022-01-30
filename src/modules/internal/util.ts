@@ -1,8 +1,6 @@
-import { createHash } from "crypto";
 
-import fs from "fs";
 import { arch, platform, type, version } from "os";
-import { assets, launchArgs, rules, cpuArch } from "../../index.js";
+import { assets, rules, cpuArch } from "../../index.js";
 //import { downloadable } from "./get";
 import { cmd as _cmd } from '7zip-min';
 import { dir } from "../objects/files.js";
