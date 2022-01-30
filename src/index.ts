@@ -1,7 +1,3 @@
-
-
-
-
 /**
  * ---------------------------------------------------------------------------------------------
  * imports 
@@ -22,12 +18,12 @@ export type version_type = "old_alpha" | "old_beta" | "release" | "snapshot" | "
 export type user_type = "msa" | "mojang" | "legacy";
 export type jarTypes = "client" | "client_mappings" | "server" | "server_mappings" | "windows_server";
 export type runtimes = "java-runtime-alpha" | "java-runtime-beta" | "jre-legacy" | "minecraft-java-exe";
-
+export type cpuArch = "x86" | "x64" | "arm" | "arm64" | "mips" | "mipsel" | "ppc" | "ppc64" | "s390" | 's390x'
 export interface rule {
     "action": "allow" | "disallow",
     os?: {
         name?: "osx" | "windows" | "linux",
-        arch?: "x86" | "x32" | "x64" | "arm" | "arm64" | "ia32" | "mips" | "mipsel" | "ppc" | "ppc64" | "s390" | 's390x',
+        arch?: cpuArch,
         version?: string
     },
     features?: options
@@ -76,12 +72,18 @@ export interface artifact extends urlFile {
 export interface assetIndex extends artifact {
     id: string
 }
+/**
+ * Used in the Modpack API 
+ */
 export interface apiDoc {
     name: string,
     version: number,
     sha: string,
     "_comment": string
 }
+/**
+ * The general format of a version.json file
+ */
 export interface version {
     arguments?: {
         "game": launchArgs
@@ -147,8 +149,6 @@ export interface version {
     }
 }
 
-
-
 export interface assets {
     "objects": { [key: string]: { "hash": string, "size": number, "ignore"?: boolean } },
     map_to_resources?: boolean,
@@ -178,8 +178,6 @@ export interface library {
     }
     serverreq?: boolean,
     clientreq?: boolean
-
-
 }
 
 export interface launcherFILE {
@@ -197,12 +195,7 @@ export interface runtimeFILE {
         [key: string]: launcherFILE
     }
 }
-/**
- * "java-runtime-alpha": [],
-        "java-runtime-beta": [],
-        "jre-legacy": [],
-        "minecraft-java-exe": []
- */
+
 export type runtimeManifest = {
     "availability": {
         "group": number,
@@ -220,7 +213,7 @@ export type runtimeManifest = {
 }
 export type runtimeManifests = {
     [key in "gamecore" | "linux" | "linux-i386" | "mac-os" | "windows-x64" | "windows-x86"]: {
-        [key in "java-runtime-beta" | "java-runtime-beta" | "jre-legacy" | "minecraft-java-exe"]: Array<runtimeManifest>
+        [key in "java-runtime-beta" | "java-runtime-alpha" | "jre-legacy" | "minecraft-java-exe"]: Array<runtimeManifest>
     }
 }
 /**
@@ -228,7 +221,6 @@ export type runtimeManifests = {
  * INDEX 
  * ---------------------------------------------------------------------------------------------
  */
-
 
 /**Does a range of required preflight checks. Will cause errors if ignored!*/
 export async function init() { await initialize() }
@@ -245,4 +237,3 @@ export * as wrapper from "./modules/wrapper.js";
 export { default as instance } from "./modules/objects/instance.js";
 export { token as token } from "./modules/objects/instance.js";
 export { options as options } from "./modules/objects/instance.js";
-

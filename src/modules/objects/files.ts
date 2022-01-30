@@ -5,6 +5,7 @@ import { createHash } from "crypto";
 import { platform, type } from "os";
 import { execSync } from "child_process";
 import { cmd as _cmd } from '7zip-min';
+
 export interface downloadable {
     name: string,
     path: string[],

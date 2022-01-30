@@ -38,7 +38,7 @@ export function getManifests(): manifest[] {
     })
     return versionManifest;
 }
-/**Find a specific manifest based on a version id string. */
+
 function findManifest(version: string, manifests: manifest[]) {
     const v = version.toLocaleLowerCase().trim();
     const manifest = manifests.find(e => { try { return e.id.toLocaleLowerCase().trim() == v } catch { return false; } }) || { id: version, type: "unknown" };
@@ -50,7 +50,10 @@ function findManifest(version: string, manifests: manifest[]) {
     }
     return manifest;
 }
-
+/**Gets a specific version manifest based on the version ID provided
+ * @param version the version ID
+ * @returns a version manifest. It will be of type "unknown" if the specific manifest is not in the manifest database. 
+ */
 export function getManifest(version: string) {
     isInitialized();
     const manifests = getManifests();
@@ -65,7 +68,9 @@ export function getLatest(): { "release": string, "snapshot": string } {
         return file.toJSON();
     else return { "release": "1.17.1", "snapshot": "21w42a" };
 }
-/**Used to get a unique ID to recognise this machine. Used by mojang in some snapshot builds.*/
+/**
+ * Used to get a unique ID to recognise this machine. Used by mojang in some snapshot builds.
+ */
 export function getClientID(forceNew: boolean = false) {
     isInitialized();
     const path = getMeta().index.getFile("ID.txt");

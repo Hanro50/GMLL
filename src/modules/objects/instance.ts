@@ -1,17 +1,43 @@
 import { spawn } from "child_process";
 import { join } from "path";
-import { assetTag, combine, defJVM, fsSanitiser, oldJVM, parseArguments, processAssets, throwErr } from "../internal/util.js";
+import { assetTag, combine, fsSanitiser, lawyer, processAssets, throwErr } from "../internal/util.js";
 import { dir, downloadable, file } from "./files.js";
 import { cpus, type } from "os";
 import { getClientID, getJavaPath, getLatest, installForge } from "../handler.js";
-import { emit, getAssets, getInstances, getLauncherVersion, getlibraries, getMeta, getNatives, resolvePath } from "../config.js";
+import { emit, getAssets, getInstances, getLauncherName, getLauncherVersion, getlibraries, getMeta, getNatives, resolvePath } from "../config.js";
 import { assets, launchArgs, manifest, user_type, version as version_type } from "../../index.js";
 import { version } from "./version.js";
 
 import { pack, cmd } from '7zip-min';
 import { download, runtime } from "../downloader.js";
 
-const defArgs = [
+/**
+ * For internal use only
+ */
+function parseArguments(val = {}, args: launchArgs = defJVM) {
+    let out = ""
+    args.forEach(e => {
+        if (typeof e == "string")
+            out += " " + e.trim().replace(/\s/g, "");
+        else if (lawyer(e.rules, val))
+            out += " " + (e.value instanceof Array ? e.value.join("\t") : e.value);
+    })
+    return out
+}
+
+export let defJVM: launchArgs = [
+    { "rules": [{ "action": "allow", "os": { "name": "osx" } }], "value": ["-XstartOnFirstThread"] },
+    { "rules": [{ "action": "allow", "os": { "name": "windows" } }], "value": "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump" },
+    { "rules": [{ "action": "allow", "os": { "name": "windows", "version": "^10\\." } }], "value": ["-Dos.name=Windows 10", "-Dos.version=10.0"] },
+    { "rules": [{ "action": "allow", "os": { "arch": "x86" } }], "value": "-Xss1M" },
+    "-Djava.library.path=${natives_directory}",
+    "-Dminecraft.launcher.brand=${launcher_name}",
+    "-Dminecraft.launcher.version=${launcher_version}",
+    "-cp",
+    "${classpath}"
+]
+
+export let defaultGameArguments = [
     "-Xms${ram}G",
     "-Xmx${ram}G",
     "-XX:+UnlockExperimentalVMOptions",
@@ -274,7 +300,7 @@ export default class instance {
             auth_access_token: token.access_token,
 
             natives_directory: getNatives(),
-            launcher_name: process.env.launcher_name || process.env.npm_package_name || "GMLL",
+            launcher_name: getLauncherName(),
             launcher_version: getLauncherVersion(),
             classpath: classPath,
             auth_session: "token:" + token.access_token,
@@ -286,21 +312,14 @@ export default class instance {
 
         }
         const javaPath = this.javaPath == "default" ? version.getJavaPath() : new file(this.javaPath);
-        const rawJVMargs: launchArgs = defArgs;
+        const rawJVMargs: launchArgs = defaultGameArguments;
         rawJVMargs.push(...(vjson.arguments ? vjson.arguments.jvm : defJVM));
-        // if (version.manifest.releaseTime) {
-        //    const date = Date.parse(version.manifest.releaseTime);
-        //   if (date < Date.parse("2012-11-18T22:00:00+00:00")) {
-        ////     rawJVMargs.push(...oldJVM);
-
-        //  }
-        //  }
         var jvmArgs = parseArguments(args, rawJVMargs);
 
         let gameArgs = vjson.arguments ? parseArguments(args, vjson.arguments.game) : "";
         gameArgs += vjson.minecraftArguments ? " " + vjson.minecraftArguments : "";
 
-        var launchCom = jvmArgs + " " +/* "za.net.hanro50.inject.App"+*/ vjson.mainClass + (!gameArgs.startsWith(" ") ? " " : "") + gameArgs;
+        var launchCom = jvmArgs + " " + vjson.mainClass + (!gameArgs.startsWith(" ") ? " " : "") + gameArgs;
         console.log(gameArgs)
 
         Object.keys(args).forEach(key => {
@@ -390,7 +409,6 @@ export default class instance {
             }
         }
         resources.push({ unzip: { file: [] }, key: "misc", name: "misc.zip", path: [".data"], url: [baseUrl, ".data", zip].join("/"), chk: { sha1: mzip.getHash(), size: mzip.getSize() } });
-
         const ver: Partial<version_type> = {
             instance: {
                 restart_Multiplier: 1,
@@ -402,10 +420,7 @@ export default class instance {
             id: name
         }
         const verfile = save.getDir(".meta").mkdir().getFile("version.json");
-
-
         let Fversion = this.version;
-
         if (forge) {
             await runtime("java-runtime-beta");
 

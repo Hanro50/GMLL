@@ -2,11 +2,13 @@ import { EventEmitter } from "events";
 import { tmpdir } from "os";
 import { join } from "path";
 import { manifests } from "./downloader.js";
-import { dir } from "./objects/files.js";
+import { dir, file } from "./objects/files.js";
 import { getErr, throwErr } from "./internal/util.js";
+import packagePath from "./internal/root.cjs";
 export type update = "fabric" | "vanilla" | "forge" | "runtime";
 let initialized = false;
-var version = "0.0.0";
+let version = (new file(packagePath, "..", "..", "package.json").toJSON<{ version: string }>().version || "0.0.0");
+let launcherName = "GMLL";
 const startUpCalls: Array<() => void | Promise<void>> = [];
 export function isInitialized() {
     if (!initialized) {
@@ -65,91 +67,148 @@ defEvents.on('jvm.stderr', (app, out) => {
 });
 var updateConf: update[] = ["fabric", "vanilla", "forge", "runtime"];
 
-var files: { root: dir, assets: dir, libraries: dir, instances: dir, versions: dir, runtimes: dir, launcher: dir, natives: dir }
+var files: { assets: dir, libraries: dir, instances: dir, versions: dir, runtimes: dir, launcher: dir, natives: dir }
 /**
  * Resets the root folder path and all of it's sub folders
- * @param {String} _root 
+ * @param {String} _root Essentially where you want to create a new .minecraft folder
  */
-export function setRoot(_root: string, absolutePath = false) {
-    if (!absolutePath)
-        _root = join(process.cwd(), _root);
+export function setRoot(_root: dir) {
+
     initialized = false;
     files = {
-        root: new dir(_root),
-        assets: new dir(_root, "assets"),
-        libraries: new dir(_root, "libraries"),
-        instances: new dir(_root, "instances"),
-        versions: new dir(_root, "versions"),
-        runtimes: new dir(_root, "runtimes"),
-        launcher: new dir(_root, "launcher"),
-        natives: new dir(_root, "natives")
+        assets: _root.getDir("assets"),
+        libraries: _root.getDir("libraries"),
+        instances: _root.getDir("instances"),
+        versions: _root.getDir("versions"),
+        runtimes: _root.getDir("runtimes"),
+        launcher: _root.getDir("launcher"),
+        natives: _root.getDir("natives")
     }
 }
 
-setRoot(".minecraft");
-
+setRoot(new dir(".minecraft"));
+/**
+ * The location of the asset directory. Used to store textures, music and sounds. 
+ * @param _assets The location you want the asset directory to be at
+ */
 export function setAssets(_assets: dir) {
-   files.assets.mkdir();
     files.assets = _assets;
+    files.assets.mkdir();
 }
+/**
+ * Used to store dependencies various versions of Minecraft and modloaders need in order to function.  
+ * @param _libraries The location you want the library directory to be at
+ */
 export function setLibraries(_libraries: dir) {
-    files.libraries.mkdir();
     files.libraries = _libraries;
+    files.libraries.mkdir();
 }
+/**
+ * The default location to store new instances at.  
+ * @param _instances The location you want the instance directory to be at
+ */
 export function setInstances(_instances: dir) {
-    files.instances.mkdir();
     files.instances = _instances;
+    files.instances.mkdir();
 }
+/**
+ * Used to store version.json files and client jars GMLL uses to download the dependencies a 
+ * set version of minecraft or a set modeloader needs inorder to function properly
+ * @param _versions The location you want the version directory to be at
+ */
+export function setVersions(_versions: dir) {
+    files.versions = _versions;
+    files.versions.mkdir();
+}
+/**
+ * Runtimes are the various different versions of Java minecraft needs to function. 
+ * Java 8 for pre-1.17 builds of the game 
+ * Java 16 for 1.17
+ * Java 17 for 1.18+ 
+ * @param _runtimes The location you want the runtime directory to be at
+ */
 export function setRuntimes(_runtimes: dir) {
-    files.runtimes.mkdir();
     files.runtimes = _runtimes;
+    files.runtimes.mkdir();
 }
+/**
+ * GMLL uses this folder to store meta data GMLL uses to control and manage minecraft. 
+ * @param _launcher   The location you want the meta directory to be at
+ */
 export async function setLauncher(_launcher: dir) {
     initialized = false;
     files.launcher = _launcher;
     await initialize();
 }
-
+/**
+ * Natives are binary blobs and DLL files various minecraft versions use to function. 
+ * Essentially used to access functionality outside the scope of what the Java JVM provides 
+ * @param _natives The location you want the bin directory to be at
+ */
 export function setNatives(_natives: dir) {
-    _natives.mkdir();
     files.natives = _natives;
+    _natives.mkdir();
 }
-
-export function getRoot() {
-    return files.root;
-}
-
+/**
+ * Gets the root of the asset database. 
+ * @see the {@link setAssets set} method for more info 
+ */
 export function getAssets() {
     return files.assets;
 }
+/**
+ * Get the location of the library files. 
+ * @see the {@link setLibraries set} method for more info 
+ */
 export function getlibraries() {
     return files.libraries;
 }
+/**
+ * Use to get the instance directory  
+ * @see the {@link setInstances set} method for more info 
+ */
 export function getInstances() {
     return files.instances;
 }
+/**
+ * Use to get the version directory 
+ * @see the {@link setVersions set} method for more info 
+ */
 export function getVersions() {
     return files.versions;
 }
+/**
+ * Used to get the runtime directory 
+ * @see the {@link setRuntimes set} method for more info 
+ */
 export function getRuntimes() {
     return files.runtimes;
 }
+/**
+ * Returns a set of directories GMLL uses to store meta data. 
+ * Mostly used for version manifests and runtime manifests that act as pointers to help GMLL to locate other files stored on Mojang's servers.
+ * It also stores miscellaneous files GMLL uses to optimize the retrieval of certian pieces of information needed for GMLL to function properly 
+ */
 export function getMeta() {
     const meta = {
         manifests: files.launcher.getDir("manifests"),
         runtimes: files.launcher.getDir("runtimes"),
         index: files.launcher.getDir("index"),
-        profiles: files.launcher.getDir("profiles"),
-        //  temp: join(tmpdir(), "GMLL"),
-        folder: files.launcher,
+        profiles: files.launcher.getDir("profiles")
     }
     return meta;
 }
-
+/**
+ * Used to get the bin directory 
+ * @see the {@link setNatives set} method for more info 
+ */
 export function getNatives() {
     files.natives.mkdir();
     return files.natives
 }
+/**
+ * For internal use only 
+ */
 export function emit(tag: string, ...args: Array<Number | String>) {
     defEvents.emit(tag, ...args);
 }
@@ -198,10 +257,30 @@ export function resolvePath(file: string) {//
         replace(/\<runtimes\>/g, getRuntimes().sysPath()).
         replace(/\<versions\>/g, getVersions().sysPath());
 }
+/**
+ * Used to set the reported launcher name reported by GMLL to Minecraft
+ * @param _version Any version string
+ */
+export function setLauncherName(_name: string = "GMLL") {
+    launcherName = _name;
+}
+/**
+ * Used to get the currently reported launcher name reported by GMLL to Minecraft
+ */
+export function getLauncherName() {
+    return launcherName || "GMLL";
+}
 
+/**
+ * Used to set the reported launcher version reported by GMLL to Minecraft
+ * @param _version Any version string
+ */
 export function setLauncherVersion(_version: string = "0.0.0") {
     version = _version;
 }
+/**
+ * Used to get the currently reported launcher version reported by GMLL to Minecraft
+ */
 export function getLauncherVersion() {
     return version || "0.0.0";
 }

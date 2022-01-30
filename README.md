@@ -168,6 +168,23 @@ i777.install();
 # Warning!
 From the point forward. It will be assumed that you have a basic understanding of how JavaScript works. Not every element will be showed like it was with the previous documentation!
 
+# Basic file handling in GMLL
+GMLL uses an object based system to handle files. This abstraction simplifies handling the small differences between Windows, Linux and MacOS interms of how files, folders and directories are specified. It also replaces the old buggy and unstable function based system completely that GMLL used in the past.  
+
+## Specifying a folder 
+```js
+const { dir } = require("gmll/objects/files");
+const folder = new dir("path","to","folder");
+```
+Folders specify, while folders if you're on Windows and directories if you're on anything else. 
+
+## Specifying a file 
+```js
+import { file } from "gmll/objects/files";
+const file = new file("path/to/folder");
+```
+Specifies the path towards a file
+
 # Configuration 
 ```js
 //ES6 
@@ -184,44 +201,47 @@ This is primarily due to this module controlling where GMLL will look and pull f
 ## set and get functions
 ### Root
 ```ts
-function getRoot(): string;
-function setRoot(_root: string, absolutePath?: boolean): void;
+function setRoot(_root: dir): void;
 ```
 <b style="color:red">Warning:</b> using "setRoot" will mark gmll as uninitialized. It will also reset all other filepaths to their default values based on the given root path. This call is used internally to set the initial filepaths. 
 
-<b>set:</b> The set method can be used to customize where your launcher stores GMLL's data. Useful if the default location is not exactly optimal for one reason or another. If "absolutePath" is set to false (default) it will append the process directory as a prefix onto the path. Please keep this in mind as providing a relative path is likely to result in unforeseen behavior. 
-
-<b>get:</b> In a sense the get method will give you the root directory gmll is using. Unless you're developing a plugin for GMLL and wish to use the same folder GMLL uses to store critical information and or settings. It is best to use one of the other methods below to access GMLL's files.  
+ This method can be used to easily redefine where GMLL stores Minecraft related data. Useful if the default location is not exactly optimal for one reason or another. 
 
 ### Assets
 ```ts
-function setAssets(_assets: string): void;
+function setAssets(_assets: dir): void;
 function getAssets(): string;
 ```
 The location of the assets in GMLL. Internally it should look similar to the vanilla launcher's asset's folder. Apart from the fact that certain folders aren't deleted after GMLL shuts down. 
 ### Libraries
 ```ts
-function setLibraries(_libraries: string):void;
+function setLibraries(_libraries: dir):void;
 function getlibraries(): string;
 ```
 The array of Java libraries Minecraft needs to function correctly. These two commands allow you to specify where GMLL will store them internally. 
 ### Instances
 ```ts
-function setInstances(_instances: string): void;
+function setInstances(_instances: dir): void;
 function getInstances(): string;
 ```
 The default location where GMLL stores the game files used by various versions of minecraft. It will contain the name of the instance which will default to the version id if a set instance is not given a name. 
+### Versions
+```ts
+function setVersions(_Versions: dir): void;
+function getVersions(): string;
+```
+The location of the assets in GMLL. Internally it should look similar to the vanilla launcher's asset's folder. Apart from the fact that certain folders aren't deleted after GMLL shuts down. 
 ### Runtimes
 ```ts
-function setRuntimes(_runtimes: string): void;
+function setRuntimes(_runtimes: dir): void;
 function getRuntimes(): string;
 ```
 The "runtimes" folder contains all the java runtimes GMLL knows about. Adding custom runtimes to this folder can technically be done, but isn't recommended. 
 ### Launcher/Meta
 ```ts
-async function setLauncher(_launcher: string): Promise<void>;
+async function setLauncher(_launcher: dir): Promise<void>;
 export declare function getMeta(): {
-   manifests: string;runtimes: string;index: string;profiles: string;temp: string;folder: string;
+   manifests: dir;runtimes: dir;index: dir;profiles: dir;temp: dir;folder: dir;
 };
 ```
 The launcher folder contains all the core meta data and files GMLL uses. 
@@ -238,22 +258,24 @@ The "setLauncher" is asynchronous as it will reinitialize GMLL for you when it i
 <tr><td>runtimes</td><td>Contains the index files GMLL uses to download a set runtime required by a set version. The vanilla provided indexes are checked against a sha hash. Although custom runtime indexes are left alone and will be ignored unless a set version of minecraft requests it.<br><br>  <b style="color:red">Warning:</b>Contents of these indexes are different per platform. Just take that into account as you need to insure the right index is placed here for the set platform your launcher is currently running on.</td></tr>
 <tr><td>index</td><td>Contains miscellaneous index files used by GMLL to get other index files or to store internal data GMLL uses to function. Please ignore unless you're developing an addon for GMLL.</td></tr>
 <tr><td>profiles</td><td>Where instance config data is saved when you run the "save()" function on the profile object. </td></tr>
-<tr><td>folder</td><td>Gets the root launcher folder. Useful for addons.</td></tr>
 </table>
 
 ### Natives
 ```ts
-function setNatives(_natives: string): void;
+function setNatives(_natives: dir): void;
 function getNatives(): string;
 ```
 Where the natives a set version uses should be extracted to. 
 
-### setLauncherVersion
+### setLauncherVersion & setLauncherName
 ```ts
 function setLauncherVersion(_version?: string): void;
 function getLauncherVersion(): string;
+
+function setLauncherName(_name: string = "GMLL"): void;
+function setLauncherName(): string;
 ```
-Declares the launcher version GMLL should report to Minecraft. Doesn't seem to do much of anything. 
+Declares the launcher version and name GMLL should report to Minecraft. Doesn't seem to do much of anything atm. 
 
 ### events 
 ```ts

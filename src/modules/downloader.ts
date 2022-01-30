@@ -1,11 +1,11 @@
-import { lawyer, getOS, assetTag, throwErr, classPathResolver, getErr, combine, processAssets } from "./internal/util.js";
+import { lawyer, getOS, assetTag, throwErr, classPathResolver, getErr, processAssets, getCpuArch } from "./internal/util.js";
 import { join } from "path";
 import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig } from "./config.js";
 import { processCMD, failCMD, getSelf } from "./internal/get.js"
 import cluster from "cluster";
 const fork = cluster.fork;
 const setupMaster = cluster.setupPrimary || cluster.setupMaster;
-import { cpus, arch } from 'os';
+import { cpus } from 'os';
 import Fetch from 'node-fetch';
 import { assetIndex, assets, manifest, runtimeFILE, runtimeManifest, runtimeManifests, runtimes, version } from "../index.js";
 import { dir, downloadable, file, mklink } from "./objects/files.js";
@@ -62,7 +62,7 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
             }, 15000 * it);
 
             for (let i = 0; i < arr.length; i++) {
-          
+
                 let cpu = { length: arr[i].length };
                 for (var i7 = 0; i7 < arr[i].length; i7++) {
                     cpu["gmll_" + i7] = JSON.stringify(arr[i][i7]);
@@ -139,8 +139,6 @@ export function runtime(runtime: runtimes) {
                     url = obj.downloads.raw.url;
                     chk = { size: obj.downloads.raw.size, sha1: obj.downloads.raw.sha1 }
                 }
-
-
                 arr.push(_file.toDownloadable(url, key, chk, opt));
                 break;
             case "link":
@@ -154,8 +152,6 @@ export function runtime(runtime: runtimes) {
         }
     });
     return download(arr, 5);
-
-
 }
 /**Install a set version's assets based on a provided asset index. */
 export async function assets(index: assetIndex) {
@@ -186,16 +182,11 @@ export async function assets(index: assetIndex) {
         const obj = o[1];
         if (!obj.ignore)
             downloader.push(assetTag(root.getDir("objects"), obj.hash).getFile(obj.hash).toDownloadable(getURL(obj), key, { sha1: obj.hash, size: obj.size }));
-
     })
     await download(downloader);
-
     processAssets(assetIndex);
-
 }
-
-
-
+/**Installs the lib files from a set version */
 export async function libraries(version: version) {
     const arr: Partial<downloadable>[] = [];
     const natives = getNatives();
@@ -230,14 +221,12 @@ export async function libraries(version: version) {
         } else {
             if (!e.url) e.url = "https://libraries.minecraft.net/";
             const path = classPathResolver(e.name);
-            const file = getlibraries().getFile(path); // [getlibraries(), ...path.split("/")];
-
+            const file = getlibraries().getFile(path);
             var sha1: string | string[];
 
             //Maven repo
             for (var i = 0; i < 3; i++) {
                 try {
-                  //  console.log(e)
                     if (e.checksums) {
                         sha1 = e.checksums;
                     } else {
@@ -255,9 +244,9 @@ export async function libraries(version: version) {
     }
     return await download(arr, 3);
 }
-
-
-
+/**
+ * Updates GMLL's manifest files. Used internally
+ */
 export async function manifests() {
     const forgiacURL = "https://github.com/Hanro50/Forgiac/releases/download/1.8-SNAPSHOT/basic-1.8-SNAPSHOT.jar";
     const forgiacSHA = "https://github.com/Hanro50/Forgiac/releases/download/1.8-SNAPSHOT/basic-1.8-SNAPSHOT.jar.sha1";
@@ -290,8 +279,8 @@ export async function manifests() {
     }
     if (update.includes("fabric")) {
         try {
-            const jsgame = (await meta.index.getFile("fabric_game.json").download(fabricVersions)).toJSON<[jsgameInf]>(); 
-            const jsloader = (await meta.index.getFile("fabric_loader.json").download(fabricLoader)).toJSON<[jsloaderInf]>(); 
+            const jsgame = (await meta.index.getFile("fabric_game.json").download(fabricVersions)).toJSON<[jsgameInf]>();
+            const jsloader = (await meta.index.getFile("fabric_loader.json").download(fabricLoader)).toJSON<[jsloaderInf]>();
             const result = [];
             jsgame.forEach(game => {
                 const version = game.version;
@@ -310,12 +299,10 @@ export async function manifests() {
             console.log(getErr(e));
         }
     }
-  
+
     if (update.includes("forge")) {
         var libzFolder = getlibraries().getDir(...forgiacPath).mkdir();
-
         var rURL2 = await Fetch(forgiacSHA);
-
         if (rURL2.status == 200) {
             await libzFolder.getFile("forgiac.jar").download(forgiacURL, { sha1: await rURL2.text() })
         }
@@ -326,12 +313,12 @@ export async function manifests() {
 
         var platform: "gamecore" | "linux" | "linux-i386" | "mac-os" | "windows-x64" | "windows-x86";
         switch (getOS()) {
+            case ("windows"):
+                platform = getCpuArch() == "x64" ? "windows-x64" : "windows-x86"; break;
+            case ("linux"):
+                platform = getCpuArch() == "x64" ? "linux" : "linux-i386"; break;
             case ("osx"):
                 platform = "mac-os"; break;
-            case ("linux"):
-                platform = arch() == "x64" ? "linux" : "linux-i386"; break;
-            case ("windows"):
-                platform = arch() == "x64"|| process.env.hasOwnProperty('PROCESSOR_ARCHITEW6432') ? "windows-x64" : "windows-x86"; break;
             default: throw ("Unsupported operating system");
         }
         for (const key of Object.keys(manifest[platform])) {
@@ -340,5 +327,4 @@ export async function manifests() {
             await meta.runtimes.getFile(key + ".json").download(obj.manifest.url, obj.manifest);
         }
     }
-
 }
