@@ -2,21 +2,20 @@
 import { wrapper, init, instance } from "gmll";
 import { setRoot } from "gmll/config";
 import { installForge } from "gmll/handler";
-
+setRoot(".MC")
+await init();
 
 import { fastLaunch } from "msmc";
 import { runtime } from "gmll/downloader";
 import { getLauncherVersion } from "gmll/config";
+//await installForge();
 
-setRoot(".MC")
-await init();
-//installForge();
+
 //runtime("minecraft-java-exe")
-//const token = wrapper.msmc2token(await fastLaunch("raw", console.log));
+const token = wrapper.msmc2token(await fastLaunch("raw", console.log));
 console.log(getLauncherVersion())
-//const i = new instance({ version: "1.7.10" });
-//i.setIcon("icon_32x32.png", "icon_16x16.png");
-//i.save();
-//i.launch(token);
+const i = new instance({ version: "1.18.1-forge-39.0.75" });
+i.setIcon("icon_32x32.png", "icon_16x16.png");
+i.launch(token);
 
 

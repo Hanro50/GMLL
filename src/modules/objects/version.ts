@@ -1,11 +1,11 @@
-import { copyFileSync} from "fs";
+import { copyFileSync } from "fs";
 import { join } from "path";
 import { assets as _assets, jarTypes, manifest, version as _version } from "../..";
-import { getVersions, isInitialized } from "../config.js";
+import { getlibraries, getVersions, isInitialized } from "../config.js";
 import { assets, runtime, libraries } from "../downloader.js";
 import { getManifest, getJavaPath } from "../handler.js";
 import { dir, file } from "./files";
-import { throwErr, classPathResolver, combine } from "../internal/util.js";
+import { throwErr, classPathResolver, combine, lawyer } from "../internal/util.js";
 
 /**
  * Version data is unique. Each version of the game will generate an unique version object. 
@@ -148,9 +148,14 @@ export class version {
         this.json.libraries.forEach(lib => {
             if (mode == "client" && lib.hasOwnProperty("clientreq") && !lib.clientreq) return;
             else if (mode == "server" && !lib.serverreq && lib.hasOwnProperty("clientreq")) return
+            if (lib.rules && !lawyer(lib.rules)) return;
 
             const p = join("libraries", ...classPathResolver(lib.name).split("/"));
-            if (!cp.includes(p)) cp.push(p);
+            const p2 = getlibraries().getDir("..").getFile(p);
+            if (!p2.exists()) {
+                console.error(p + " does not exist. Removing to avoid possible error");
+            }
+            else if (!cp.includes(p)) cp.push(p);
         });
         const jar = this.folder.getFile(this.name + ".jar");
         if (jar.exists())
