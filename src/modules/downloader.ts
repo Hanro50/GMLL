@@ -146,9 +146,9 @@ export function runtime(runtime: runtimes) {
                 _file.mkdir();
                 if (getOS() != "windows") {
                     _file.rm()
-                    
-                    _file.linkTo( resolve(..._file.path, obj.target))
-                 //   mklink(_file.sysPath(), resolve(..._file.path, obj.target));
+
+                    _file.linkTo(resolve(..._file.path, obj.target))
+                    //   mklink(_file.sysPath(), resolve(..._file.path, obj.target));
                 }
                 break;
             default:
@@ -194,8 +194,8 @@ export async function assets(index: assetIndex) {
 export async function libraries(version: version) {
     const arr: Partial<downloadable>[] = [];
     const natives = getNatives();
-     natives.rm();
-     natives.mkdir();
+    natives.rm();
+    natives.mkdir();
 
     const OS = getOS();
     const libraries = version.libraries;
@@ -315,14 +315,23 @@ export async function manifests() {
         const meta = getMeta();
         const manifest = (await meta.index.getFile("runtime.json").download(mcRuntimes)).toJSON<runtimeManifests>();
 
-        var platform: "gamecore" | "linux" | "linux-i386" | "mac-os" | "windows-x64" | "windows-x86";
+        var platform: "gamecore" | "linux" | "linux-i386" | "mac-os" | "mac-os-arm64" | "windows-x64" | "windows-x86";
         switch (getOS()) {
             case ("windows"):
                 platform = getCpuArch() == "x64" ? "windows-x64" : "windows-x86"; break;
             case ("linux"):
                 platform = getCpuArch() == "x64" ? "linux" : "linux-i386"; break;
             case ("osx"):
-                platform = "mac-os"; break;
+                if (getCpuArch() == "arm64") {
+                    platform = "mac-os-arm64";
+                    //Intel fallback for m1
+                    console.warn("[GMLL]: Loading intel fallback for M1. Please contact devs if this bugs out.")
+                    for (const key of Object.keys(manifest[platform]))
+                        if (manifest[platform][key].length < 1) manifest[platform][key] = manifest["mac-os"][key];
+                } else {
+                    platform = "mac-os";
+                }
+                break;
             default: throw ("Unsupported operating system");
         }
         for (const key of Object.keys(manifest[platform])) {
