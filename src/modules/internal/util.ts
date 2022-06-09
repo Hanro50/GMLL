@@ -78,8 +78,10 @@ export function throwErr(message: any) {
 }
 /**Used to get maven class paths */
 export function classPathResolver(name: string) {
-    const namespec = name.split(":");
-    return namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + ".jar";
+    const namespec = name.split(":", 4);
+    return `${namespec[0].replace(/\./g, "/")}/${namespec[1]}/${namespec[2]}/${namespec[1]}-${namespec[2]}${(namespec[3] ? '-'+namespec[3].replace(/\:/g, "-"):"")}.jar`;
+
+  //  return namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + (namespec[3] ? namespec[3].replace(/\:/g, "-"):"") + ".jar";
 }
 
 /**Takes two different version.json files and combines them */

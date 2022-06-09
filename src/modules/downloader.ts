@@ -1,5 +1,5 @@
 import { lawyer, getOS, assetTag, throwErr, classPathResolver, getErr, processAssets, getCpuArch } from "./internal/util.js";
-import { join } from "path";
+import { join, resolve } from "path";
 import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig } from "./config.js";
 import { processCMD, failCMD, getSelf } from "./internal/get.js"
 import cluster from "cluster";
@@ -9,6 +9,7 @@ import { cpus } from 'os';
 import Fetch from 'node-fetch';
 import { assetIndex, assets, manifest, runtimeFILE, runtimeManifest, runtimeManifests, runtimes, version } from "../index.js";
 import { dir, downloadable, file, mklink } from "./objects/files.js";
+import { existsSync, unlinkSync } from "fs";
 
 
 setupMaster({
@@ -144,7 +145,10 @@ export function runtime(runtime: runtimes) {
             case "link":
                 _file.mkdir();
                 if (getOS() != "windows") {
-                    mklink(join(..._file.path, obj.target), _file.sysPath());
+                    _file.rm()
+                    
+                    _file.linkTo( resolve(..._file.path, obj.target))
+                 //   mklink(_file.sysPath(), resolve(..._file.path, obj.target));
                 }
                 break;
             default:
@@ -190,8 +194,8 @@ export async function assets(index: assetIndex) {
 export async function libraries(version: version) {
     const arr: Partial<downloadable>[] = [];
     const natives = getNatives();
-    natives.rm();
-    natives.mkdir();
+     natives.rm();
+     natives.mkdir();
 
     const OS = getOS();
     const libraries = version.libraries;

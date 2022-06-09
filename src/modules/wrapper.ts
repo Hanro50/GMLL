@@ -22,6 +22,7 @@ export interface msmcResult {
  * I already did it for MSMC, I'm not doing it again -Hanro
  * 
  * @param msmcResult The resulting msmc result token
+ * @deprecated For use with msmc 3.x and below, please use the function included in 4.0.0 to get this same result
  * @returns a GMLL launch token
  */
 export function msmc2token(msmcResult: msmcResult): _token {

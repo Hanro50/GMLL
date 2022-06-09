@@ -153,9 +153,9 @@ export default class instance {
     getPath() {
         return resolvePath(this.path);
     }
-  /**
-     * @returns A absolute path leading to this instance in the internal format GMLL uses as a file format
-     */
+    /**
+       * @returns A absolute path leading to this instance in the internal format GMLL uses as a file format
+       */
     getDir() {
         return new dir(this.getPath());
     }
@@ -189,8 +189,8 @@ export default class instance {
      */
     async install() {
         //Making links
-        getlibraries().link([this.getPath(), "libraries"]);
-        getAssets().link([this.getPath(), "assets"]);
+        getlibraries().linkFrom([this.getPath(), "libraries"]);
+        getAssets().linkFrom([this.getPath(), "assets"]);
         const version = await this.getVersion();
         console.log(version.json)
         if (version.json.instance) {
@@ -271,7 +271,7 @@ export default class instance {
         if (AssetIndex.virtual || AssetIndex.map_to_resources) {
             assetRoot = getAssets().getDir("legacy", AssetIndex.virtual ? "virtual" : "resources");
             assetsFile = this.getDir().getFile("resources").rm();
-            assetRoot.link(assetsFile);
+            assetRoot.linkFrom(assetsFile);
         }
 
         const classpath_separator = type() == "Windows_NT" ? ";" : ":";
@@ -314,20 +314,21 @@ export default class instance {
         }
         const javaPath = this.javaPath == "default" ? version.getJavaPath() : new file(this.javaPath);
         const rawJVMargs: launchArgs = defaultGameArguments;
-        rawJVMargs.push(...(vjson.arguments ? vjson.arguments.jvm : defJVM));
+        rawJVMargs.push(...(vjson.arguments?.jvm || defJVM));
         var jvmArgs = parseArguments(args, rawJVMargs);
 
         let gameArgs = vjson.arguments ? parseArguments(args, vjson.arguments.game) : "";
         gameArgs += vjson.minecraftArguments ? " " + vjson.minecraftArguments : "";
 
         var launchCom = jvmArgs + " " + vjson.mainClass + (!gameArgs.startsWith(" ") ? " " : "") + gameArgs;
-        console.log(gameArgs)
+
 
         Object.keys(args).forEach(key => {
             const regex = new RegExp(`\\\$\{${key}\}`, "g")
             launchCom = launchCom.replace(regex, args[key])
         })
         emit("jvm.start", "Minecraft", this.getPath());
+        console.log(launchCom)
         const s = spawn(javaPath.sysPath(), launchCom.trim().split(" "), { "cwd": this.getPath() })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));

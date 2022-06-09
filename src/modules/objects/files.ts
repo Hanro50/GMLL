@@ -27,16 +27,18 @@ export interface downloadable {
 }
 /**
  * 
- * @param target Path to create the link in
+ * @param dest Path to create the link in
  * @param path Path to the file to link to
  */
-export function mklink(target: string, path: string) {
+export function mklink(dest: string, path: string) {
     try {
         if (existsSync(path)) unlinkSync(path)
-        symlinkSync(target, path, "junction");
+
+        symlinkSync(dest, path, "junction");
     } catch (e) {
-        console.error(e);
-        console.error("Could not create syslink between " + target + "=>" + path)
+        console.error(e, existsSync(path), path);
+        console.error("Could not create syslink between d:" + dest + "=>p:" + path)
+        process.exit()
     }
 }
 
@@ -90,14 +92,25 @@ export class dir {
         mkdir(join(...this.path));
         return this;
     }
-    link(linkto: string | string[] | file | dir) {
-        if (linkto instanceof file)
-            linkto = [...linkto.path, linkto.name];
-        if (linkto instanceof dir)
-            linkto = linkto.path;
-        if (linkto instanceof Array)
-            linkto = join(...linkto);
-        mklink(this.sysPath(), linkto);
+    linkTo(dest: string | string[] | file | dir) {
+        if (this instanceof file && platform() == "win32") console.warn("[GMLL]: Symlinks in Windows need administrator priviliges!\nThings are about to go wrong!")
+        if (dest instanceof file)
+            dest = [...dest.path, dest.name];
+        if (dest instanceof dir)
+            dest = dest.path;
+        if (dest instanceof Array)
+            dest = join(...dest);
+        mklink(dest, this.sysPath());
+    }
+    linkFrom(path: string | string[] | file | dir) {
+        if (this instanceof file && platform() == "win32") console.warn("[GMLL]: Symlinks in Windows need administrator priviliges!\nThings are about to go wrong!")
+        if (path instanceof file)
+            path = [...path.path, path.name];
+        if (path instanceof dir)
+            path = path.path;
+        if (path instanceof Array)
+            path = join(...path);
+        mklink(this.sysPath(), path);
     }
     /**@override */
     toString() {
@@ -159,14 +172,7 @@ export class file extends dir {
         return this.name;
     }
 
-    /**@override */
-    link(path: string | string[] | file) {
-        if (platform() == "win32") {
-            console.warn("[GMLL]: Symlinks in Windows need administrator priviliges!\nThings are about to go wrong!")
-        }
 
-        return super.link(path);
-    }
     /**@override */
     sysPath() {
         return join(super.sysPath(), this.name);
@@ -252,6 +258,7 @@ export class file extends dir {
             return;
         }
         await f.download(json.url, json.chk);
+
         if (json.unzip) {
             await f.unzip(new dir(...json.unzip.file), json.unzip.exclude);
         }

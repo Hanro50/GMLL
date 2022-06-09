@@ -148,7 +148,7 @@ export class version {
         this.json.libraries.forEach(lib => {
             if (mode == "client" && lib.hasOwnProperty("clientreq") && !lib.clientreq) return;
             else if (mode == "server" && !lib.serverreq && lib.hasOwnProperty("clientreq")) return
-            if (lib.rules && !lawyer(lib.rules)) return;
+            if (lib.rules && !lawyer(lib.rules)) { return } else { console.log(lib.name, join("libraries", "\n", ...classPathResolver(lib.name).split("/"))); }
 
             const p = join("libraries", ...classPathResolver(lib.name).split("/"));
             const p2 = getlibraries().getDir("..").getFile(p);
