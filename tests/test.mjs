@@ -14,8 +14,8 @@ import { getLauncherVersion } from "gmll/config";
 //runtime("minecraft-java-exe")
 const token = wrapper.msmc2token(await fastLaunch("raw", console.log));
 console.log(getLauncherVersion())
-const i = new instance({ version: "1.18" });
-//i.setIcon("icon_32x32.png", "icon_16x16.png");
+const i = new instance({ version: "a1.1.2_01" });
+i.setIcon("icon_32x32.png", "icon_16x16.png");
 i.launch(token);
 
 

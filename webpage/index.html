@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>GMLL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="A small web based tool to generate recommended partition sizes. The values returned are merely suggested values and the use of said values are done entirely at one's own risk">
+    <link rel="icon" type="image/jpeg" href="/favicon.jpeg">
+    <style>
+        :root {
+            --text: #000;
+            --background: #eee;
+            --border: #000;
+            --accent: #fff;
+        }
+
+        html {
+            height: 100%;
+        }
+
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            background-color: var(--background);
+            color: var(--text);
+            height: calc(100% - 16px);
+        }
+
+        h1,
+        p {
+            text-align: center;
+        }
+
+        .button {
+            border: solid 1px var(--border);
+            background-color: var(--accent);
+            border-radius: 15px;
+            margin-right: 5vw;
+            margin-left: 5vw;
+            padding: 5px;
+        }
+
+        div {
+            text-align: center;
+            transition-duration: 0.5s;
+        }
+
+        div:hover,
+        .button:hover {
+            background-color: var(--background);
+        }
+
+        *:focus {
+            outline: none;
+        }
+
+        .w {
+            color: red;
+            background-color: var(--background);
+        }
+
+        body * {
+            border-radius: 10px;
+            width: 70%;
+            min-width: 300px;
+            text-align: center;
+
+        }
+
+        @media not screen and (max-width: 1000px) {
+            body * {
+                width: 689px;
+                min-width: 0px;
+            }
+        }
+
+        @media only screen and (max-width: 300px) {
+            body * {
+                width: 99%;
+                min-width: 0px;
+            }
+        }
+    </style>
+    <style id="dark">
+        :root {
+            --text: #fff;
+            --background: rgb(20, 20, 20);
+            --border: rgb(30, 30, 30);
+            --accent: rgb(40, 40, 40);
+
+        }
+    </style>
+    <script>
+        const theme = document.getElementById("dark");
+
+        function switchTheme() {
+            if (theme.parentElement) {
+                theme.remove()
+                localStorage.setItem("light", "true")
+            } else {
+                document.head.appendChild(theme)
+                localStorage.removeItem("light")
+            }
+        }
+        if (localStorage.getItem("light")) {
+            switchTheme()
+        }
+    </script>
+</head>
+
+<body>
+
+    <h1>Generic Minecraft Launcher Library</h1>
+    <p>GMLL is by no means a lightweight library. It is a fully featured modular core that will serve as a solid
+        foundation for your Minecraft endeavours.</p>
+
+    <h1>Features:</h1>
+    <h2>Instance handling</h2>
+    <img src="./assets/instances.png">
+    <p>Easily handle multiple instances with their own settings, loaded mods, mod-loaders and so much more. Includes the
+        ability to save instance settings to file so you can easily load them up later.</p>
+    <h2>Custom assets</h2>
+    <img src="./assets/icon.png">
+    <p>Easily launch Minecraft with a custom icon, music or language file. GMLL will not only take care off copying the
+        right file to the right location. It will write a custom asset index to ensure everything loads as planned
+        without needing to override any existing files. This also means you can easily have multiple instances all with
+        different icons without them conflicting with one another.</p>
+    <h2>Easily wrap, upload and share mod-packs</h2>
+    <img src="./assets/modpacks.png">
+    <p>GMLL includes the ability to easily wrap an instance and turn it into a mod-pack. This includes any saves that
+        would be within the instance. Any custom configuration files and mods are also included as well as is any custom
+        assets you
+        have defined. It can use either fabric or forge as a mod-loader. It is smart enough to replace mod.jar files if
+        they experience corruption, but to leave world files alone if they experience changes.</p>
+    <h2>Forgiac!</h2>
+    <img src="./assets/forge.png">
+    <p>GMLL includes forgiac. A powerful Java based tool to handle the installation and setup of Minecraft forge for
+        you. It has 2 modes, namely manual and automatic. If you point it to a forge installer jar, it will
+        automatically handle the installation of that jar and add it to the version.json file for gmll. It also provides
+        a gui to allow a user to manually install forge into your launcher. Please note that you still need to obtain
+        the forge installation jar yourself.<br> (As per the wishes of the forge development team)</p>
+    <h2>Fabric</h2>
+    <img src="./assets/fabric.png">
+    <p>GMLL will automatically generate a version manifest for fabric. Allowing you to easily install any fabric version
+        as easily as any vanilla release without needing to download fabric directly. Also huge thank you to the fabric
+        dev team.</p>
+    <h2>Sound fix for legacy versions!</h2>
+    <img src="./assets/soundfix.png">
+    <p>In the mood for a little blast from the past? Well now you can enjoy said adventure with audio to boot. GMLL
+        accounts for how older versions of the game expect to be treated and makes adjustments to accommodate them. As
+        such you can now enjoy the older versions as they where meant to be enjoyed...with sound.</p>
+    <div class="button" id="themer" onclick="switchTheme()">Switch theme</div>
+    <br>
+    <div class="button" id="themer" onclick="window.open('https://github.com/Hanro50/GMLL','_blank')">View on github
+    </div>
+    <br>
+    <div class=" button" onclick="document.location.href='../'">back</div>
+    <br>
+    &nbsp;
+</body>
+
+</html>

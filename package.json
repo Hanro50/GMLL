@@ -1,9 +1,10 @@
 {
     "name": "gmll",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "A generic launcher core for building custom launchers",
     "license": "MIT",
     "types": "./dist/ts/index.d.ts",
+    "homepage": "https://www.hanro50.net.za/gmll",
     "typesVersions": {
         "*": {
             "config": [
@@ -99,8 +100,8 @@
     ],
     "scripts": {
         "build": "node build.cjs",
-        "test-cjs": "node tests/test.cjs",
-        "test-mjs": "node tests/test.mjs"
+        "test-cjs": "cd tests&&node test.cjs",
+        "test-mjs": "cd tests&&node test.mjs"
     },
     "keywords": [
         "msmc",

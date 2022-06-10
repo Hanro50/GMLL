@@ -25,6 +25,8 @@ Linux and Mac users should not encounter this issue as on these systems, symlink
 
 If your launcher is installed onto a drive which in of itself is not formated as NTFS, but your launcher tells GMLL to generate it's files on a partition that is formated as NTFS. It _should_ work. A shortcut to the user's AppData folder is "%appdata%\\\<name of your launcher\>". Just incase...
 
+The reason why GMLL only works on NTFS on windows is due to it making use of junctions, whereas on Linux and Mac GMLL will use symlinks instead. While they behave funtionally the same for our purposes, junctions are a filesystem specific feature that only works on NTFS. While Windows also supports symlinks, you require administrator privilidges to create them.  
+
 # Initialization
 The library relies on a collection core files that are dynamically downloaded from the internet to function. GMLL thus has two states it can be within. Initialized and uninitialized. GMLL will refuse to launch minecraft if it is not properly initialized. 
 
@@ -327,7 +329,7 @@ GMLL has a built in modpack API it can use to obtain and install modpacks. It al
 ### Creation:
 ```js
 //Create an instance with the settings you want
-var int = new gmll.instance({ version: "1.18.1" })
+var int = new gmll.instance({ version: "1.19" })
 //Customise the asset index for that version like so
 int.setIcon("icon_32x32.png", "icon_16x16.png");
 //Finally create your modpack - this example is what to do for fabric and vanilla packs
@@ -376,5 +378,4 @@ While GMLL's modpack api supports both forge (via <a href="https://github.com/Ha
 It should be mentioned that for GMLL to wrap a forge based modpack. The forge installer will need to be provided as an input. Ignoring this field will treat the modpack as a fabric modpack. While this can still work, you'll need to instruct your user to manually install forge. The reason why you do not need to manually install fabric versions is because GMLL will automatically generate the manifest files needed to install nearly any version of fabric.   
 
 
-# WIP Docs
-Still being worked on actively. Stay tuned.
+## A note on older versions 
