@@ -192,7 +192,7 @@ export default class instance {
         getlibraries().linkFrom([this.getPath(), "libraries"]);
         getAssets().linkFrom([this.getPath(), "assets"]);
         const version = await this.getVersion();
-        console.log(version.json)
+        //     console.log(version.json)
         if (version.json.instance) {
             const chk = this.getDir().getFile(".installed.txt");
 
@@ -328,7 +328,7 @@ export default class instance {
             launchCom = launchCom.replace(regex, args[key])
         })
         emit("jvm.start", "Minecraft", this.getPath());
-        console.log(launchCom)
+        //   console.log(launchCom)
         const s = spawn(javaPath.sysPath(), launchCom.trim().split(" "), { "cwd": this.getPath() })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
@@ -349,7 +349,7 @@ export default class instance {
         const packAsync = (pathToDirOrFile: string, pathToArchive: string) => new Promise<Error | null>(res => pack(pathToDirOrFile, pathToArchive, res));
 
         const cp = (d: dir, path: string[]) => {
-            console.log(d.exists())
+            //  console.log(d.exists())
             if (d.exists()) {
                 d.ls().forEach(e => {
                     if (typeof save == "string") save = new dir(save);
@@ -368,21 +368,21 @@ export default class instance {
             cp(me.getDir(e), [e]);
         })
         const data = save.getDir(".data").mkdir();
-        console.log(1)
+        //  console.log(1)
         for (var i = 0; i < bunlde.length; i++) {
-            console.log(2)
+            //    console.log(2)
             const e = bunlde[i]
             const ls = me.getDir(e).ls();
             for (var k = 0; k < ls.length; k++) {
-                console.log(3)
+                //  console.log(3)
                 const e2 = ls[k]
                 if (!e2.islink() && e2 instanceof dir && e2.exists()) {
-                    console.log(4)
+                    //   console.log(4)
                     const name = e2.getName()
                     const zip = e + "_" + k + ".zip";
                     const file = data.getFile(zip)
                     const err = await packAsync(e2.sysPath(), file.sysPath());
-                    if (err) console.log(err);
+                    if (err) console.error(err);
                     resources.push({ dynamic: e == "saves", unzip: { file: [e] }, key: [e, name].join("/"), name: zip, path: [".data"], url: [baseUrl, ".data", zip].join("/"), chk: { sha1: file.getHash(), size: file.getSize() } });
                 }
             }
@@ -397,18 +397,18 @@ export default class instance {
             Object.values(this.assets.objects).forEach((e) => {
                 assetTag(getAssets().getDir("objects"), e.hash).getFile(e.hash).copyto(assetTag(assetz.getDir("objects"), e.hash).mkdir().getFile(e.hash))
             })
-            console.log(assetz.sysPath())
+           // console.log(assetz.sysPath())
             const err = await packAsync(assetz.sysPath(), mzip.sysPath());
-            if (err) console.log(err);
+            if (err) console.error(err);
             assetz.rm();
         }
 
         for (var k = 0; k < ls2.length; k++) {
             const e = ls2[k];
-            console.log(e.getName() + ":" + e.islink())
+           // console.log(e.getName() + ":" + e.islink())
             if (!e.islink() && !avoid.includes(e.getName()) && !e.getName().startsWith(".")) {
                 const err = await packAsync(e.sysPath(), mzip.sysPath());
-                if (err) console.log(err);
+                if (err) console.error(err);
 
             }
         }

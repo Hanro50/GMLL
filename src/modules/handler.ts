@@ -103,7 +103,7 @@ export async function installForge(forgeInstallerJar?: file | string): Promise<v
     if (forgeInstallerJar) {
         args.push("--installer", forgeInstallerJar.sysPath());
     }
-    console.log(args)
+  //  console.log(args)
     path.mkdir();
     emit("jvm.start", "Forgiac", path.sysPath());
     const s = spawn(javaPath.sysPath(), args, { "cwd": path.sysPath() })
@@ -131,7 +131,7 @@ export async function importLink(url: string, name?: string): Promise<instance |
     }
     const manfile = fsSanitiser(v.name) + ".json"
     const manifest = (await getMeta().manifests.getFile(manfile).download(url + "/.meta/manifest.json", { sha1: v.sha })).toJSON<manifest>();
-    console.log(manfile)
+   // console.log(manfile)
     if (!name) return manifest;
     return new instance({ version: manifest.id, name: name }).save();
 }

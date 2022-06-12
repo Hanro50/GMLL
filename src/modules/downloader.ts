@@ -1,5 +1,5 @@
 import { lawyer, getOS, assetTag, throwErr, classPathResolver, getErr, processAssets, getCpuArch } from "./internal/util.js";
-import { join, resolve } from "path";
+import { resolve } from "path";
 import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig } from "./config.js";
 import { processCMD, failCMD, getSelf } from "./internal/get.js"
 import cluster from "cluster";
@@ -7,9 +7,8 @@ const fork = cluster.fork;
 const setupMaster = cluster.setupPrimary || cluster.setupMaster;
 import { cpus } from 'os';
 import Fetch from 'node-fetch';
-import { assetIndex, assets, manifest, runtimeFILE, runtimeManifest, runtimeManifests, runtimes, version } from "../index.js";
+import { assetIndex, assets, manifest, mojangResourceFile, runtimeManifest, runtimeManifests, runtimes, version } from "../index.js";
 import { dir, downloadable, file, mklink } from "./objects/files.js";
-import { existsSync, unlinkSync } from "fs";
 
 
 setupMaster({
@@ -106,18 +105,22 @@ export function runtime(runtime: runtimes) {
     if (!cfile.exists()) {
         throwErr("Cannot find runtime");
     }
-    const json = cfile.toJSON<runtimeFILE>().files;
-    var arr = [];
-    const lzma = getRuntimes().getDir("lzma");
+    return mojangRFDownloader(cfile.toJSON<mojangResourceFile>(), getRuntimes().getDir(runtime), getRuntimes().getDir("lzma"))
+}
+/**Did you know you can use this file to download dungeons? */
+export function mojangRFDownloader(file: mojangResourceFile, baseFile: dir, lzma?: dir) {
+    if (!lzma)
+        lzma = baseFile.getDir("lzma")
+
     lzma.mkdir();
+    const json = file.files;
+    var arr = [];
+
     Object.keys(json).forEach(key => {
         const obj = json[key];
-        var _file = getRuntimes().getFile(runtime, ...key.split("/"));
-        var _dir = getRuntimes().getDir(runtime, ...key.split("/"));
-
+        var _file = baseFile.getFile(...key.split("/"));
+        var _dir = baseFile.getDir(...key.split("/"));
         const name = key.split("/").pop();
-
-
         switch (obj.type) {
             case "directory":
                 _dir.mkdir();
@@ -157,6 +160,8 @@ export function runtime(runtime: runtimes) {
     });
     return download(arr, 5);
 }
+
+
 /**Install a set version's assets based on a provided asset index. */
 export async function assets(index: assetIndex) {
     const root = getAssets();
@@ -240,7 +245,7 @@ export async function libraries(version: version) {
                     }
                     break;
                 } catch (e) {
-                    console.log(getErr(e));
+                    console.error(getErr(e));
                 }
             }
             arr.push(file.toDownloadable(e.url + path, path, { sha1: sha1 }))
@@ -300,7 +305,7 @@ export async function manifests() {
             });
             meta.manifests.getFile("fabric.json").write(result);
         } catch (e) {
-            console.log(getErr(e));
+            console.error(getErr(e));
         }
     }
 

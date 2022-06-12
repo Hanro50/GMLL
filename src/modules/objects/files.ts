@@ -279,6 +279,6 @@ export class file extends dir {
                 com.push("-xr!" + f);
             })
         }
-        return new Promise<void>(e => _cmd(com, (err: any) => { if (err) console.log(err); e() }));
+        return new Promise<void>(e => _cmd(com, (err: any) => { if (err) console.error(err); e() }));
     }
 }

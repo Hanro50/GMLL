@@ -1,5 +1,5 @@
 
-import { arch, platform, type, version } from "os";
+import { arch, platform, version } from "os";
 import { assets, rules, cpuArch } from "../../index.js";
 //import { downloadable } from "./get";
 import { cmd as _cmd } from '7zip-min';

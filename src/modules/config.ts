@@ -1,6 +1,4 @@
 import { EventEmitter } from "events";
-import { tmpdir } from "os";
-import { join } from "path";
 import { manifests } from "./downloader.js";
 import { dir, file } from "./objects/files.js";
 import { getErr, throwErr } from "./internal/util.js";

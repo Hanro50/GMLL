@@ -4,8 +4,8 @@
  * ---------------------------------------------------------------------------------------------
  */
 import { initialize } from "./modules/config.js";
-import { type, version } from "os";
-import instance, { options } from "./modules/objects/instance.js";
+import { version } from "os";
+import { options } from "./modules/objects/instance.js";
 import { downloadable } from "./modules/objects/files.js";
 
 
@@ -189,7 +189,16 @@ export interface launcherFILE {
     },
     executable?: boolean,
 }
-
+/**
+ * The generic resource file format mojang uses. 
+ * The two downloadables in this formate are the java edition runtimes and Minecraft Dungeons
+ */
+export interface mojangResourceFile {
+    files: {
+        [key: string]: launcherFILE
+    }
+}
+/**@deprecated Name changed to `mojangResourceFile` */
 export interface runtimeFILE {
     files: {
         [key: string]: launcherFILE
@@ -232,7 +241,8 @@ export * as downloader from './modules/downloader.js';
 export * as handler from "./modules/handler.js";
 /**Integration with other libs */
 export * as wrapper from "./modules/wrapper.js";
-
+/**Provides access to GMLL's file handler */
+export * as files from "./modules/objects/files.js"
 /**The instance object. An instance is basically a minecraft profile you can launch */
 export { default as instance } from "./modules/objects/instance.js";
 export { token as token } from "./modules/objects/instance.js";
