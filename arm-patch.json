@@ -1,0 +1,173 @@
+{
+    "_comment": "This is a proposed modification to the version.json of 1.19 and newer to allow it to run on arm64. Do note that gmll is not currently set up to function on arm devices. We are missing the runtimes thus far. Which might I might end up hosting myself at some point.",
+    "libraries": [
+        {
+            "name": "org.lwjgl:lwjgl:3.3.1:natives-linux-arm64",
+            "url": "https://repo1.maven.org/maven2/",
+            "rules": [
+                {
+                    "action": "allow",
+                    "os": {
+                        "name": "linux"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "org.lwjgl:lwjgl-jemalloc:3.3.1:natives-linux-arm64",
+            "url": "https://repo1.maven.org/maven2/",
+            "rules": [
+                {
+                    "action": "allow",
+                    "os": {
+                        "name": "linux"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "org.lwjgl:lwjgl-openal:3.3.1:natives-linux-arm64",
+            "url": "https://repo1.maven.org/maven2/",
+            "rules": [
+                {
+                    "action": "allow",
+                    "os": {
+                        "name": "linux"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "org.lwjgl:lwjgl-opengl:3.3.1:natives-linux-arm64",
+            "url": "https://repo1.maven.org/maven2/",
+            "rules": [
+                {
+                    "action": "allow",
+                    "os": {
+                        "name": "linux"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "org.lwjgl:lwjgl-glfw:3.3.1:natives-linux-arm64",
+            "url": "https://repo1.maven.org/maven2/",
+            "rules": [
+                {
+                    "action": "allow",
+                    "os": {
+                        "name": "linux"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "org.lwjgl:lwjgl-stb:3.3.1:natives-linux-arm64",
+            "url": "https://repo1.maven.org/maven2/",
+            "rules": [
+                {
+                    "action": "allow",
+                    "os": {
+                        "name": "linux"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "org.lwjgl:lwjgl-tinyfd:3.3.1:natives-linux-arm64",
+            "url": "https://repo1.maven.org/maven2/",
+            "rules": [
+                {
+                    "action": "allow",
+                    "os": {
+                        "name": "linux"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "org.lwjgl:lwjgl:3.3.1:natives-windows-arm64",
+            "url": "https://repo1.maven.org/maven2/",
+            "rules": [
+                {
+                    "action": "allow",
+                    "os": {
+                        "name": "windows"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "org.lwjgl:lwjgl-jemalloc:3.3.1:natives-windows-arm64",
+            "url": "https://repo1.maven.org/maven2/",
+            "rules": [
+                {
+                    "action": "allow",
+                    "os": {
+                        "name": "windows"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "org.lwjgl:lwjgl-openal:3.3.1:natives-windows-arm64",
+            "url": "https://repo1.maven.org/maven2/",
+            "rules": [
+                {
+                    "action": "allow",
+                    "os": {
+                        "name": "windows"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "org.lwjgl:lwjgl-opengl:3.3.1:natives-windows-arm64",
+            "url": "https://repo1.maven.org/maven2/",
+            "rules": [
+                {
+                    "action": "allow",
+                    "os": {
+                        "name": "windows"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "org.lwjgl:lwjgl-glfw:3.3.1:natives-windows-arm64",
+            "url": "https://repo1.maven.org/maven2/",
+            "rules": [
+                {
+                    "action": "allow",
+                    "os": {
+                        "name": "windows"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "org.lwjgl:lwjgl-stb:3.3.1:natives-windows-arm64",
+            "url": "https://repo1.maven.org/maven2/",
+            "rules": [
+                {
+                    "action": "allow",
+                    "os": {
+                        "name": "windows"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "org.lwjgl:lwjgl-tinyfd:3.3.1:natives-windows-arm64",
+            "url": "https://repo1.maven.org/maven2/",
+            "rules": [
+                {
+                    "action": "allow",
+                    "os": {
+                        "name": "windows"
+                    }
+                }
+            ]
+        }
+    ]
+}
