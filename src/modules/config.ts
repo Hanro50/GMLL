@@ -20,11 +20,11 @@ export interface Events {
      * restart=>Used when the downloader has detected a timeout and decides to reset so it can try again
      * done=>Fired when everything is wrapped up.
     */
-    on(e: "download.start" | "download.restart" | "download.done", f: () => void): void
+    on(e: "download.start" | "download.restart" | "download.done" | "encode.start" | "encode.done", f: () => void): void
     /**Used to give setup information. Useful for progress bars. */
     on(e: "download.setup", f: (cores: number) => void): void
     /**Fired when a file has been downloaded and saved to disk */
-    on(e: "download.progress", f: (key: string, index: Number, total: Number, left: Number) => void): void
+    on(e: "download.progress" | "encode.progress", f: (key: string, index: Number, total: Number, left: Number) => void): void
     /**Fired when GMLL needs to restart a download */
     on(e: "download.fail", f: (key: string, type: "retry" | "fail" | "system", err: any) => void): void
     /**The events fired when GMLL has to spin up an instance of the JVM. 
@@ -41,6 +41,11 @@ export interface Events {
     emit(tag: string, ...args: any): void
 }
 let defEvents: Events = new EventEmitter();
+//Encode Manager
+defEvents.on('encode.start', () => console.log("[GMLL]: Starting to encode files"))
+defEvents.on('encode.progress', (key, index, total, left) => console.log("[GMLL]: Done with " + index + " of " + total + " : " + left + " : " + key))
+defEvents.on('encode.done', () => console.log("[GMLL]: Done with encoding files"))
+
 //Download Manager
 defEvents.on('download.setup', (cores) => console.log("[GMLL]: Dividing out work to " + cores + " cores"))
 defEvents.on('download.start', () => console.log("[GMLL]: Starting download"))

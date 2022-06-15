@@ -253,5 +253,9 @@
                 }
             ]
         }
-    ]
+    ],
+    "javaVersion": {
+        "component": "java-runtime-arm",
+        "majorVersion": 17
+    }
 }

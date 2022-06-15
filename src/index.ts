@@ -180,9 +180,16 @@ export interface library {
     clientreq?: boolean
 }
 
-export interface launcherFILE {
+export interface resourceDIR {
+    type: "directory"
+}
+export interface resourceLink {
+    type: "link",
     target: string;
-    type: "directory" | "file" | "link"
+}
+
+export interface launcherFILE {
+    type: "file"
     downloads?: {
         lzma?: urlFile,
         raw: urlFile
@@ -195,7 +202,7 @@ export interface launcherFILE {
  */
 export interface mojangResourceFile {
     files: {
-        [key: string]: launcherFILE
+        [key: string]: launcherFILE | resourceDIR | resourceLink
     }
 }
 /**@deprecated Name changed to `mojangResourceFile` */

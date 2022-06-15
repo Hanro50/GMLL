@@ -1,14 +1,13 @@
 import { spawn } from "child_process";
 import { join } from "path";
 import { assetTag, combine, fsSanitiser, lawyer, processAssets, throwErr } from "../internal/util.js";
-import { dir, downloadable, file } from "./files.js";
+import { dir, downloadable, file, packAsync } from "./files.js";
 import { cpus, type } from "os";
 import { getClientID, getJavaPath, getLatest, installForge } from "../handler.js";
 import { emit, getAssets, getInstances, getLauncherName, getLauncherVersion, getlibraries, getMeta, getNatives, resolvePath } from "../config.js";
 import { assets, launchArgs, manifest, user_type, version as version_type } from "../../index.js";
 import { version } from "./version.js";
 
-import { pack, cmd } from '7zip-min';
 import { download, runtime } from "../downloader.js";
 
 /**
@@ -346,7 +345,6 @@ export default class instance {
         const blacklist = ["usercache.json", "realms_persistence.json", "logs"]
         const me = new dir(this.getPath());
         const resources: downloadable[] = [];
-        const packAsync = (pathToDirOrFile: string, pathToArchive: string) => new Promise<Error | null>(res => pack(pathToDirOrFile, pathToArchive, res));
 
         const cp = (d: dir, path: string[]) => {
             //  console.log(d.exists())

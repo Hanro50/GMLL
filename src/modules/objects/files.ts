@@ -1,10 +1,10 @@
 import { join } from "path";
 import fetch from "node-fetch";
-import { existsSync, mkdirSync, unlinkSync, symlinkSync, readFileSync, createWriteStream, statSync, writeFileSync, read, rmSync, readdirSync, copyFileSync, lstatSync } from 'fs';
+import { existsSync, mkdirSync, unlinkSync, symlinkSync, readFileSync, createWriteStream, statSync, writeFileSync, rmSync, readdirSync, copyFileSync, lstatSync, renameSync, access, constants, } from 'fs';
 import { createHash } from "crypto";
 import { platform, type } from "os";
 import { execSync } from "child_process";
-import { cmd as _cmd } from '7zip-min';
+import { cmd as _cmd, pack } from '7zip-min';
 
 export interface downloadable {
     name: string,
@@ -41,6 +41,9 @@ export function mklink(dest: string, path: string) {
         process.exit()
     }
 }
+export function packAsync(pathToDirOrFile: string, pathToArchive: string) {
+    return new Promise<Error | null>(res => pack(pathToDirOrFile, pathToArchive, res))
+};
 
 
 export function mkdir(path: string) {
@@ -149,6 +152,7 @@ export class dir {
     }
 }
 export class file extends dir {
+
     dir(): dir {
         return new dir(...this.path);
     }
@@ -184,6 +188,10 @@ export class file extends dir {
     }
     copyto(file: file) {
         copyFileSync(this.sysPath(), file.sysPath());
+    }
+    moveTo(file: file) {
+        renameSync(this.sysPath(), file.sysPath())
+        return file;
     }
     sha1(expected: string | string[]) {
         if (!this.exists()) return false
@@ -280,5 +288,14 @@ export class file extends dir {
             })
         }
         return new Promise<void>(e => _cmd(com, (err: any) => { if (err) console.error(err); e() }));
+    }
+    isExecutable() : Promise<boolean> {
+        return new Promise((res) => {
+            access(this.sysPath(), constants.F_OK, (err) => {
+                res(err ? false : true)
+                // console.log(`${file} ${err ? 'does not exist' : 'exists'}`);
+            });
+        })
+
     }
 }

@@ -59,7 +59,7 @@ export function lawyer(rules: rules, properties: any = {}): boolean {
  * Generates the sha1 dir listings for assets and compressed runtime files 
  */
 export function assetTag(path: dir, sha1: string) {
-    const file = path.getDir(sha1.substr(0, 2));
+    const file = path.getDir(sha1.substring(0, 2));
     file.mkdir()
     return file;
 }

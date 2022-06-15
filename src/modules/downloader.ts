@@ -8,7 +8,7 @@ const setupMaster = cluster.setupPrimary || cluster.setupMaster;
 import { cpus } from 'os';
 import Fetch from 'node-fetch';
 import { assetIndex, assets, manifest, mojangResourceFile, runtimeManifest, runtimeManifests, runtimes, version } from "../index.js";
-import { dir, downloadable, file, mklink } from "./objects/files.js";
+import { dir, downloadable, file, mklink, packAsync } from "./objects/files.js";
 
 
 setupMaster({
@@ -345,4 +345,93 @@ export async function manifests() {
             await meta.runtimes.getFile(key + ".json").download(obj.manifest.url, obj.manifest);
         }
     }
+}
+/**
+ * Used for runtime management
+  */
+export async function encodeMRF(url: string, root: dir, out: dir) {
+    let res: mojangResourceFile = { files: {} }
+    let packed = out.getDir('encoded').mkdir();
+    console.log("[GMLL] Starting to encode as Mojang resource file")
+    let tfiles = 0;
+    let cfiles = 0;
+    emit('encode.start');
+    async function encodeDir(path: string, root: dir) {
+
+
+        const ls = root.ls().sort((a, b) => a.sysPath().length - b.sysPath().length);
+        tfiles += ls.length;
+        for (let index = 0; index < ls.length; index++) {
+
+            const e = ls[index]
+            const directory = [path, e.getName()].join("/")
+
+
+            cfiles++
+            emit('encode.progress', directory, cfiles, tfiles, tfiles - cfiles);
+            if (e.islink()) {
+                console.warn("[GMLL] Not implemented yet!")
+                continue;
+            }
+            else if (e instanceof file) {
+
+                const rhash = e.getHash();
+                e.copyto(packed.getFile(rhash, e.name).mkdir())
+
+                let zip = out.getFile('tmp', e.name + ".7z").mkdir()
+                await packAsync(e.sysPath(), zip.sysPath())
+                const zhash = zip.getHash();
+
+
+
+                if (zip.getSize() < e.getSize()) {
+                    zip = zip.moveTo(packed.getFile(zhash, e.name).mkdir())
+                    res.files[directory] = {
+                        "type": "file",
+                        "executable": await e.isExecutable(),
+                        "downloads": {
+                            "lzma": {
+                                "sha1": zhash,
+                                "size": zip.getSize(),
+                                "url": [url, zhash, e.name].join("/")
+                            },
+                            "raw": {
+                                "sha1": rhash,
+                                "size": e.getSize(),
+                                "url": [url, rhash, e.name].join("/")
+                            }
+                        }
+                    }
+                } else {
+                    zip.rm()
+                    res.files[directory] = {
+                        "type": "file",
+                        "executable": await e.isExecutable(),
+                        "downloads": {
+                            "raw": {
+                                "sha1": rhash,
+                                "size": e.getSize(),
+                                "url": [url, rhash, e.name].join("/")
+                            }
+                        }
+                    }
+                }
+                continue;
+            }
+            else if (e instanceof dir) {
+                res.files[directory] = {
+                    "type": "directory",
+                }
+                await encodeDir(directory, e)
+                continue;
+            }
+
+        }
+
+    }
+
+    await encodeDir("", root)
+    out.getFile("file-Index.json").write(res)
+    emit('encode.done');
+    return res;
 }
