@@ -1,7 +1,7 @@
 import { copyFileSync } from "fs";
 import { join } from "path";
 import { assets as _assets, jarTypes, manifest, version as _version } from "../..";
-import { getlibraries, getVersions, isInitialized } from "../config.js";
+import { getlibraries, getMeta, getVersions, isInitialized, onUnsupportedArm } from "../config.js";
 import { assets, runtime, libraries } from "../downloader.js";
 import { getManifest, getJavaPath } from "../handler.js";
 import { dir, file } from "./files";
@@ -33,7 +33,12 @@ export class version {
      * @see {@link get} : This is the method that should instead be used
      */
     private constructor(manifest: string | manifest) {
+        
         this.manifest = typeof manifest == "string" ? getManifest(manifest) : manifest;
+        if (onUnsupportedArm && Date.parse(this.manifest.releaseTime)<Date.parse("2022-05-12T15:36:11+00:00")){
+            console.trace(manifest)
+            throw "Only 1.19 and up is supported on arm based Windows and Linux devices atm."
+        }
         //  console.log(this.manifest)
         this.json;
         this.name = this.manifest.base || this.manifest.id;
@@ -41,6 +46,8 @@ export class version {
         this.file = this.folder.getFile(this.manifest.id + ".json");
         this.synced = true;
         this.folder.mkdir();
+
+      
     }
     mergeFailure() {
         return this._mergeFailure;
@@ -50,6 +57,7 @@ export class version {
      * @see {@link json} for synchronious way to access this. The {@link get} method already calls this function and saves it accordingly. 
      */
     async getJSON(): Promise<_version> {
+
 
         const folder_old = getVersions().getDir(this.manifest.id);
         const file_old = folder_old.getFile(this.manifest.id + ".json");
@@ -76,6 +84,7 @@ export class version {
                     console.warn("[GMLL]: Dependency merge failed.");
                     this._mergeFailure = true;
                 }
+                if (onUnsupportedArm) {this.json = combine(this.json, getMeta().index.getFile("arm-patch.json").toJSON())}
                 return this.json;
             }
         }
@@ -99,6 +108,7 @@ export class version {
                 this._mergeFailure = true;
             }
         }
+        if (onUnsupportedArm) {this.json = combine(this.json, getMeta().index.getFile("arm-patch.json").toJSON())}
         return this.json;
     }
     /**
@@ -129,6 +139,7 @@ export class version {
         }
     }
     async install() {
+      
         if (this._mergeFailure) {
             this._mergeFailure = false;
             console.log("[GMLL]: Correcting earlier dependency merge failure.");

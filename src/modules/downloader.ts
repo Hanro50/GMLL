@@ -1,6 +1,6 @@
-import { lawyer, getOS, assetTag, throwErr, classPathResolver, getErr, processAssets, getCpuArch } from "./internal/util.js";
+import { lawyer, getOS, assetTag, throwErr, classPathResolver, getErr, processAssets, getCpuArch, combine } from "./internal/util.js";
 import { resolve } from "path";
-import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig } from "./config.js";
+import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig, onUnsupportedArm } from "./config.js";
 import { processCMD, failCMD, getSelf } from "./internal/get.js"
 import cluster from "cluster";
 const fork = cluster.fork;
@@ -8,7 +8,7 @@ const setupMaster = cluster.setupPrimary || cluster.setupMaster;
 import { cpus } from 'os';
 import Fetch from 'node-fetch';
 import { assetIndex, assets, manifest, mojangResourceFile, runtimeManifest, runtimeManifests, runtimes, version } from "../index.js";
-import { dir, downloadable, file, mklink, packAsync } from "./objects/files.js";
+import { dir, downloadable, file, packAsync } from "./objects/files.js";
 import { readlinkSync } from "fs";
 
 
@@ -267,6 +267,11 @@ export async function manifests() {
 
     const mcRuntimes = "https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json";
     const mcVersionManifest = "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json";
+
+    const armRuntimes = "https://download.hanro50.net.za/java/index.json"
+    const armPatch = "https://download.hanro50.net.za/java/arm-patch.json"
+
+
     const update = getUpdateConfig();
     const meta = getMeta();
     interface jsloaderInf {
@@ -278,6 +283,9 @@ export async function manifests() {
     }
     interface jsgameInf {
         version: string; stable: boolean;
+    }
+    if (onUnsupportedArm) {
+        await meta.index.getFile("arm-patch.json").download(armPatch);
     }
     if (update.includes("vanilla")) {
         const r = await Fetch(mcVersionManifest);
@@ -319,14 +327,21 @@ export async function manifests() {
     }
     if (update.includes("runtime")) {
         const meta = getMeta();
-        const manifest = (await meta.index.getFile("runtime.json").download(mcRuntimes)).toJSON<runtimeManifests>();
+        let manifest = (await meta.index.getFile("runtime.json").download(mcRuntimes)).toJSON<runtimeManifests>();
+        if (onUnsupportedArm) {
+            let Armmanifest = (await meta.index.getFile("runtime-Arm.json").download(armRuntimes)).toJSON<runtimeManifests>();
+            manifest = combine(manifest, Armmanifest)
+        }
 
-        var platform: "gamecore" | "linux" | "linux-i386" | "mac-os" | "mac-os-arm64" | "windows-x64" | "windows-x86";
+        var platform: "gamecore" | "linux" | "linux-i386" | "mac-os" | "mac-os-arm64" | "windows-x64" | "windows-x86" | "linux-arm64" | "linux-arm32" | "windows-arm64";
         switch (getOS()) {
             case ("windows"):
+                if (onUnsupportedArm) { platform = "windows-arm64"; break; }
                 platform = getCpuArch() == "x64" ? "windows-x64" : "windows-x86"; break;
             case ("linux"):
+                if (onUnsupportedArm) { platform = getCpuArch() == "arm" ? "linux-arm32" : "linux-arm64"; break; }
                 platform = getCpuArch() == "x64" ? "linux" : "linux-i386"; break;
+
             case ("osx"):
                 if (getCpuArch() == "arm64") {
                     platform = "mac-os-arm64";
@@ -346,6 +361,7 @@ export async function manifests() {
             await meta.runtimes.getFile(key + ".json").download(obj.manifest.url, obj.manifest);
         }
     }
+
 }
 /**
  * Used for runtime management

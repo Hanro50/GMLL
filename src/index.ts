@@ -228,8 +228,8 @@ export type runtimeManifest = {
     }
 }
 export type runtimeManifests = {
-    [key in "gamecore" | "linux" | "linux-i386" | "mac-os" | "windows-x64" | "windows-x86"]: {
-        [key in "java-runtime-beta" | "java-runtime-alpha" | "jre-legacy" | "minecraft-java-exe"]: Array<runtimeManifest>
+    [key in "gamecore" | "linux" | "linux-i386" | "mac-os" | "windows-x64" | "windows-x86"| "linux-arm64"|"linux-arm32"|"windows-arm64"]: {
+        [key in "java-runtime-beta" | "java-runtime-alpha" | "jre-legacy" | "minecraft-java-exe"| "java-runtime-arm"]: Array<runtimeManifest>
     }
 }
 /**
