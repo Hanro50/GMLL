@@ -9,6 +9,7 @@ import { cpus } from 'os';
 import Fetch from 'node-fetch';
 import { assetIndex, assets, manifest, mojangResourceFile, runtimeManifest, runtimeManifests, runtimes, version } from "../index.js";
 import { dir, downloadable, file, mklink, packAsync } from "./objects/files.js";
+import { readlinkSync } from "fs";
 
 
 setupMaster({
@@ -370,7 +371,10 @@ export async function encodeMRF(url: string, root: dir, out: dir) {
             cfiles++
             emit('encode.progress', directory, cfiles, tfiles, tfiles - cfiles);
             if (e.islink()) {
-                console.warn("[GMLL] Not implemented yet!")
+                res.files[directory] = {
+                    "type": "link",
+                    "target": readlinkSync(e.sysPath())
+                }
                 continue;
             }
             else if (e instanceof file) {
@@ -431,7 +435,19 @@ export async function encodeMRF(url: string, root: dir, out: dir) {
     }
 
     await encodeDir("", root)
-    out.getFile("file-Index.json").write(res)
+    const manifest = out.getFile(root.getName() + "_manifest.json")
+    manifest.write(res)
+
+    const mhash = manifest.getHash()
+    manifest.copyto(packed.getFile(mhash, "manifest.json").mkdir())
+
+    const index = out.getFile(root.getName() + "_index.json")
+
+    index.write({
+        sha1: mhash,
+        size: manifest.getSize(),
+        url: [url, mhash, "manifest.json"].join("/")
+    })
     emit('encode.done');
     return res;
 }
