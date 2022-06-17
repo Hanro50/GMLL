@@ -1,6 +1,6 @@
 {
     "name": "gmll",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "A generic launcher core for building custom launchers",
     "license": "MIT",
     "types": "./dist/ts/index.d.ts",

@@ -369,7 +369,7 @@ export async function manifests() {
 export async function encodeMRF(url: string, root: dir, out: dir) {
     let res: mojangResourceFile = { files: {} }
     let packed = out.getDir('encoded').mkdir();
-    console.log("[GMLL] Starting to encode as Mojang resource file")
+    console.log("[GMLL]: Starting to encode as Mojang resource file")
     let tfiles = 0;
     let cfiles = 0;
     emit('encode.start');

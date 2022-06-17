@@ -5,7 +5,8 @@ import { getErr, throwErr } from "./internal/util.js";
 import packagePath from "./internal/root.cjs";
 import { arch, type } from "os";
 export type update = "fabric" | "vanilla" | "forge" | "runtime";
-export const onUnsupportedArm = true || (arch() == "arm64" || arch() == "arm") && type() != "Darwin";
+export const onUnsupportedArm = (arch() == "arm64" || arch() == "arm") && type() != "Darwin";
+console.warn("[GMLL]: Running on an non M1 Arm platform! We are desperate for dedicated testers!")
 let initialized = false;
 let version = (new file(packagePath, "..", "..", "package.json").toJSON<{ version: string }>().version || "0.0.0");
 let launcherName = "GMLL";
