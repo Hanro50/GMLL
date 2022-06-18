@@ -144,7 +144,7 @@ i777.launch(token);
 ## Custom icons and assets
 Warning: borked in general on Mac and Linux for releases between 1.13 and 1.18.1 (<a href="https://bugs.mojang.com/browse/MCL-15163">MCL-15163?</a>)
 
-Can be used to insert a matching launcher icon or replace a random song with Rick Ashley's <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Never going to give you up</a>. This will copy the files provided into Minecraft's asset index and create a custom asset index file matching the modifications. GMLL does take care to emulate vanilla here in how assets are added to the index to avoid collisions. 
+Can be used to insert a matching launcher icon or replace a random song with Rick Astley's <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Never going to give you up</a>. This will copy the files provided into Minecraft's asset index and create a custom asset index file matching the modifications. GMLL does take care to emulate vanilla here in how assets are added to the index to avoid collisions. 
 
 Should be a predefined asset in Minecraft's asset index for the version the set instance launches. 
 ```js
