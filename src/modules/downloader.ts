@@ -1,18 +1,20 @@
 import { lawyer, getOS, assetTag, throwErr, classPathResolver, getErr, processAssets, getCpuArch, combine } from "./internal/util.js";
 import { resolve } from "path";
 import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig, onUnsupportedArm, __get } from "./config.js";
-import cluster from "cluster";
-const fork = cluster.fork;
-const setupMaster = cluster.setupPrimary || cluster.setupMaster;
+//import cluster from "cluster";
+//const fork = cluster.fork;
+//const setupMaster = cluster.setupPrimary || cluster.setupMaster;
 import { cpus } from 'os';
 import Fetch from 'node-fetch';
 import { dir, file, packAsync } from "./objects/files.js";
 import { readlinkSync } from "fs";
 import type { downloadableFile, versionManifest, runtimeManifestEntry, runtimeManifest, mcRuntimeVal, versionJson, assetIndex, artifact, mojangResourceManifest, mojangResourceFile } from "../types.js";
+import { Worker } from "worker_threads";
+import { getWorkerDate } from "./internal/get.js";
 
 const processCMD = "download.progress";
 const failCMD = "download.fail";
-if (cluster.isWorker) console.warn("[GMLL]: Possible worker context leak detected!");
+//if (cluster.isWorker) console.warn("[GMLL]: Possible worker context leak detected!");
 /**
  * Download function. Can be used for downloading modpacks and launcher updates.
  * Checks sha1 hashes and can use multiple cores to download files rapidly. 
@@ -25,9 +27,9 @@ if (cluster.isWorker) console.warn("[GMLL]: Possible worker context leak detecte
  * Each restart actually increments this value. 
  */
 export function download(obj: Partial<downloadableFile>[], it: number = 1) {
-    setupMaster({
-        exec: __get
-    });
+    // setupMaster({
+    //     exec: __get
+    //});
     if (it < 1) it = 1;
     emit("download.started");
     obj.sort((a, b) => { return (b.chk.size || 0) - (a.chk.size || 0) });
@@ -41,13 +43,13 @@ export function download(obj: Partial<downloadableFile>[], it: number = 1) {
         var active = true;
         const totalItems = Object.values(temp).length;
         return new Promise<void>(res => {
-            const numCPUs = cpus().length;
+            const numCPUs = Math.max(cpus().length - 1, 1);
             emit("download.setup", numCPUs);
             var done = 0;
             var arr = [];
             const data = Object.values(temp);
-            const workers = [];
-            const fire = () => workers.forEach(w => w.process.kill());
+            const workers: Worker[] = [];
+            const fire = () => workers.forEach(w => w.terminate());
             for (let i3 = 0; i3 < numCPUs; i3++) {
                 var iCpu = [];
                 for (let i = i3; i < data.length; i += numCPUs) iCpu.push(data[i]);
@@ -65,12 +67,16 @@ export function download(obj: Partial<downloadableFile>[], it: number = 1) {
 
             for (let i = 0; i < arr.length; i++) {
 
-                let cpu = { length: arr[i].length };
+                let cpu: getWorkerDate = {
+                    processCMD,
+                    failCMD,
+                    keys: []
+                };
                 for (var i7 = 0; i7 < arr[i].length; i7++) {
-                    cpu["gmll_" + i7] = JSON.stringify(arr[i][i7]);
+                    cpu.keys.push(arr[i][i7]);
                 }
 
-                const w = fork(cpu);
+                const w = new Worker(__get, { workerData: cpu });
                 workers.push(w);
                 w.on('message', (msg) => {
                     if (!msg.cmd) return;

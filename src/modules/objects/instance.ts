@@ -310,7 +310,7 @@ export default class instance {
             launchCom = launchCom.replace(regex, args[key])
         })
         emit("jvm.start", "Minecraft", this.getPath());
-       // console.debug(launchCom)
+        // console.debug(launchCom)
         const s = spawn(javaPath.sysPath(), launchCom.trim().split(" "), { "cwd": this.getPath() })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
@@ -320,7 +320,7 @@ export default class instance {
      * @param save The file GMLL will generate the final files on. 
      * @param name The name that should be used to identify the generated version files
     */
-    async wrap(baseUrl: string, save: dir | string, name: string = ("custom_" + this.name), forge?: { jar: file | string }) {
+    async wrap(baseUrl: string, save: dir | string, name: string = ("custom_" + this.name), forge?: { jar: file | string } | file) {
         if (typeof save == "string") save = new dir(save);
         await this.install();
         const seperate = ["resourcepacks", "texturepacks", "mods", "coremods", "shaderpacks"]
@@ -373,7 +373,7 @@ export default class instance {
         const zip = "misc.zip";
         const mzip = data.getFile(zip).mkdir();
         const avoid = [...seperate, ...bunlde, ...blacklist]
-        if (this.assets) {
+        if (this.assets && this.assets.objects) {
             const assetz = save.getDir("assets").mkdir();
             Object.values(this.assets.objects).forEach((e) => {
                 assetTag(getAssets().getDir("objects"), e.hash).getFile(e.hash).copyto(assetTag(assetz.getDir("objects"), e.hash).mkdir().getFile(e.hash))
@@ -407,14 +407,17 @@ export default class instance {
         const verfile = save.getDir(".meta").mkdir().getFile("version.json");
         let Fversion = this.version;
         if (forge) {
-            if (typeof forge.jar == "string") forge.jar = new file(forge.jar);
+            let _forge: file;
+            if (forge instanceof file) _forge = forge;
+            else if (typeof forge.jar == "string") _forge = new file(forge.jar);
+            else _forge = forge.jar;
 
             await runtime("java-runtime-beta");
 
             const javaPath = getJavaPath("java-runtime-beta");
             const path = save.getDir(".forgiac").rm().mkdir();
             const manifest = path.getDir("manifest").mkdir();
-            const args: string[] = ["-jar", getlibraries().getFile("za", "net", "hanro50", "forgiac", "basic", "forgiac.jar").sysPath(), "--.minecraft", path.sysPath(), "--mk_manifest", manifest.sysPath(), "--installer", forge.jar.sysPath()];
+            const args: string[] = ["-jar", getlibraries().getFile("za", "net", "hanro50", "forgiac", "basic", "forgiac.jar").sysPath(), "--.minecraft", path.sysPath(), "--mk_manifest", manifest.sysPath(), "--installer", _forge.sysPath()];
 
             path.mkdir();
             emit("jvm.start", "Forgiac", path.sysPath());
@@ -433,9 +436,9 @@ export default class instance {
             }
             const forgePath = save.getDir("forge").mkdir();
             Fversion = forgi.toJSON<versionManifest>().id;
-            forge.jar.copyto(forgePath.getFile(forge.jar.getName()));
-            ver.instance.files.push({ key: forge.jar.getName(), name: forge.jar.getName(), path: ["forge"], url: [baseUrl, "forge", forge.jar.getName()].join("/"), chk: { sha1: forge.jar.getHash(), size: forge.jar.getSize() } })
-            ver.instance.forge = { installer: ["forge", forge.jar.getName()] };
+            _forge.copyto(forgePath.getFile(_forge.getName()));
+            ver.instance.files.push({ key: _forge.getName(), name: _forge.getName(), path: ["forge"], url: [baseUrl, "forge", _forge.getName()].join("/"), chk: { sha1:_forge.getHash(), size: _forge.getSize() } })
+            ver.instance.forge = { installer: ["forge", _forge.getName()] };
 
             path.rm();
         }

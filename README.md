@@ -351,7 +351,7 @@ await int.wrap(
     /**The name of your pack.*/ 
     "MyAmazingPack",
     /**This is a bit more complex here for future proofing. This is just a path to your forge jar*/
-    {jar: new file("path/to/installer/jar")}))
+    new file("path/to/installer/jar"));
 ```
 ### Importing:
 ```js

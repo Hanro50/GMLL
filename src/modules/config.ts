@@ -4,9 +4,7 @@ import { dir, file } from "./objects/files.js";
 import { getErr, throwErr } from "./internal/util.js";
 import { arch, type } from "os";
 import { getPath } from "./internal/root.cjs";
-
-/**A redefinable pointer to the internal download manager script GMLL uses. */
-export let __get = getPath("./get.js");
+export let __get = getPath();
 if (!__get.endsWith("get.js")) {
     console.warn("[GMLL]: The internal downloader script may not be within it's own file. GMLL may fail due to this!!");
     console.warn("[GMLL]: If GMLL does fail. Please update the '__get' property in the config module to point to the correct standalone js file.");
