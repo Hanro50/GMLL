@@ -1,6 +1,7 @@
 /**The compatibility lib for integration with other libraries */
+import type { player } from "../types.js";
 import { throwErr } from "./internal/util.js";
-import { token as _token } from "./objects/instance.js";
+
 /**The return object that all the async login procedures return */
 export interface msmcResult {
     type: "Success" | "DemoUser" | "Authentication" | "Cancelled" | "Unknown"
@@ -25,7 +26,7 @@ export interface msmcResult {
  * @deprecated For use with msmc 3.x and below, please use the function included in 4.0.0 to get this same result
  * @returns a GMLL launch token
  */
-export function msmc2token(msmcResult: msmcResult): _token {
+export function msmc2token(msmcResult: msmcResult): player {
     if (msmcResult.type != "DemoUser" && msmcResult.type != "Success" || !msmcResult.profile) {
         throwErr("User was not logged in with msmc!");
     }
@@ -51,7 +52,7 @@ export function msmc2token(msmcResult: msmcResult): _token {
  * @param demo Whether to launch the game in demo mode or not (Userfull for demo account functionality)
  * @returns a GMLL launch token
  */
-export function mojang2token(username: string, uuid: string, accessToken: string, demo: boolean): _token {
+export function mojang2token(username: string, uuid: string, accessToken: string, demo: boolean): player {
     return {
         profile: {
             demo: demo,

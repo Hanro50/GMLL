@@ -1,10 +1,13 @@
 
-import { arch, platform, version } from "os";
-import { assets, rules, cpuArch } from "../../index.js";
+import { arch, networkInterfaces, platform, userInfo, version } from "os";
+
 //import { downloadable } from "./get";
 import { cmd as _cmd } from '7zip-min';
-import { dir } from "../objects/files.js";
-import { getAssets } from "../config.js";
+import { dir, stringify } from "../objects/files.js";
+import { getAssets, getMeta, isInitialized } from "../config.js";
+import { createHash, randomUUID } from "crypto";
+import { cpuArchRuleVal, versionJsonRules, assetIndex } from "../../types.js";
+
 /**Gets the current operating system GMLL thinks it is running under */
 export function getOS() {
     const operatingSystem = platform();
@@ -20,7 +23,7 @@ export function getOS() {
 }
 
 const OS = getOS();
-type exCpuArch = cpuArch | "ia32" | "x32";
+type exCpuArch = cpuArchRuleVal | "ia32" | "x32";
 /**Gets the current CPU architexture for the current running machine. May not be that accurate for Mac OS */
 export function getCpuArch() {
     let architexture: exCpuArch = arch() as exCpuArch;
@@ -28,11 +31,11 @@ export function getCpuArch() {
         if (OS == "windows" && process.env.hasOwnProperty('PROCESSOR_ARCHITEW6432')) architexture = "x64";
         else architexture = "x86";
     }
-    return architexture as cpuArch
+    return architexture as cpuArchRuleVal
 }
 const archx = getCpuArch();
 /**The processor that handles the rules set out in the version.json for a set version.*/
-export function lawyer(rules: rules, properties: any = {}): boolean {
+export function lawyer(rules: versionJsonRules, properties: any = {}): boolean {
     let end = true, end2 = false;
     //process.env.hasOwnProperty('PROCESSOR_ARCHITEW6432')
     for (let i = 0; i < rules.length; i++) {
@@ -79,13 +82,13 @@ export function throwErr(message: any) {
 /**Used to get maven class paths */
 export function classPathResolver(name: string) {
     const namespec = name.split(":", 4);
-    return `${namespec[0].replace(/\./g, "/")}/${namespec[1]}/${namespec[2]}/${namespec[1]}-${namespec[2]}${(namespec[3] ? '-'+namespec[3].replace(/\:/g, "-"):"")}.jar`;
+    return `${namespec[0].replace(/\./g, "/")}/${namespec[1]}/${namespec[2]}/${namespec[1]}-${namespec[2]}${(namespec[3] ? '-' + namespec[3].replace(/\:/g, "-") : "")}.jar`;
 
-  //  return namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + (namespec[3] ? namespec[3].replace(/\:/g, "-"):"") + ".jar";
+    //  return namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + (namespec[3] ? namespec[3].replace(/\:/g, "-"):"") + ".jar";
 }
 
 /**Takes two different version.json files and combines them */
-export function combine(ob1: any, ob2: any) {
+export function combine<T, T2>(ob1: T, ob2: T2): T & T2 {
     Object.keys(ob2).forEach(e => {
         if (!ob1[e]) {
             ob1[e] = ob2[e]
@@ -106,16 +109,17 @@ export function combine(ob1: any, ob2: any) {
             ob1[e] = ob2[e];
         }
     })
-    return ob1;
+    return ob1 as T & T2;
 }
 /**
- * Used to export assets from the modern asset index system the game uses for 1.8+ to a format legacy versions of the game can comprehend 
+ * Used to export assets from the modern asset index system the game uses for 1.8+ to a format legacy versions of the game can comprehend.
+ * This is how we get sound working in deprecated versions of Minecraft 
  */
-export function processAssets(assetIndex: assets) {
-    if (assetIndex.virtual || assetIndex.map_to_resources) {
+export function processAssets(assetManifest: assetIndex) {
+    if (assetManifest.virtual || assetManifest.map_to_resources) {
         const root = getAssets();
-        const file = root.getDir("legacy", assetIndex.virtual ? "virtual" : "resources").mkdir();
-        Object.entries(assetIndex.objects).forEach(o => {
+        const file = root.getDir("legacy", assetManifest.virtual ? "virtual" : "resources").mkdir();
+        Object.entries(assetManifest.objects).forEach(o => {
             const key = o[0];
             const obj = o[1];
             const to = file.getFile(...key.split("/")).mkdir();
@@ -124,3 +128,28 @@ export function processAssets(assetIndex: assets) {
         })
     }
 }
+
+/**
+ * Used to get a unique ID to recognise this machine. Used by mojang in some snapshot builds.
+ * We're just making sure it is sufficiently random
+ */
+export function getClientID(forceNew: boolean = false) {
+    isInitialized();
+    const path = getMeta().index.getFile("ClientID.txt");
+    var data: string;
+    if (!path.exists() || forceNew) {
+        data = stringify({
+            Date: Date.now(),
+            UUID: randomUUID(),
+            network: createHash('sha256').update(stringify(networkInterfaces())).digest("base64"),
+            user: createHash('sha256').update(stringify(userInfo())).digest("base64"),
+            provider: "GMLL",
+        });
+        data = createHash('sha512').update(data).digest("base64");
+        path.write(data);
+    } else {
+        data = path.read();
+    }
+    return data;
+}
+

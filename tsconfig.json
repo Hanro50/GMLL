@@ -1,4 +1,4 @@
-{  // Change this to match your project
+{ // Change this to match your project
   "include": [
     "src/**/*"
   ],
@@ -7,20 +7,24 @@
     "dist"
   ],
   "compilerOptions": {
-    "outDir": "dist/raw",
-    "moduleResolution": "Node",
+    "outDir": "dist",
+    "moduleResolution": "node16",
     "resolveJsonModule": true,
     "target": "ESNext",
-    // Generate d.ts files
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "importHelpers": true,
     "esModuleInterop": true,
-    // Types should go into this directory.
-    // Removing this would place the .d.ts files
-    // next to the .js files
-    "removeComments": true,
-  //  "sourceMap": true,
-    "rootDir": "src/"
+    "removeComments": false,
+    "declaration": true,
+    "declarationDir": "types",
+    "rootDir": "src/",
+    "module": "CommonJS",
+    "baseUrl": "src", // this must be specified if "paths" is specified.
+    "paths": {
+      "gmll/*": [
+        "*"
+      ]
+    }
   }
 }

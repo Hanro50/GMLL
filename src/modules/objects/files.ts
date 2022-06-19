@@ -1,3 +1,5 @@
+/**Accessed by get.js, imports allowed from other GMLL modules */
+
 import { join } from "path";
 import fetch from "node-fetch";
 import { existsSync, mkdirSync, unlinkSync, symlinkSync, readFileSync, createWriteStream, statSync, writeFileSync, rmSync, readdirSync, copyFileSync, lstatSync, renameSync, access, constants, } from 'fs';
@@ -5,26 +7,8 @@ import { createHash } from "crypto";
 import { platform, type } from "os";
 import { execSync } from "child_process";
 import { cmd as _cmd, pack } from '7zip-min';
+import type { downloadableFile } from "../../types";
 
-export interface downloadable {
-    name: string,
-    path: string[],
-    url: string,
-
-    key: string,
-    chk: {
-        sha1?: string | string[],
-        size?: number
-    },
-    unzip?: {
-        file: string[],
-
-        exclude?: string[]
-    },
-    executable?: boolean | string,
-    dynamic?: boolean
-
-}
 /**
  * 
  * @param dest Path to create the link in
@@ -246,7 +230,7 @@ export class file extends dir {
     }
     toDownloadable(url: string, key?: string, chk?: { sha1?: string | string[], size?: number }, opt?: { executable?: boolean | string, unzip?: { file: dir, exclude?: string[] } }) {
         this.mkdir();
-        let d: downloadable = { key: key || [...this.path, this.name].join("/"), name: this.name, path: this.path, url: url, chk: {} }
+        let d: downloadableFile = { key: key || [...this.path, this.name].join("/"), name: this.name, path: this.path, url: url, chk: {} }
         if (chk) {
             d.chk = chk;
         }
@@ -260,7 +244,7 @@ export class file extends dir {
         return d;
     }
 
-    static async process(json: downloadable) {
+    static async process(json: downloadableFile) {
         let f = new this(...json.path, json.name);
         if (json.dynamic && f.exists()) {
             return;
@@ -289,7 +273,7 @@ export class file extends dir {
         }
         return new Promise<void>(e => _cmd(com, (err: any) => { if (err) console.error(err); e() }));
     }
-    isExecutable() : Promise<boolean> {
+    isExecutable(): Promise<boolean> {
         return new Promise((res) => {
             access(this.sysPath(), constants.F_OK, (err) => {
                 res(err ? false : true)

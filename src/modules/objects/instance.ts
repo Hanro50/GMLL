@@ -1,19 +1,20 @@
 import { spawn } from "child_process";
 import { join } from "path";
-import { assetTag, combine, fsSanitiser, lawyer, processAssets, throwErr } from "../internal/util.js";
-import { dir, downloadable, file, packAsync } from "./files.js";
+import { assetTag, combine, fsSanitiser, getClientID, lawyer, processAssets, throwErr } from "../internal/util.js";
+import { dir, file, packAsync } from "./files.js";
 import { cpus, type } from "os";
-import { getClientID, getJavaPath, getLatest, installForge } from "../handler.js";
-import { emit, getAssets, getInstances, getLauncherName, getLauncherVersion, getlibraries, getMeta, getNatives, resolvePath } from "../config.js";
-import { assets, launchArgs, manifest, user_type, version as version_type } from "../../index.js";
-import { version } from "./version.js";
+import { getLatest, installForge, getJavaPath } from "../handler.js";
+import { emit, getAssets, getLauncherName, getLauncherVersion, getlibraries, getMeta, getNatives, resolvePath } from "../config.js";
+
+import version from "./version.js";
 
 import { download, runtime } from "../downloader.js";
+import { assetIndex, downloadableFile, launchArguments, launchOptions, mcUserTypeVal, player, versionJson, versionManifest } from "../../types.js";
 
 /**
  * For internal use only
  */
-function parseArguments(val = {}, args: launchArgs = defJVM) {
+function parseArguments(val = {}, args: launchArguments) {
     let out = ""
     args.forEach(e => {
         if (typeof e == "string")
@@ -24,94 +25,76 @@ function parseArguments(val = {}, args: launchArgs = defJVM) {
     return out
 }
 
-export let defJVM: launchArgs = [
-    { "rules": [{ "action": "allow", "os": { "name": "osx" } }], "value": ["-XstartOnFirstThread"] },
-    { "rules": [{ "action": "allow", "os": { "name": "windows" } }], "value": "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump" },
-    { "rules": [{ "action": "allow", "os": { "name": "windows", "version": "^10\\." } }], "value": ["-Dos.name=Windows 10", "-Dos.version=10.0"] },
-    { "rules": [{ "action": "allow", "os": { "arch": "x86" } }], "value": "-Xss1M" },
-    "-Djava.library.path=${natives_directory}",
-    "-Dminecraft.launcher.brand=${launcher_name}",
-    "-Dminecraft.launcher.version=${launcher_version}",
-    "-cp",
-    "${classpath}"
-]
 
-export let defaultGameArguments = [
-    "-Xms${ram}G",
-    "-Xmx${ram}G",
-    "-XX:+UnlockExperimentalVMOptions",
-    "-XX:+UseG1GC",
-    "-XX:G1NewSizePercent=20",
-    "-XX:G1ReservePercent=20",
-    "-XX:MaxGCPauseMillis=50",
-    "-XX:G1HeapRegionSize=32M",
-    "-Dlog4j2.formatMsgNoLookups=true"
-]
-export interface token {
-    profile: {
-        id: string,
-        name: string,
-        xuid?: string,
-        type?: user_type,
-        demo?: boolean,
-        properties?: {
-            //We're still reverse engineering what this property is used for...
-            //This likely does not work anymore...
-            twitch_access_token: string
-        }
-    },
-    access_token?: string
-}
-
-export interface options {
-    /**The name of the instance */
-    name?: string,
-    /**The version of the game to load */
-    version?: string,
-    /**The installation path */
-    path?: string,
-    /**Ram in GB */
-    ram?: Number,
-    /**Custom data your launcher can use */
-    meta?: any,
-    /**Asset index injection */
-    assets?: assets,
-    /**Define a custom java path. 
-     * @warning It is recommended to let GMLL handle this for you. It is solely changable to achieve parody with the vanilla launcher. 
-     * Changing this can easily break older versions of forge, cause grathical corruption, crash legacy versions of minecraft, cause issues with arm Macs and a whole host of random BS.  
-     * If brought up in the support channels for GMLL, you'll be asked to set this to it's default value if we see that you have changed it.
-     */
-    javaPath?: "default" | string;
-}
 /**
  * An instance is what the name intails. An instance of the game Minecraft containing Minecraft specific data.
  * This information on where the game is stored and the like. The mods installed and what not. 
  */
 export default class instance {
+
     name: string;
     version: string;
     ram: Number;
     meta: any;
     private path: string;
-    assets: Partial<assets>;
+    assets: Partial<assetIndex>;
     javaPath: "default" | string;
-    static get(name: string) {
 
-        const json = new file(getMeta().profiles.toString(), fsSanitiser(name + ".json")).toJSON<options>();
+    static getProfiles() {
+        const profiles: Map<string, (launchOptions & { get: () => instance })> = new Map();
+
+        getMeta().profiles.ls().forEach(e => {
+            const name = e.getName();
+            if (e instanceof file && e.getName().endsWith(".json")) {
+                const profile = e.toJSON<launchOptions>()
+                profiles.set(profile.name, { ...profile, get: () => this.get(e.getName()) })
+            }
+        })
+        return profiles;
+    }
+
+    static get(profile: string) {
+        if (!profile.endsWith(".json")) profile += ".json"
+        const _file = getMeta().profiles.getFile(fsSanitiser(profile));
+        const json = _file.exists() ? _file.toJSON<launchOptions>() : {};
         return new instance(json);
     }
+    static defaultGameArguments = [
+        "-Xms${ram}G",
+        "-Xmx${ram}G",
+        "-XX:+UnlockExperimentalVMOptions",
+        "-XX:+UseG1GC",
+        "-XX:G1NewSizePercent=20",
+        "-XX:G1ReservePercent=20",
+        "-XX:MaxGCPauseMillis=50",
+        "-XX:G1HeapRegionSize=32M",
+        "-Dlog4j2.formatMsgNoLookups=true"
+    ]
+    /**Do not mess with unless you know what you're doing. Some older versions may not launch if information from this file is missing. */
+    static defJVM: launchArguments = [
+        { "rules": [{ "action": "allow", "os": { "name": "osx" } }], "value": ["-XstartOnFirstThread"] },
+        { "rules": [{ "action": "allow", "os": { "name": "windows" } }], "value": "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump" },
+        { "rules": [{ "action": "allow", "os": { "name": "windows", "version": "^10\\." } }], "value": ["-Dos.name=Windows 10", "-Dos.version=10.0"] },
+        { "rules": [{ "action": "allow", "os": { "arch": "x86" } }], "value": "-Xss1M" },
+        "-Djava.library.path=${natives_directory}",
+        "-Dminecraft.launcher.brand=${launcher_name}",
+        "-Dminecraft.launcher.version=${launcher_version}",
+        "-cp",
+        "${classpath}"
+    ]
+
     /**
      * 
      * @param opt This parameter contains information vital to constructing the instance. That being said, GMLL will never the less pull in default values if it is emited
      */
-    constructor(opt?: options) {
-        this.version = opt && opt.version ? opt.version : getLatest().release;
-        this.name = opt && opt.name ? opt.name : this.version;
-        this.path = opt && opt.path ? opt.path : join("<instance>", fsSanitiser(this.name));
-        this.ram = opt && opt.ram ? opt.ram : 2;
-        this.meta = opt && opt.meta ? opt.meta : undefined;
-        this.assets = opt && opt.assets ? opt.assets : {};
-        this.javaPath = opt && opt.javaPath ? opt.javaPath : "default";
+    constructor(opt: launchOptions = {}) {
+        this.version = opt.version ? opt.version : getLatest().release;
+        this.name = opt.name ? opt.name : this.version;
+        this.path = opt.path ? opt.path : join("<instance>", fsSanitiser(this.name));
+        this.ram = opt.ram ? opt.ram : 2;
+        this.meta = opt.meta ? opt.meta : undefined;
+        this.assets = opt.assets ? opt.assets : {};
+        this.javaPath = opt.javaPath ? opt.javaPath : "default";
         new dir(this.getPath()).mkdir();
     }
     /**
@@ -248,7 +231,7 @@ export default class instance {
      * @param token The player login token
      * @param resolution Optional information defining the game's resolution
      */
-    async launch(token: token, resolution?: { width: string, height: string }) {
+    async launch(token: player, resolution?: { width: string, height: string }) {
 
         const version = await this.install();
 
@@ -258,7 +241,7 @@ export default class instance {
 
         var assetsFile = this.getDir().getDir("assets");
 
-        let AssetIndex = getAssets().getFile("indexes", (vjson.assets || "pre-1.6") + ".json").toJSON<assets>();
+        let AssetIndex = getAssets().getFile("indexes", (vjson.assets || "pre-1.6") + ".json").toJSON<assetIndex>();
         let assets_index_name = vjson.assetIndex.id;
         if (this.assets.objects) {
             AssetIndex = combine(AssetIndex, this.assets);
@@ -312,8 +295,8 @@ export default class instance {
 
         }
         const javaPath = this.javaPath == "default" ? version.getJavaPath() : new file(this.javaPath);
-        const rawJVMargs: launchArgs = defaultGameArguments;
-        rawJVMargs.push(...(vjson.arguments?.jvm || defJVM));
+        const rawJVMargs: launchArguments = instance.defaultGameArguments;
+        rawJVMargs.push(...(vjson.arguments?.jvm || instance.defJVM));
         var jvmArgs = parseArguments(args, rawJVMargs);
 
         let gameArgs = vjson.arguments ? parseArguments(args, vjson.arguments.game) : "";
@@ -327,7 +310,7 @@ export default class instance {
             launchCom = launchCom.replace(regex, args[key])
         })
         emit("jvm.start", "Minecraft", this.getPath());
-        //   console.log(launchCom)
+       // console.debug(launchCom)
         const s = spawn(javaPath.sysPath(), launchCom.trim().split(" "), { "cwd": this.getPath() })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
@@ -344,7 +327,7 @@ export default class instance {
         const bunlde = ["saves"]
         const blacklist = ["usercache.json", "realms_persistence.json", "logs"]
         const me = new dir(this.getPath());
-        const resources: downloadable[] = [];
+        const resources: downloadableFile[] = [];
 
         const cp = (d: dir, path: string[]) => {
             //  console.log(d.exists())
@@ -395,7 +378,7 @@ export default class instance {
             Object.values(this.assets.objects).forEach((e) => {
                 assetTag(getAssets().getDir("objects"), e.hash).getFile(e.hash).copyto(assetTag(assetz.getDir("objects"), e.hash).mkdir().getFile(e.hash))
             })
-           // console.log(assetz.sysPath())
+            // console.log(assetz.sysPath())
             const err = await packAsync(assetz.sysPath(), mzip.sysPath());
             if (err) console.error(err);
             assetz.rm();
@@ -403,7 +386,7 @@ export default class instance {
 
         for (var k = 0; k < ls2.length; k++) {
             const e = ls2[k];
-           // console.log(e.getName() + ":" + e.islink())
+            // console.log(e.getName() + ":" + e.islink())
             if (!e.islink() && !avoid.includes(e.getName()) && !e.getName().startsWith(".")) {
                 const err = await packAsync(e.sysPath(), mzip.sysPath());
                 if (err) console.error(err);
@@ -411,7 +394,7 @@ export default class instance {
             }
         }
         resources.push({ unzip: { file: [] }, key: "misc", name: "misc.zip", path: [".data"], url: [baseUrl, ".data", zip].join("/"), chk: { sha1: mzip.getHash(), size: mzip.getSize() } });
-        const ver: Partial<version_type> = {
+        const ver: Partial<versionJson> = {
             instance: {
                 restart_Multiplier: 1,
                 files: resources,
@@ -449,7 +432,7 @@ export default class instance {
                 throw "Manifest file is a directory?"
             }
             const forgePath = save.getDir("forge").mkdir();
-            Fversion = forgi.toJSON<manifest>().id;
+            Fversion = forgi.toJSON<versionManifest>().id;
             forge.jar.copyto(forgePath.getFile(forge.jar.getName()));
             ver.instance.files.push({ key: forge.jar.getName(), name: forge.jar.getName(), path: ["forge"], url: [baseUrl, "forge", forge.jar.getName()].join("/"), chk: { sha1: forge.jar.getHash(), size: forge.jar.getSize() } })
             ver.instance.forge = { installer: ["forge", forge.jar.getName()] };
@@ -459,7 +442,7 @@ export default class instance {
         ver.inheritsFrom = Fversion;
         verfile.write(ver);
 
-        const manifest: manifest = {
+        const manifest: versionManifest = {
             id: name, type: "custom", sha1: verfile.getHash(), base: Fversion, url: baseUrl + "/" + ".meta/version.json", "_comment": "Drop this into gmll's manifest folder",
         }
         save.getFile("manifest_" + fsSanitiser(name) + ".json").write(manifest);

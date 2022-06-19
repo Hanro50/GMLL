@@ -1,17 +1,23 @@
-import { join } from 'path';
+/**
+ * This is the core of the download manager. No code from the main thread should interact with it!
+ * DO NOT WRAP THIS FUNTION UP WITH WEBPACK IF YOU DO NOT WANT THINGS TO BREAK BADLY. 
+ * 
+ * Redefine the property __get in the config module to change where GMLL looks for this file.
+ */
 import { cmd as _cmd } from '7zip-min';
-/**@ts-ignore */
-import root from './root.cjs';
-import { dir, downloadable, file } from '../objects/files.js';
-export const processCMD = "download.progress";
-export const failCMD = "download.fail";
+import type { downloadableFile } from "gmll/types";
+import { dir, file } from "gmll/objects/files";
+import cluster from 'cluster';
 
-export function getSelf(): string {
-    return join(root, "get.js");
-}
+const processCMD = "download.progress";
+const failCMD = "download.fail";
+
+if (cluster.isPrimary || cluster.isMaster) throw "[GMLL]: Cannot run this module from main thread!"
+
+
 
 if (process.env.length) {
-    const keys: downloadable[] = [];
+    const keys: downloadableFile[] = [];
     for (var i = 0; i < new Number(process.env.length); i++) {
         keys.push(JSON.parse(process.env["gmll_" + i]));
     }

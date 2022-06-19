@@ -1,41 +1,42 @@
 import { copyFileSync } from "fs";
 import { join } from "path";
-import { assets as _assets, jarTypes, manifest, version as _version } from "../..";
+
 import { getlibraries, getMeta, getVersions, isInitialized, onUnsupportedArm } from "../config.js";
-import { assets, runtime, libraries } from "../downloader.js";
+import { runtime, libraries, assets } from "../downloader.js";
 import { getManifest, getJavaPath } from "../handler.js";
 import { dir, file } from "./files";
 import { throwErr, classPathResolver, combine, lawyer } from "../internal/util.js";
+import {  mcJarTypeVal, versionManifest, versionJson, artifact } from "../../types.js";
 
 /**
  * Version data is unique. Each version of the game will generate an unique version object. 
  * Take note however. GMLL,unlike the default launcher, will store version data in the same folder as the version it is based upon. 
  * If forge still works, but you cannot find the file connected to it...this is why.
  */
-export class version {
-    json: _version;
-    manifest: manifest;
+export default class version {
+    json: versionJson;
+    manifest: versionManifest;
     name: string;
     folder: dir;
     file: file;
     synced: boolean;
-    override?: _assets;
+    override?: artifact;
     private _mergeFailure: boolean;
     /**Gets a set version based on a given manifest or version string. Either do not have to be contained within the manifest database. */
-    static async get(manifest: string | manifest): Promise<version> {
+    static async get(manifest: string | versionManifest): Promise<version> {
         isInitialized();
-        const v = new version(manifest);
+        const v = new this(manifest);
         await v.getJSON();
         return v;
     }
     /**
-     * @deprecated DO NOT USE CONSTRUCTOR DIRECTLY. FOR INTERNAL USE ONLY! 
+     *  DO NOT USE CONSTRUCTOR DIRECTLY. FOR INTERNAL USE ONLY! 
      * @see {@link get} : This is the method that should instead be used
      */
-    private constructor(manifest: string | manifest) {
-        
+    private constructor(manifest: string | versionManifest) {
+
         this.manifest = typeof manifest == "string" ? getManifest(manifest) : manifest;
-        if (onUnsupportedArm && Date.parse(this.manifest.releaseTime)<Date.parse("2022-05-12T15:36:11+00:00")){
+        if (onUnsupportedArm && Date.parse(this.manifest.releaseTime) < Date.parse("2022-05-12T15:36:11+00:00")) {
             console.trace(manifest)
             throw "Only 1.19 and up is supported on arm based Windows and Linux devices atm."
         }
@@ -47,7 +48,7 @@ export class version {
         this.synced = true;
         this.folder.mkdir();
 
-      
+
     }
     mergeFailure() {
         return this._mergeFailure;
@@ -56,7 +57,7 @@ export class version {
      * @returns Gets the version json file. 
      * @see {@link json} for synchronious way to access this. The {@link get} method already calls this function and saves it accordingly. 
      */
-    async getJSON(): Promise<_version> {
+    async getJSON(): Promise<versionJson> {
 
 
         const folder_old = getVersions().getDir(this.manifest.id);
@@ -66,7 +67,7 @@ export class version {
         this._mergeFailure = false;
         if (this.file.sysPath() != file_old.sysPath() && !this.file.exists() && file_old.exists()) {
             console.log("[GMLL]: Cleaning up versions!")
-            this.json = file_old.toJSON<_version>();
+            this.json = file_old.toJSON<versionJson>();
             this.synced = !this.json.hasOwnProperty("synced") || this.json.synced;
             if (this.synced) {
                 copyFileSync(file_old.sysPath(), this.file.sysPath());
@@ -84,7 +85,7 @@ export class version {
                     console.warn("[GMLL]: Dependency merge failed.");
                     this._mergeFailure = true;
                 }
-                if (onUnsupportedArm) {this.json = combine(this.json, getMeta().index.getFile("arm-patch.json").toJSON())}
+                if (onUnsupportedArm) { this.json = combine(this.json, getMeta().index.getFile("arm-patch.json").toJSON()) }
                 return this.json;
             }
         }
@@ -108,7 +109,7 @@ export class version {
                 this._mergeFailure = true;
             }
         }
-        if (onUnsupportedArm) {this.json = combine(this.json, getMeta().index.getFile("arm-patch.json").toJSON())}
+        if (onUnsupportedArm) { this.json = combine(this.json, getMeta().index.getFile("arm-patch.json").toJSON()) }
         return this.json;
     }
     /**
@@ -130,7 +131,7 @@ export class version {
     async getLibs() {
         await libraries(this.json);
     }
-    async getJar(type: jarTypes, jarFile: file) {
+    async getJar(type: mcJarTypeVal, jarFile: file) {
         if (this.synced && this.json.hasOwnProperty("downloads")) {
             const download = this.json.downloads[type];
             if (!jarFile.sha1(download.sha1) || !jarFile.size(download.size)) {
@@ -139,7 +140,7 @@ export class version {
         }
     }
     async install() {
-      
+
         if (this._mergeFailure) {
             this._mergeFailure = false;
             console.log("[GMLL]: Correcting earlier dependency merge failure.");

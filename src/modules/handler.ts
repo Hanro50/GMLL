@@ -1,35 +1,27 @@
+/**The internal java and version manifest handler for GMLL */
 
-import { emit, getInstances, getlibraries, getMeta, getRuntimes, getVersions, isInitialized } from "./config.js";
+import { emit, getInstances, getlibraries, getMeta, getRuntimes, getVersions, isInitialized, onUnsupportedArm } from "./config.js";
 import { runtime } from "./downloader.js";
 import { fsSanitiser, getOS, throwErr } from "./internal/util.js";
-import { manifest, version as _version, runtimes, apiDoc } from "../index.js";
-import { randomUUID, createHash } from "crypto";
-import { networkInterfaces, userInfo } from "os";
 import { spawn } from "child_process";
-import { file, stringify } from "./objects/files.js";
+import { file } from "./objects/files.js";
 import fetch from "node-fetch";
 import instance from "./objects/instance.js";
+import type { modpackApiInfo, versionManifest, mcRuntimeVal } from "../types.js";
 
-/**
- * Gets the path to an installed version of Java. GMLL manages these versions and they're not provided by the system. 
- * @param java the name of the Java runtime. Based on the names Mojang gave them.
- * @returns The location of the hava executable. 
- */
-export function getJavaPath(java: runtimes = "jre-legacy") {
-    return getRuntimes().getFile(java, "bin", getOS() == "windows" ? "java.exe" : "java");
-}
+
 /**
  * Compiles all manifest objects GMLL knows about into a giant array. This will include almost all fabric versions and any installed version of forge.
  * GMLL can still launch a version if it is not within this folder, although it is not recommended
  * @returns a list of Manifest files GMLL knows definitely exist. 
  */
-export function getManifests(): manifest[] {
+export function getManifests(): versionManifest[] {
     isInitialized();
     var versionManifest = [];
     const root = getMeta().manifests
     root.ls().forEach(e => {
         if (e.sysPath().endsWith("json") && e instanceof file) {
-            var v = e.toJSON<manifest | manifest[]>();
+            var v = e.toJSON<versionManifest | versionManifest[]>();
             if (v instanceof Array)
                 versionManifest.push(...v);
             else
@@ -39,7 +31,7 @@ export function getManifests(): manifest[] {
     return versionManifest;
 }
 
-function findManifest(version: string, manifests: manifest[]) {
+function findManifest(version: string, manifests: versionManifest[]) {
     const v = version.toLocaleLowerCase().trim();
     const manifest = manifests.find(e => { try { return e.id.toLocaleLowerCase().trim() == v } catch { return false; } }) || { id: version, type: "unknown" };
     if (manifest.base) {
@@ -68,42 +60,23 @@ export function getLatest(): { "release": string, "snapshot": string } {
         return file.toJSON();
     else return { "release": "1.17.1", "snapshot": "21w42a" };
 }
-/**
- * Used to get a unique ID to recognise this machine. Used by mojang in some snapshot builds.
- */
-export function getClientID(forceNew: boolean = false) {
-    isInitialized();
-    const path = getMeta().index.getFile("ID.txt");
-    var data: string;
-    if (!path.exists() || forceNew) {
-        data = stringify({
-            Date: Date.now(),
-            UUID: randomUUID(),
-            network: createHash('sha256').update(stringify(networkInterfaces())).digest("base64"),
-            user: createHash('sha256').update(stringify(userInfo())).digest("base64"),
-            provider: "GMLL",
-        });
-        data = createHash('sha512').update(data).digest("base64");
-        path.write(data);
-    } else {
-        data = path.read();
-    }
-    return data;
-}
+
 /**Installs a provided version of forge from a provided installer. Only works with forge*/
 export async function installForge(forgeInstallerJar?: file | string): Promise<void> {
     if (typeof forgeInstallerJar == "string") forgeInstallerJar = new file(forgeInstallerJar);
     isInitialized();
-    await runtime("java-runtime-beta");
 
-    const javaPath = getJavaPath("java-runtime-beta");
+    const frun: mcRuntimeVal = onUnsupportedArm ? "java-runtime-arm" : "java-runtime-gamma";
+    await runtime(frun);
+
+    const javaPath = getJavaPath(frun);
     const path = getInstances().getDir(".forgiac");
     const logFile = path.getFile("log.txt")
     const args: string[] = ["-jar", getlibraries().getFile("za", "net", "hanro50", "forgiac", "basic", "forgiac.jar").sysPath(), " --log", logFile.sysPath(), "--virtual", getVersions().sysPath(), getlibraries().sysPath(), "--mk_manifest", getMeta().manifests.sysPath()];
     if (forgeInstallerJar) {
         args.push("--installer", forgeInstallerJar.sysPath());
     }
-  //  console.log(args)
+    //  console.log(args)
     path.mkdir();
     emit("jvm.start", "Forgiac", path.sysPath());
     const s = spawn(javaPath.sysPath(), args, { "cwd": path.sysPath() })
@@ -119,19 +92,28 @@ export async function installForge(forgeInstallerJar?: file | string): Promise<v
  * See the {@link instance.wrap()  wrapper function} to generate the files to upload to your web server to make this work  
  * @param url the afformentioned link. 
  */
-export async function importLink(url: string): Promise<manifest>;
+export async function importLink(url: string): Promise<versionManifest>;
 export async function importLink(url: string, name: string): Promise<instance>;
-export async function importLink(url: string, name?: string): Promise<instance | manifest> {
+export async function importLink(url: string, name?: string): Promise<instance | versionManifest> {
     const r = await fetch(url + "/.meta/api.json");
     if (!r.ok)
         throw "Could not find the api doc";
-    const v = await r.json() as apiDoc;
+    const v = await r.json() as modpackApiInfo;
     if (v.version != 1) {
         throw "Incompatible version ID detected";
     }
     const manfile = fsSanitiser(v.name) + ".json"
-    const manifest = (await getMeta().manifests.getFile(manfile).download(url + "/.meta/manifest.json", { sha1: v.sha })).toJSON<manifest>();
-   // console.log(manfile)
+    const manifest = (await getMeta().manifests.getFile(manfile).download(url + "/.meta/manifest.json", { sha1: v.sha })).toJSON<versionManifest>();
+    // console.log(manfile)
     if (!name) return manifest;
     return new instance({ version: manifest.id, name: name }).save();
+}
+
+/**
+ * Gets the path to an installed version of Java. GMLL manages these versions and they're not provided by the system. 
+ * @param java the name of the Java runtime. Based on the names Mojang gave them.
+ * @returns The location of the hava executable. 
+ */
+export function getJavaPath(java: mcRuntimeVal = "jre-legacy") {
+    return getRuntimes().getFile(java, "bin", getOS() == "windows" ? "java.exe" : "java");
 }

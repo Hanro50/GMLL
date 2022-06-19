@@ -8,7 +8,8 @@ A generic Minecraft Launcher Library
 GMLL is a hybrid module. However as such, you should best avoid trying to use GMLL as both a ES6 and a CommonJS module in the same project. 
 
 # Support
-No support will be given to launchers that seek to grant access to Minecraft to individuals whom do not posses a valid Minecraft License. In other words, don't launch Minecraft if a user has not logged in with an account that owns the game at least once. I'm not in the mood to get sued. -Hanro
+No support will be given to launchers that seek to grant access to Minecraft to individuals whom do not posses a valid Minecraft License. Infact, doing this voids your licence to use this library and you will be asked to stop using this here library if you're found to be in violation of the licence. In other words, don't launch Minecraft if a user has not logged in with a valid account that owns the game at least once. I'm not in the mood to get sued by Mojang or Microsoft. -Hanro
+
 
 Other then that. There's a channel dedicated to GMLL on the MSMC support Discord server. Click the following badge to join.
 <div>
@@ -26,30 +27,6 @@ Linux and Mac users should not encounter this issue as on these systems, symlink
 If your launcher is installed onto a drive which in of itself is not formated as NTFS, but your launcher tells GMLL to generate it's files on a partition that is formated as NTFS. It _should_ work. A shortcut to the user's AppData folder is "%appdata%\\\<name of your launcher\>". Just incase...
 
 The reason why GMLL only works on NTFS on windows is due to it making use of junctions, whereas on Linux and Mac GMLL will use symlinks instead. While they behave funtionally the same for our purposes, junctions are a filesystem specific feature that only works on NTFS. While Windows also supports symlinks, you require administrator privilidges to create them.  
-
-# Initialization
-The library relies on a collection core files that are dynamically downloaded from the internet to function. GMLL thus has two states it can be within. Initialized and uninitialized. GMLL will refuse to launch minecraft if it is not properly initialized. 
-
-Before initialization. You'll likely want to load the config module and modify the paths GMLL uses. This is recommended as the initialization method will also create any folders required by GMLL to function. Essentially if you keep finding GMLL is generating random .minecraft folders, this is likely why. See the header "Config" under modules.
-
-To initialize GMLL. You need to execute the init() function. 
-```js
-//CommonJS
-const {init} = require("gmll");
-init().then(...);
-//ES6
-import { init } from "gmll";
-await init();
-```
-# Start here
-## Import the module
-GMLL contains a commonJS and a ES6 versions of every internal component
-```js
-//ES6 
-import * as gmll from "gmll";
-//commonJS
-const gmll = require("gmll");
-```
 
 ## a word on the docs
 GMLL is to big to maintain an up to date dev doc with the current amount of resources awarded to the project. Instead, please see the included JSDocs in the comments in the type files. Since those will be exponetially easier to maintain and will likely provide the information specific to what you require a function to do. 
@@ -101,6 +78,29 @@ gmll.init().then(async () => {
     //Launches the game with the token we got earlier. GMLL will download and install any library it needs 
     int.launch(token);
 })
+```
+# Initialization
+The library relies on a collection core files that are dynamically downloaded from the internet to function. GMLL thus has two states it can be within. Initialized and uninitialized. GMLL will refuse to launch minecraft if it is not properly initialized. 
+
+Before initialization. You'll likely want to load the config module and modify the paths GMLL uses. This is recommended as the initialization method will also create any folders required by GMLL to function. Essentially if you keep finding GMLL is generating random .minecraft folders, this is likely why. See the header "Config" under modules.
+
+To initialize GMLL. You need to execute the init() function. 
+```js
+//CommonJS
+const {init} = require("gmll");
+init().then(...);
+//ES6
+import { init } from "gmll";
+await init();
+```
+# Start here
+## Import the module
+GMLL contains a commonJS and a ES6 versions of every internal component
+```js
+//ES6 
+import * as gmll from "gmll";
+//commonJS
+const gmll = require("gmll");
 ```
 # Handling of instances 
 An instance contains all the local files of a launcher profile. Your texture, resource, mod and data packs are all contained within a folder declared by an "instance". GMLL has an instance manager built into it and can easily keep track of multiple instances for you. 

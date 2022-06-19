@@ -1,20 +1,18 @@
 import { lawyer, getOS, assetTag, throwErr, classPathResolver, getErr, processAssets, getCpuArch, combine } from "./internal/util.js";
 import { resolve } from "path";
-import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig, onUnsupportedArm } from "./config.js";
-import { processCMD, failCMD, getSelf } from "./internal/get.js"
+import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig, onUnsupportedArm, __get } from "./config.js";
 import cluster from "cluster";
 const fork = cluster.fork;
 const setupMaster = cluster.setupPrimary || cluster.setupMaster;
 import { cpus } from 'os';
 import Fetch from 'node-fetch';
-import { assetIndex, assets, manifest, mojangResourceFile, runtimeManifest, runtimeManifests, runtimes, version } from "../index.js";
-import { dir, downloadable, file, packAsync } from "./objects/files.js";
+import { dir, file, packAsync } from "./objects/files.js";
 import { readlinkSync } from "fs";
+import type { downloadableFile, versionManifest, runtimeManifestEntry, runtimeManifest, mcRuntimeVal, versionJson, assetIndex, artifact, mojangResourceManifest, mojangResourceFile } from "../types.js";
 
-
-setupMaster({
-    exec: getSelf()
-});
+const processCMD = "download.progress";
+const failCMD = "download.fail";
+if (cluster.isWorker) console.warn("[GMLL]: Possible worker context leak detected!");
 /**
  * Download function. Can be used for downloading modpacks and launcher updates.
  * Checks sha1 hashes and can use multiple cores to download files rapidly. 
@@ -26,7 +24,10 @@ setupMaster({
  * Lower is better for small files with 1 being the minimum. Higher might cause issues if fetch decides to hang on a download. 
  * Each restart actually increments this value. 
  */
-export function download(obj: Partial<downloadable>[], it: number = 1) {
+export function download(obj: Partial<downloadableFile>[], it: number = 1) {
+    setupMaster({
+        exec: __get
+    });
     if (it < 1) it = 1;
     emit("download.started");
     obj.sort((a, b) => { return (b.chk.size || 0) - (a.chk.size || 0) });
@@ -100,16 +101,19 @@ export function download(obj: Partial<downloadable>[], it: number = 1) {
  * @param runtime the name of the Java runtime. Based on the names Mojang gave them.
  * @returns This is an asyn function!
  */
-export function runtime(runtime: runtimes) {
+export function runtime(runtime: mcRuntimeVal) {
     const meta = getMeta();
     const cfile = meta.runtimes.getFile(runtime + ".json");
     if (!cfile.exists()) {
         throwErr("Cannot find runtime");
     }
-    return mojangRFDownloader(cfile.toJSON<mojangResourceFile>(), getRuntimes().getDir(runtime), getRuntimes().getDir("lzma"))
+    return mojangRFDownloader(cfile.toJSON<mojangResourceManifest>(), getRuntimes().getDir(runtime), getRuntimes().getDir("lzma"))
 }
-/**Did you know you can use this file to download dungeons? */
-export function mojangRFDownloader(file: mojangResourceFile, baseFile: dir, lzma?: dir) {
+/**
+ * Did you know you can use this file to download dungeons?
+ * (We prefer not to be sued...so no more details then that)  
+ */
+export function mojangRFDownloader(file: mojangResourceManifest, baseFile: dir, lzma?: dir) {
     if (!lzma)
         lzma = baseFile.getDir("lzma")
 
@@ -152,9 +156,7 @@ export function mojangRFDownloader(file: mojangResourceFile, baseFile: dir, lzma
                     _file.rm()
 
                     _file.linkTo(resolve(..._file.path, obj.target))
-                    //   mklink(_file.sysPath(), resolve(..._file.path, obj.target));
                 }
-                break;
             default:
                 break;
         }
@@ -164,12 +166,12 @@ export function mojangRFDownloader(file: mojangResourceFile, baseFile: dir, lzma
 
 
 /**Install a set version's assets based on a provided asset index. */
-export async function assets(index: assetIndex) {
+export async function assets(index: artifact) {
     const root = getAssets();
     var indexes = root.getDir("indexes").mkdir();
     var file = indexes.getFile(index.id + ".json");
-    let assetIndex = (await file.download(index.url, { sha1: index.sha1, size: index.size })).toJSON<assets>()
-    var downloader: downloadable[] = [];
+    let assetIndex = (await file.download(index.url, { sha1: index.sha1, size: index.size })).toJSON<assetIndex>()
+    var downloader: downloadableFile[] = [];
     const getURL = (obj: { hash: string; size: Number; }) => "http://resources.download.minecraft.net/" + obj.hash.substring(0, 2) + "/" + obj.hash;
 
     if (assetIndex.map_to_resources) {
@@ -197,8 +199,8 @@ export async function assets(index: assetIndex) {
     processAssets(assetIndex);
 }
 /**Installs the lib files from a set version */
-export async function libraries(version: version) {
-    const arr: Partial<downloadable>[] = [];
+export async function libraries(version: versionJson) {
+    const arr: Partial<downloadableFile>[] = [];
     const natives = getNatives();
     natives.rm();
     natives.mkdir();
@@ -254,6 +256,37 @@ export async function libraries(version: version) {
     }
     return await download(arr, 3);
 }
+export async function getRuntimeIndexes(manifest: runtimeManifest) {
+    const runtimes = getMeta().runtimes.mkdir();
+    var platform: "gamecore" | "linux" | "linux-i386" | "mac-os" | "mac-os-arm64" | "windows-x64" | "windows-x86" | "linux-arm64" | "linux-arm32" | "windows-arm64";
+    switch (getOS()) {
+        case ("windows"):
+            if (onUnsupportedArm) { platform = "windows-arm64"; break; }
+            platform = getCpuArch() == "x64" ? "windows-x64" : "windows-x86"; break;
+        case ("linux"):
+            if (onUnsupportedArm) { platform = getCpuArch() == "arm" ? "linux-arm32" : "linux-arm64"; break; }
+            platform = getCpuArch() == "x64" ? "linux" : "linux-i386"; break;
+
+        case ("osx"):
+            if (getCpuArch() == "arm64") {
+                platform = "mac-os-arm64";
+                //Intel fallback for m1
+                console.warn("[GMLL]: Loading intel fallback for M1. Please contact devs if this bugs out.")
+                for (const key of Object.keys(manifest[platform]))
+                    if (manifest[platform][key].length < 1) manifest[platform][key] = manifest["mac-os"][key];
+            } else {
+                platform = "mac-os";
+            }
+            break;
+        default: throw ("Unsupported operating system");
+    }
+    for (const key of Object.keys(manifest[platform])) {
+        if (manifest[platform][key].length < 1) continue;
+        var obj = manifest[platform][key][0] as runtimeManifestEntry;
+        await runtimes.getFile(key + ".json").download(obj.manifest.url, obj.manifest);
+    }
+}
+
 /**
  * Updates GMLL's manifest files. Used internally
  */
@@ -290,7 +323,7 @@ export async function manifests() {
     if (update.includes("vanilla")) {
         const r = await Fetch(mcVersionManifest);
         if (r.status == 200) {
-            const json: { versions?: [manifest], latest?: {} } = await r.json();
+            const json: { versions?: [versionManifest], latest?: {} } = await r.json();
             meta.index.getFile("latest.json").write(json.latest);
             meta.manifests.getFile("vanilla.json").write(json.versions);
         }
@@ -326,64 +359,30 @@ export async function manifests() {
         }
     }
     if (update.includes("runtime")) {
-        const meta = getMeta();
-        let manifest = (await meta.index.getFile("runtime.json").download(mcRuntimes)).toJSON<runtimeManifests>();
+        let manifest = (await meta.index.getFile("runtime.json").download(mcRuntimes)).toJSON<runtimeManifest>();
+        getRuntimeIndexes(manifest);
         if (onUnsupportedArm) {
-            let Armmanifest = (await meta.index.getFile("runtime-Arm.json").download(armRuntimes)).toJSON<runtimeManifests>();
-            manifest = combine(manifest, Armmanifest)
-        }
-
-        var platform: "gamecore" | "linux" | "linux-i386" | "mac-os" | "mac-os-arm64" | "windows-x64" | "windows-x86" | "linux-arm64" | "linux-arm32" | "windows-arm64";
-        switch (getOS()) {
-            case ("windows"):
-                if (onUnsupportedArm) { platform = "windows-arm64"; break; }
-                platform = getCpuArch() == "x64" ? "windows-x64" : "windows-x86"; break;
-            case ("linux"):
-                if (onUnsupportedArm) { platform = getCpuArch() == "arm" ? "linux-arm32" : "linux-arm64"; break; }
-                platform = getCpuArch() == "x64" ? "linux" : "linux-i386"; break;
-
-            case ("osx"):
-                if (getCpuArch() == "arm64") {
-                    platform = "mac-os-arm64";
-                    //Intel fallback for m1
-                    console.warn("[GMLL]: Loading intel fallback for M1. Please contact devs if this bugs out.")
-                    for (const key of Object.keys(manifest[platform]))
-                        if (manifest[platform][key].length < 1) manifest[platform][key] = manifest["mac-os"][key];
-                } else {
-                    platform = "mac-os";
-                }
-                break;
-            default: throw ("Unsupported operating system");
-        }
-        for (const key of Object.keys(manifest[platform])) {
-            if (manifest[platform][key].length < 1) continue;
-            var obj = manifest[platform][key][0] as runtimeManifest;
-            await meta.runtimes.getFile(key + ".json").download(obj.manifest.url, obj.manifest);
+            getRuntimeIndexes((await meta.index.getFile("runtime-Arm.json").download(armRuntimes)).toJSON<runtimeManifest>());
         }
     }
-
 }
+
 /**
  * Used for runtime management
   */
 export async function encodeMRF(url: string, root: dir, out: dir) {
-    let res: mojangResourceFile = { files: {} }
+    let res: mojangResourceManifest = { files: {} }
     let packed = out.getDir('encoded').mkdir();
     console.log("[GMLL]: Starting to encode as Mojang resource file")
     let tfiles = 0;
     let cfiles = 0;
     emit('encode.start');
     async function encodeDir(path: string, root: dir) {
-
-
         const ls = root.ls().sort((a, b) => a.sysPath().length - b.sysPath().length);
         tfiles += ls.length;
         for (let index = 0; index < ls.length; index++) {
-
             const e = ls[index]
             const directory = [path, e.getName()].join("/")
-
-
             cfiles++
             emit('encode.progress', directory, cfiles, tfiles, tfiles - cfiles);
             if (e.islink()) {
@@ -394,48 +393,33 @@ export async function encodeMRF(url: string, root: dir, out: dir) {
                 continue;
             }
             else if (e instanceof file) {
-
                 const rhash = e.getHash();
                 e.copyto(packed.getFile(rhash, e.name).mkdir())
-
                 let zip = out.getFile('tmp', e.name + ".7z").mkdir()
                 await packAsync(e.sysPath(), zip.sysPath())
                 const zhash = zip.getHash();
-
-
-
-                if (zip.getSize() < e.getSize()) {
-                    zip = zip.moveTo(packed.getFile(zhash, e.name).mkdir())
-                    res.files[directory] = {
-                        "type": "file",
-                        "executable": await e.isExecutable(),
-                        "downloads": {
-                            "lzma": {
-                                "sha1": zhash,
-                                "size": zip.getSize(),
-                                "url": [url, zhash, e.name].join("/")
-                            },
-                            "raw": {
-                                "sha1": rhash,
-                                "size": e.getSize(),
-                                "url": [url, rhash, e.name].join("/")
-                            }
-                        }
-                    }
-                } else {
-                    zip.rm()
-                    res.files[directory] = {
-                        "type": "file",
-                        "executable": await e.isExecutable(),
-                        "downloads": {
-                            "raw": {
-                                "sha1": rhash,
-                                "size": e.getSize(),
-                                "url": [url, rhash, e.name].join("/")
-                            }
+                let downloadable: mojangResourceFile = {
+                    "type": "file",
+                    "executable": await e.isExecutable(),
+                    "downloads": {
+                        "raw": {
+                            "sha1": rhash,
+                            "size": e.getSize(),
+                            "url": [url, rhash, e.name].join("/")
                         }
                     }
                 }
+                if (zip.getSize() < e.getSize()) {
+                    zip = zip.moveTo(packed.getFile(zhash, e.name).mkdir())
+                    downloadable.downloads.lzma = {
+                        "sha1": zhash,
+                        "size": zip.getSize(),
+                        "url": [url, zhash, e.name].join("/")
+                    }
+                } else {
+                    zip.rm()
+                }
+                res.files[directory] = downloadable;
                 continue;
             }
             else if (e instanceof dir) {
@@ -445,25 +429,21 @@ export async function encodeMRF(url: string, root: dir, out: dir) {
                 await encodeDir(directory, e)
                 continue;
             }
-
         }
-
     }
-
     await encodeDir("", root)
     const manifest = out.getFile(root.getName() + "_manifest.json")
     manifest.write(res)
 
     const mhash = manifest.getHash()
     manifest.copyto(packed.getFile(mhash, "manifest.json").mkdir())
-
     const index = out.getFile(root.getName() + "_index.json")
-
     index.write({
         sha1: mhash,
         size: manifest.getSize(),
         url: [url, mhash, "manifest.json"].join("/")
     })
     emit('encode.done');
+    out.getDir('tmp').rm();
     return res;
 }

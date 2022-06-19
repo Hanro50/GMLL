@@ -2,16 +2,33 @@ import { EventEmitter } from "events";
 import { manifests } from "./downloader.js";
 import { dir, file } from "./objects/files.js";
 import { getErr, throwErr } from "./internal/util.js";
-import packagePath from "./internal/root.cjs";
 import { arch, type } from "os";
+import { getPath } from "./internal/root.cjs";
+
+/**A redefinable pointer to the internal download manager script GMLL uses. */
+export let __get = getPath("./get.js");
+if (!__get.endsWith("get.js")) {
+    console.warn("[GMLL]: The internal downloader script may not be within it's own file. GMLL may fail due to this!!");
+    console.warn("[GMLL]: If GMLL does fail. Please update the '__get' property in the config module to point to the correct standalone js file.");
+}
 export type update = "fabric" | "vanilla" | "forge" | "runtime";
 export const onUnsupportedArm = (arch() == "arm64" || arch() == "arm") && type() != "Darwin";
+
 if (onUnsupportedArm)
     console.warn("[GMLL]: Running on an non M1 Arm platform! We are desperate for dedicated testers!")
 let initialized = false;
-let version = (new file(packagePath, "..", "..", "package.json").toJSON<{ version: string }>().version || "0.0.0");
-let launcherName = "GMLL";
+
+let _packageFile = new file("package.json");
+let _packageJSON: { version?: string, name?: string } = _packageFile.exists() ? new file("package.json").toJSON<{ version: string }>() : {}
+
+let version = _packageJSON.version || "0.0.0";
+let launcherName = _packageJSON.name || "GMLL";
+
+
 const startUpCalls: Array<() => void | Promise<void>> = [];
+
+
+
 export function isInitialized() {
     if (!initialized) {
         throwErr("GMLL is not initialized!\nPlease run \"init()\" or wait for the manifest files to redownload when changing the launcher directory.\nThis error is here to prevent unexpected errors")
