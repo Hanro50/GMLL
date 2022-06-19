@@ -1,6 +1,6 @@
 {
     "name": "gmll",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "description": "A generic launcher core for building custom launchers",
     "license": "MIT",
     "types": "./types/index.d.ts",
@@ -70,9 +70,7 @@
     "main": "dist/index.js",
     "module": "dist/index.js",
     "dependencies": {
-        "@types/webpack": "^5.28.0",
         "7zip-min": "^1.4.0",
-        "node": "^14.19.1",
         "node-fetch": "2.x",
         "tslib": "^2.3.1"
     },
