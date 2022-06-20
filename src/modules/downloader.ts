@@ -267,10 +267,10 @@ export async function getRuntimeIndexes(manifest: runtimeManifest) {
     var platform: "gamecore" | "linux" | "linux-i386" | "mac-os" | "mac-os-arm64" | "windows-x64" | "windows-x86" | "linux-arm64" | "linux-arm32" | "windows-arm64";
     switch (getOS()) {
         case ("windows"):
-            if (onUnsupportedArm) { platform = "windows-arm64"; break; }
+            if (onUnsupportedArm && "windows-arm64" in manifest) { platform = "windows-arm64"; break; }
             platform = getCpuArch() == "x64" ? "windows-x64" : "windows-x86"; break;
         case ("linux"):
-            if (onUnsupportedArm) { platform = getCpuArch() == "arm" ? "linux-arm32" : "linux-arm64"; break; }
+            if (onUnsupportedArm && ("linux-arm32" in manifest || "linux-arm64" in manifest)) { platform = getCpuArch() == "arm" ? "linux-arm32" : "linux-arm64"; break; }
             platform = getCpuArch() == "x64" ? "linux" : "linux-i386"; break;
 
         case ("osx"):
@@ -365,10 +365,10 @@ export async function manifests() {
         }
     }
     if (update.includes("runtime")) {
-        let manifest = (await meta.index.getFile("runtime.json").download(mcRuntimes)).toJSON<runtimeManifest>();
-        getRuntimeIndexes(manifest);
         if (onUnsupportedArm) {
             getRuntimeIndexes((await meta.index.getFile("runtime-Arm.json").download(armRuntimes)).toJSON<runtimeManifest>());
+        } else {
+            getRuntimeIndexes((await meta.index.getFile("runtime.json").download(mcRuntimes)).toJSON<runtimeManifest>());
         }
     }
 }
