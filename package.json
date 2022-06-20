@@ -112,12 +112,27 @@
     },
     "keywords": [
         "msmc",
+        "mc",
         "minecraft",
         "launcher",
         "java edition",
-        "mc",
         "es6",
         "commonjs",
-        "gmll"
+        "gmll",
+        "arm",
+        "arm-support",
+        "fabric",
+        "forge",
+        "management",
+        "instances-management",
+        "instances",
+        "mod",
+        "mods",
+        "mc-mod",
+        "mc-mods",
+        "modpack",
+        "modpack-api",
+        "backend",
+        "extendable"
     ]
 }

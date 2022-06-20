@@ -31,7 +31,7 @@ function parseArguments(val = {}, args: launchArguments) {
  * This information on where the game is stored and the like. The mods installed and what not. 
  */
 export default class instance {
-
+    env: any;
     name: string;
     version: string;
     ram: Number;
@@ -88,14 +88,19 @@ export default class instance {
      * @param opt This parameter contains information vital to constructing the instance. That being said, GMLL will never the less pull in default values if it is emited
      */
     constructor(opt: launchOptions = {}) {
-        this.version = opt.version ? opt.version : getLatest().release;
-        this.name = opt.name ? opt.name : this.version;
-        this.path = opt.path ? opt.path : join("<instance>", fsSanitiser(this.name));
-        this.ram = opt.ram ? opt.ram : 2;
-        this.meta = opt.meta ? opt.meta : undefined;
-        this.assets = opt.assets ? opt.assets : {};
-        this.javaPath = opt.javaPath ? opt.javaPath : "default";
+        this.version = opt.version || getLatest().release;
+        this.name = opt.name || this.version;
+        this.path = opt.path || join("<instance>", fsSanitiser(this.name));
+        this.ram = opt.ram || 2;
+        this.meta = opt.meta || undefined;
+        this.assets = opt.assets || {};
+        this.javaPath = opt.javaPath || "default";
+        this.env = opt.env || {};
         new dir(this.getPath()).mkdir();
+        const MESA = "MESA_GL_VERSION_OVERRIDE"
+        if (!(MESA in this.env) && process.platform == "linux") {
+            this.env[MESA] = "4.6"
+        }
     }
     /**
      * Inject custom assets into the game.
@@ -311,7 +316,7 @@ export default class instance {
         })
         emit("jvm.start", "Minecraft", this.getPath());
         // console.debug(launchCom)
-        const s = spawn(javaPath.sysPath(), launchCom.trim().split(" "), { "cwd": this.getPath() })
+        const s = spawn(javaPath.sysPath(), launchCom.trim().split(" "), { "cwd": this.getPath(), "env": combine(process.env, this.env) })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
     }
@@ -437,7 +442,7 @@ export default class instance {
             const forgePath = save.getDir("forge").mkdir();
             Fversion = forgi.toJSON<versionManifest>().id;
             _forge.copyto(forgePath.getFile(_forge.getName()));
-            ver.instance.files.push({ key: _forge.getName(), name: _forge.getName(), path: ["forge"], url: [baseUrl, "forge", _forge.getName()].join("/"), chk: { sha1:_forge.getHash(), size: _forge.getSize() } })
+            ver.instance.files.push({ key: _forge.getName(), name: _forge.getName(), path: ["forge"], url: [baseUrl, "forge", _forge.getName()].join("/"), chk: { sha1: _forge.getHash(), size: _forge.getSize() } })
             ver.instance.forge = { installer: ["forge", _forge.getName()] };
 
             path.rm();

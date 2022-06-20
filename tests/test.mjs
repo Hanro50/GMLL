@@ -7,7 +7,7 @@ await init();
 import { fastLaunch } from "msmc";
 import { getLauncherVersion } from "gmll/config";
 
-const i = new instance();
+const i = new instance({version:"fabric-loader-0.14.5-1.19"});
 i.setIcon("icon_32x32.png", "icon_16x16.png");
 
 //await installForge();

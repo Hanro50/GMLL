@@ -317,6 +317,8 @@ export interface launchOptions {
     meta?: any,
     /**Asset index injection */
     assets?: assetIndex,
+    /**environment variables */
+    env?: any
     /**Define a custom java path. 
      * @warning It is recommended to let GMLL handle this for you. It is solely changable to achieve parody with the vanilla launcher. 
      * Changing this can easily break older versions of forge, cause grathical corruption, crash legacy versions of minecraft, cause issues with arm Macs and a whole host of random BS.  
