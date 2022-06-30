@@ -9,7 +9,8 @@ import { emit, getAssets, getLauncherName, getLauncherVersion, getlibraries, get
 import version from "./version.js";
 
 import { download, runtime } from "../downloader.js";
-import { assetIndex, downloadableFile, launchArguments, launchOptions, mcUserTypeVal, player, versionJson, versionManifest } from "../../types.js";
+import { assetIndex, downloadableFile, instancePackConfig, launchArguments, launchOptions, mcUserTypeVal, player, versionJson, versionManifest } from "../../types.js";
+import { randomUUID } from "crypto";
 
 /**
  * For internal use only
@@ -237,7 +238,20 @@ export default class instance {
      * @param resolution Optional information defining the game's resolution
      */
     async launch(token: player, resolution?: { width: string, height: string }) {
+        if (!token) {
+            console.warn("[GMLL]: No token detected. Launching game in demo mode!")
+            const demoFile = getMeta().index.getFile("demo.txt");
+            if (!demoFile.exists()) demoFile.write(randomUUID());
 
+            token = {
+                profile: {
+                    id: demoFile.read(),
+                    demo: true,
+                    name: "player"
+                },
+                access_token: ""
+            }
+        }
         const version = await this.install();
 
         const cp = version.getClassPath();
@@ -320,17 +334,30 @@ export default class instance {
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
     }
+
+    /**An version of the wrap function that takes an object as a variable instead of the mess the base function takes. */
+    pack(config: instancePackConfig) {
+        if (typeof config.forgeInstallerPath == "string") config.forgeInstallerPath = new file(config.forgeInstallerPath);
+
+        return this.wrap(config.baseDownloadLink, config.outputDir, config.modpackName, config.forgeInstallerPath, config.trimMisc)
+    }
+
     /**Wraps up an instance in a prepackaged format that can be easily uploaded to a server for distribution 
      * @param baseUrl The base URL the generated files will be stored within on your server. For example http\:\/\/yourawesomdomain.net\/path\/to\/files\/
      * @param save The file GMLL will generate the final files on. 
      * @param name The name that should be used to identify the generated version files
+     * @param forge The path to a forge installation jar
+     * @param trimMisc Gets rid of any unnecessary miscellaneous files
     */
-    async wrap(baseUrl: string, save: dir | string, name: string = ("custom_" + this.name), forge?: { jar: file | string } | file) {
+    async wrap(baseUrl: string, save: dir | string, name: string = ("custom_" + this.name), forge?: { jar: file | string } | file, trimMisc: boolean = false) {
         if (typeof save == "string") save = new dir(save);
         await this.install();
+        const blacklist = ["usercache.json", "realms_persistence.json", "logs", "profilekeys", "usernamecache.json"]
         const seperate = ["resourcepacks", "texturepacks", "mods", "coremods", "shaderpacks"]
+        const dynamic = ["saves", "config"]
         const bunlde = ["saves"]
-        const blacklist = ["usercache.json", "realms_persistence.json", "logs"]
+        const pack = ["config"]
+
         const me = new dir(this.getPath());
         const resources: downloadableFile[] = [];
 
@@ -369,15 +396,26 @@ export default class instance {
                     const file = data.getFile(zip)
                     const err = await packAsync(e2.sysPath(), file.sysPath());
                     if (err) console.error(err);
-                    resources.push({ dynamic: e == "saves", unzip: { file: [e] }, key: [e, name].join("/"), name: zip, path: [".data"], url: [baseUrl, ".data", zip].join("/"), chk: { sha1: file.getHash(), size: file.getSize() } });
+                    resources.push({ dynamic: dynamic.includes(e), unzip: { file: [e] }, key: [e, name].join("/"), name: zip, path: [".data"], url: [baseUrl, ".data", zip].join("/"), chk: { sha1: file.getHash(), size: file.getSize() } });
                 }
+            }
+        }
+        for (var i = 0; i < pack.length; i++) {
+            const e = pack[i]
+            const directory = me.getDir(e);
+            if (directory.exists() && !directory.islink()) {
+                const zip = e + ".zip";
+                const file = data.getFile(zip)
+                const err = await packAsync(directory.sysPath(), file.sysPath());
+                if (err) console.error(err);
+                resources.push({ dynamic: dynamic.includes(e), unzip: { file: [] }, key: [e, name].join("/"), name: zip, path: [".data"], url: [baseUrl, ".data", zip].join("/"), chk: { sha1: file.getHash(), size: file.getSize() } });
             }
         }
 
         const ls2 = me.ls()
         const zip = "misc.zip";
         const mzip = data.getFile(zip).mkdir();
-        const avoid = [...seperate, ...bunlde, ...blacklist]
+        const avoid = [...seperate, ...bunlde, ...blacklist, ...pack]
         if (this.assets && this.assets.objects) {
             const assetz = save.getDir("assets").mkdir();
             Object.values(this.assets.objects).forEach((e) => {
@@ -388,17 +426,29 @@ export default class instance {
             if (err) console.error(err);
             assetz.rm();
         }
-
-        for (var k = 0; k < ls2.length; k++) {
-            const e = ls2[k];
-            // console.log(e.getName() + ":" + e.islink())
-            if (!e.islink() && !avoid.includes(e.getName()) && !e.getName().startsWith(".")) {
-                const err = await packAsync(e.sysPath(), mzip.sysPath());
-                if (err) console.error(err);
-
+        if (!trimMisc)
+            for (var k = 0; k < ls2.length; k++) {
+                const e = ls2[k];
+                // console.log(e.getName() + ":" + e.islink())
+                if (!e.islink() && !avoid.includes(e.getName()) && !e.getName().startsWith(".")) {
+                    const err = await packAsync(e.sysPath(), mzip.sysPath());
+                    if (err) console.error(err);
+                }
             }
+        if (mzip.exists()) {
+            resources.push(
+                {
+                    unzip: { file: [] },
+                    key: "misc",
+                    name: "misc.zip",
+                    path: [".data"],
+                    url: [baseUrl, ".data", zip].join("/"),
+                    chk: { sha1: mzip.getHash(), size: mzip.getSize() }
+                }
+            );
+        } else {
+            console.warn("[GMLL]: No misc zip detected! If this is intended then please ignore");
         }
-        resources.push({ unzip: { file: [] }, key: "misc", name: "misc.zip", path: [".data"], url: [baseUrl, ".data", zip].join("/"), chk: { sha1: mzip.getHash(), size: mzip.getSize() } });
         const ver: Partial<versionJson> = {
             instance: {
                 restart_Multiplier: 1,

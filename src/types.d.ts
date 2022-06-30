@@ -3,6 +3,9 @@
  * TYPES 
  * ---------------------------------------------------------------------------------------------
  */
+
+import type { dir, file } from "./modules/objects/files";
+
 /**
  * The release type of a set version. Can be used to add filters to a version select field within a launcher so 
  * that a user isn't overwhelmed by the 7 billion different versions of fabric.
@@ -325,4 +328,17 @@ export interface launchOptions {
      * If brought up in the support channels for GMLL, you'll be asked to set this to it's default value if we see that you have changed it.
      */
     javaPath?: "default" | string;
+}
+
+export interface instancePackConfig {
+    /**The main domain and sub-domain you'll be hosting your files on*/
+    baseDownloadLink: string,
+    /**The directory the packed up instance should be located in*/
+    outputDir: dir | string,
+    /**The name of your modpack */
+    modpackName?: string,
+    /**The path to your forge installer jar */
+    forgeInstallerPath?: file | string,
+    /**Should the misc.zip archive be trimmed by avoiding normally unnecessary files */
+    trimMisc?: true
 }
