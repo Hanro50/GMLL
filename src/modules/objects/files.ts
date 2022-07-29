@@ -220,7 +220,7 @@ export class file extends dir {
     }
     chmod() {
         if (type() != "Windows_NT")
-            execSync('chmod +x ' + this.sysPath())
+            execSync(`chmod +x "${this.sysPath()}"`)
     }
 
     write(data: string | ArrayBuffer | object) {

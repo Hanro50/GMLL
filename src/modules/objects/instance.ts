@@ -19,9 +19,9 @@ function parseArguments(val = {}, args: launchArguments) {
     let out = ""
     args.forEach(e => {
         if (typeof e == "string")
-            out += " " + e.trim().replace(/\s/g, "");
+            out += "\u0000" + e.trim().replace(/\s/g, "");
         else if (lawyer(e.rules, val))
-            out += " " + (e.value instanceof Array ? e.value.join("\t") : e.value);
+            out += "\u0000" + (e.value instanceof Array ? e.value.join("\u0000") : e.value);
     })
     return out
 }
@@ -319,9 +319,9 @@ export default class instance {
         var jvmArgs = parseArguments(args, rawJVMargs);
 
         let gameArgs = vjson.arguments ? parseArguments(args, vjson.arguments.game) : "";
-        gameArgs += vjson.minecraftArguments ? " " + vjson.minecraftArguments : "";
+        gameArgs += vjson.minecraftArguments ? "\x00" + vjson.minecraftArguments.replace(/\s/g, "\x00") : "";
 
-        var launchCom = jvmArgs + " " + vjson.mainClass + (!gameArgs.startsWith(" ") ? " " : "") + gameArgs;
+        var launchCom = jvmArgs + "\x00" + vjson.mainClass + (!gameArgs.startsWith("\x00") ? "\x00" : "") + gameArgs;
 
 
         Object.keys(args).forEach(key => {
@@ -329,8 +329,10 @@ export default class instance {
             launchCom = launchCom.replace(regex, args[key])
         })
         emit("jvm.start", "Minecraft", this.getPath());
-        // console.debug(launchCom)
-        const s = spawn(javaPath.sysPath(), launchCom.trim().split(" "), { "cwd": this.getPath(), "env": combine(process.env, this.env) })
+        const largsL = launchCom.trim().split("\x00");
+        if (largsL[0] == '') largsL.shift();
+        console.debug(largsL)
+        const s = spawn(javaPath.sysPath(), largsL, { "cwd": this.getPath(), "env": combine(process.env, this.env) })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
     }

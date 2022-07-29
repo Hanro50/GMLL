@@ -96,6 +96,9 @@ var files: { assets: dir, libraries: dir, instances: dir, versions: dir, runtime
  */
 export function setRoot(_root: dir | string) {
     if (typeof _root == "string") _root = new dir(_root);
+    if (_root.sysPath().includes("\x00")) {
+        console.error("Path should not contain a NULL character!")
+    }
     initialized = false;
     files = {
         assets: _root.getDir("assets"),
