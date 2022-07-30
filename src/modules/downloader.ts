@@ -30,6 +30,11 @@ export function download(obj: Partial<downloadableFile>[], it: number = 1) {
     // setupMaster({
     //     exec: __get
     //});
+
+    if (obj.length <= 0) {
+        emit('download.done');
+        return;
+    }
     if (it < 1) it = 1;
     emit("download.started");
     obj.sort((a, b) => { return (b.chk.size || 0) - (a.chk.size || 0) });
