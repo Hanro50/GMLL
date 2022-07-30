@@ -505,10 +505,31 @@ export default class instance {
         const manifest: versionManifest = {
             id: name, type: "custom", sha1: verfile.getHash(), base: Fversion, url: baseUrl + "/" + ".meta/version.json", "_comment": "Drop this into gmll's manifest folder",
         }
-        save.getFile("manifest_" + fsSanitiser(name) + ".json").write(manifest);
+        
         delete manifest._comment;
         save.getFile(".meta", "manifest.json").write(manifest);
         save.getFile(".meta", "api.json").write({ name: name, version: 1, sha: save.getFile(".meta", "manifest.json").getHash(), "_comment": "Here for future proofing incase we need to introduce a breaking change to this system." });
+
+        let index = `<!DOCTYPE html><html><!--This is just a place holder! GMLL doesn't check this. It is merely here to look nice and serve as a directory listing-->`
+        index += `<head><link rel="stylesheet" href="https://styles.hanro50.net.za/v1/main"><title>${name}</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="A GMLL minecraft modpack"></head><body><h1>${name}</h1><h2>Copy the link to this page into gmll to import this modpack!</h2><h2>File list</h2>`
+        function read(f: dir, directory = []) {
+
+            f.ls().forEach(e => {
+                if (e.getName() == "index.html" || e.getName()==`manifest_${fsSanitiser(name)}.json`) return;
+                if (e instanceof file) {
+                    const entry = ([...directory, e.getName()].join("/"));
+                    index += `<br><div class="element button" onclick="document.location.href='./${entry}'">${entry}</div>`
+                }
+                else read(e, [...directory, e.getName()])
+            })
+        }
+
+        read(save);
+
+        index += `</body></html>`
+        console.log(index);
+        save.getFile("index.html").write(index);
+        save.getFile(`manifest_${fsSanitiser(name)}.json`).write(manifest);
         return ver;
     }
 }
