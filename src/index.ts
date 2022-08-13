@@ -17,7 +17,7 @@ export * as wrapper from "./modules/wrapper.js";
 /**Provides access to GMLL's file handler */
 export * as files from "./modules/objects/files.js"
 
-export * as nbt from "./modules/objects/nbt.js"
+export * as nbt from "./modules/nbt.js"
 
 import instance from "./modules/objects/instance.js";
 import type types from "./types";

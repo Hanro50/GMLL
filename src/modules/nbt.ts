@@ -1,4 +1,4 @@
-import { dir, file } from "./files.js";
+import { dir, file } from "./objects/files.js";
 
 const tagTypes = {
     0: "TAG_End",
