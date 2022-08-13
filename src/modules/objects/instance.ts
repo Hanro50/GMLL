@@ -533,7 +533,6 @@ export default class instance {
         return ver;
     }
 
-
     async getMetaPaths() : Promise<instanceMetaPaths>{
         const version = await this.getVersion();
         const p = this.getDir();
