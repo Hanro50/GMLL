@@ -4,7 +4,7 @@ import { join } from "path";
 import fetch from "node-fetch";
 import { existsSync, mkdirSync, unlinkSync, symlinkSync, readFileSync, createWriteStream, statSync, writeFileSync, rmSync, readdirSync, copyFileSync, lstatSync, renameSync, access, constants, } from 'fs';
 import { createHash } from "crypto";
-import { platform, type } from "os";
+import { platform, tmpdir, type } from "os";
 import { execSync } from "child_process";
 import { cmd as _cmd, pack } from '7zip-min';
 import type { downloadableFile } from "../../types";
@@ -41,7 +41,9 @@ export function stringify(json: object) {
 const isWin = platform() == "win32";
 
 export class dir {
-
+static tmpdir() {
+    return new dir(tmpdir());
+}
     isRelative() {
         if (this.path.length < 1) return true
         if (isWin) return !this.path[0].includes(":");
@@ -145,9 +147,11 @@ export class file extends dir {
         super(...path);
         this.name = this.path.pop();
     }
-
+readRaw(){
+    return readFileSync(this.sysPath())
+}
     read(): string {
-        return readFileSync(this.sysPath()).toString();
+        return this.readRaw().toString();
     }
     toJSON<T>() {
         if (this.exists())

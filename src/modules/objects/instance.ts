@@ -9,7 +9,7 @@ import { emit, getAssets, getLauncherName, getLauncherVersion, getlibraries, get
 import version from "./version.js";
 
 import { download, runtime } from "../downloader.js";
-import { assetIndex, downloadableFile, instancePackConfig, launchArguments, launchOptions, mcUserTypeVal, player, versionJson, versionManifest } from "../../types.js";
+import { assetIndex, downloadableFile, instanceMetaPaths, instancePackConfig, launchArguments, launchOptions, mcUserTypeVal, player, versionJson, versionManifest } from "../../types";
 import { randomUUID } from "crypto";
 
 /**
@@ -505,7 +505,7 @@ export default class instance {
         const manifest: versionManifest = {
             id: name, type: "custom", sha1: verfile.getHash(), base: Fversion, url: baseUrl + "/" + ".meta/version.json", "_comment": "Drop this into gmll's manifest folder",
         }
-        
+
         delete manifest._comment;
         save.getFile(".meta", "manifest.json").write(manifest);
         save.getFile(".meta", "api.json").write({ name: name, version: 1, sha: save.getFile(".meta", "manifest.json").getHash(), "_comment": "Here for future proofing incase we need to introduce a breaking change to this system." });
@@ -515,7 +515,7 @@ export default class instance {
         function read(f: dir, directory = []) {
 
             f.ls().forEach(e => {
-                if (e.getName() == "index.html" || e.getName()==`manifest_${fsSanitiser(name)}.json`) return;
+                if (e.getName() == "index.html" || e.getName() == `manifest_${fsSanitiser(name)}.json`) return;
                 if (e instanceof file) {
                     const entry = ([...directory, e.getName()].join("/"));
                     index += `<br><div class="element button" onclick="document.location.href='./${entry}'">${entry}</div>`
@@ -532,4 +532,19 @@ export default class instance {
         save.getFile(`manifest_${fsSanitiser(name)}.json`).write(manifest);
         return ver;
     }
+
+
+    async getMetaPaths() : Promise<instanceMetaPaths>{
+        const version = await this.getVersion();
+        const p = this.getDir();
+        return {
+            mods: p.getDir("mods"),//
+            worlds: p.getDir("saves"),
+            resourcePacks: (p.getDir(Date.parse(version.json.releaseTime) >= Date.parse("2013-06-13T15:32:23+00:00") ? "resourcepacks" : "texturepacks")),
+            coremods: p.getDir("coremods"),
+            configs: p.getDir("config")
+        }
+    }
+
+
 }

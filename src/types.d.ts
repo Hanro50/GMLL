@@ -342,3 +342,34 @@ export interface instancePackConfig {
     /**Should the misc.zip archive be trimmed by avoiding normally unnecessary files */
     trimMisc?: true
 }
+/**
+ * Used for world files and resource packs. 
+ */
+export interface metaObj {
+    icon: string,
+    name: string,
+    path: dir | file
+}
+/**
+ * Used when you ask for mods in a set a instance
+ */
+export interface modObj extends metaObj {
+    enabled: () => boolean
+    /**
+     * Toggles a set mod on and off based on the "on" variable
+     */
+    toggle: (on: boolean) => boolean
+    /**
+     * Tells you if a set mod is a core mod. For older version of forge.
+     */
+    coremod: boolean
+
+}
+
+export interface instanceMetaPaths {
+    mods: dir,
+    worlds: dir,
+    resourcePacks: dir,
+    coremods: dir,
+    configs: dir
+}

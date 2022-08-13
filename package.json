@@ -1,6 +1,6 @@
 {
     "name": "gmll",
-    "version": "1.1.6",
+    "version": "1.2.0",
     "description": "A generic launcher core for building custom launchers",
     "license": "MIT",
     "types": "./types/index.d.ts",
@@ -30,6 +30,9 @@
             ],
             "objects/files": [
                 "./types/modules/objects/files.d.ts"
+            ],
+            "objects/nbt": [
+                "./types/modules/objects/nbt.d.ts"
             ]
         }
     },
@@ -65,6 +68,10 @@
         "./objects/files": {
             "import": "./dist/modules/objects/files.js",
             "require": "./dist/modules/objects/files.js"
+        },
+        "./objects/nbt": {
+            "import": "./dist/modules/objects/nbt.js",
+            "require": "./dist/modules/objects/nbt.js"
         }
     },
     "main": "dist/index.js",

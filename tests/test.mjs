@@ -7,7 +7,7 @@ await init();
 import {auth } from "msmc";
 import { getLauncherVersion } from "gmll/config";
 const aobj = new auth("select_account");
-const i = new instance({version:"fabric-loader-0.14.5-1.19"});
+const i = new instance({version:"a1.0.15"});
 i.setIcon("icon_32x32.png", "icon_16x16.png");
 
 //await installForge();
