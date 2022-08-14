@@ -1,6 +1,6 @@
 {
     "name": "gmll",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "A generic launcher core for building custom launchers",
     "license": "MIT",
     "types": "./types/index.d.ts",
@@ -140,6 +140,7 @@
         "modpack",
         "modpack-api",
         "backend",
-        "extendable"
+        "extendable",
+        "nbt"
     ]
 }
