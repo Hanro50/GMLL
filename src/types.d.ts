@@ -346,10 +346,21 @@ export interface instancePackConfig {
  * Used for world files and resource packs. 
  */
 export interface metaObj {
-    icon: string,
     name: string,
     path: dir | file
+    icon?: string,
 }
+export interface metaResourcePack extends metaObj {
+    description: string,
+    format?: number
+    credits?: string,
+    license?: string,
+}
+export interface metaSave extends metaObj {
+    level: levelDat
+}
+
+
 /**
  * Used when you ask for mods in a set a instance
  */
@@ -368,8 +379,228 @@ export interface modObj extends metaObj {
 
 export interface instanceMetaPaths {
     mods: dir,
-    worlds: dir,
+    saves: dir,
     resourcePacks: dir,
     coremods: dir,
     configs: dir
+}
+/**
+ * EACH version of minecraft will have a slightly different structure to it's level DAT file.
+ * 
+ * =>Last updated with 1.19.2
+ * =>All constants are values that existed in 1.0 and the above version
+ * =>Please add checks before blindly pulling values from here. 
+ * 
+ * Other then that have fun
+ * 
+ * =>Some number values are actually booleans. 
+ * However a byte is the smallest unit the level.dat file can save.
+ * 
+ * Note: Saving back values is not currectly supported!
+ */
+export interface levelDat {
+    Data: {
+        CustomBossEvents?: {},
+        DataPacks?: { Enabled: string[], Disabled: string[] }
+        DragonFight?: Partial<{
+            DragonKilled: number,
+            Gateways: Array<number>[],
+            NeedsStateScanning: number,
+            PreviouslyKilled: number
+        }>,
+        GameRules?: Partial<{
+            announceAdvancements: 'true' | 'false',
+            commandBlockOutput: 'true' | 'false',
+            disableElytraMovementCheck: 'true' | 'false',
+            disableRaids: 'true' | 'false',
+            doDaylightCycle: 'true' | 'false',
+            doEntityDrops: 'true' | 'false',
+            doFireTick: 'true' | 'false',
+            doImmediateRespawn: 'true' | 'false',
+            doInsomnia: 'true' | 'false',
+            doLimitedCrafting: 'true' | 'false',
+            doMobLoot: 'true' | 'false',
+            doMobSpawning: 'true' | 'false',
+            doPatrolSpawning: 'true' | 'false'
+            doTileDrops: 'true' | 'false',
+            doTraderSpawning: 'true' | 'false',
+            doWardenSpawning: 'true' | 'false',
+            doWeatherCycle: 'true' | 'false',
+            drowningDamage: 'true' | 'false',
+            fallDamage: 'true' | 'false',
+            fireDamage: 'true' | 'false',
+            forgiveDeadPlayers: 'true' | 'false',
+            freezeDamage: 'true' | 'false',
+            keepInventory: 'true' | 'false',
+            logAdminCommands: 'true' | 'false',
+            maxCommandChainLength: string,
+            maxEntityCramming: string,
+            mobGriefing: 'true' | 'false',
+            naturalRegeneration: 'true' | 'false',
+            playersSleepingPercentage: string,
+            randomTickSpeed: string,
+            reducedDebugInfo: 'true' | 'false',
+            sendCommandFeedback: 'true' | 'false',
+            showDeathMessages: 'true' | 'false',
+            spawnRadius: string,
+            spectatorsGenerateChunks: 'true' | 'false',
+            universalAnger: 'true' | 'false',
+        }>,
+        Player: {
+            abilities: {
+                flying: number,
+                flySpeed?: number
+                instabuild: number,
+                invulnerable: number,
+                mayBuild?: number,
+                mayfly: number,
+                walkSpeed: number,
+            },
+            Attributes?: [{
+                "Base": number,
+                "Name": string
+            }],
+            recipeBook?: {
+                isBlastingFurnaceFilteringCraftable: number,
+                isBlastingFurnaceGuiOpen: number,
+                isFilteringCraftable: number,
+                isFurnaceFilteringCraftable: number,
+                isFurnaceGuiOpen: number,
+                isGuiOpen: number,
+                isSmokerFilteringCraftable: number
+                isSmokerGuiOpen: number,
+                recipes: string[],
+                toBeDisplayed: string[],
+            },
+            warden_spawn_tracker?: {
+                warning_level: number,
+                ticks_since_last_warning: number,
+                cooldown_ticks: number
+            },
+            AbsorptionAmount?: number,
+            Air: number,
+            Brain?: { memories: {} },
+            DataVersion?: number,
+            DeathTime: number,
+            Dimension: number | "minecraft:overworld" | "minecraft:the_nether" | "minecraft:the_end",
+            EnderItems: [],
+            FallDistance: number,
+            FallFlying?: number,
+            Fire: number,
+            foodExhaustionLevel: number,
+            foodLevel: number,
+            foodSaturationLevel: number,
+            foodTickTimer: number
+            Health: number,
+            HurtByTimestamp?: number,
+            HurtTime: number,
+            Inventory: [],
+            Invulnerable?: number,
+            Motion: number[],
+            OnGround: number,
+            playerGameType?: number,
+            PortalCooldown?: number,
+            Pos: number[],
+            previousPlayerGameType?: number,
+            Rotation: number[],
+            Score: number,
+            seenCredits?: number,
+            SelectedItemSlot?: number,
+            SleepTimer: number,
+            UUID?: number[],
+            XpLevel: number,
+            XpP: number,
+            XpSeed?: number,
+            XpTotal: number,
+        },
+        Version?: number | { Snapshot: number, Series: string, Id: number, Name: string },
+        version?: number,
+        WorldGenSettings?: Partial<{
+            dimensions: {
+                [Key in "minecraft:overworld" | "minecraft:the_nether" | "minecraft:the_end"]: {
+                    generator: {
+                        settings: "minecraft:overworld" | "minecraft:nether" | "minecraft:end",
+                        biome_source: {
+                            preset?: string,
+                            type: "minecraft:multi_noise" | "minecraft:noise" | "minecraft:fixed"
+                        },
+                        type: "minecraft:noise"
+                    },
+                    type: "minecraft:overworld" | "minecraft:the_nether" | "minecraft:the_end"
+                }
+            }
+            bonus_chest: number,
+            generate_features: number,
+            seed: number,
+        }>,
+        allowCommands?: number,
+        BorderCenterX?: number,
+        BorderCenterZ?: number,
+        BorderDamagePerBlock?: number,
+        BorderSafeZone?: number,
+        BorderSize?: number,
+        BorderSizeLerpTarget?: number,
+        BorderSizeLerpTime?: number,
+        BorderWarningBlocks?: number,
+        BorderWarningTime?: number,
+        clearWeatherTime?: number,
+        DataVersion?: number,
+        DayTime?: number,
+        Difficulty?: number,
+        DifficultyLocked?: number,
+        GameType: number,
+        hardcore: number,
+        initialized?: number,
+        LastPlayed: number,
+        LevelName: string,
+        MapFeatures?: number,
+        raining: number,
+        rainTime: number,
+        RandomSeed?: number,
+        ScheduledEvents?: number,
+        ServerBrands?: string[],
+        SizeOnDisk: number
+        SpawnAngle?: number,
+        SpawnX: number,
+        SpawnY: number,
+        SpawnZ: number,
+        thundering: number,
+        thunderTime: number,
+        Time: number,
+        WanderingTraderSpawnChance?: number,
+        WanderingTraderSpawnDelay?: number,
+        WasModded?: number,
+    }
+}
+export type forgeDep = {
+    modId: string
+    mandatory: boolean
+    versionRange: string
+    ordering: string
+    side: string
+}
+export interface modInfo extends metaObj {
+    id: string,
+    authors: string[],
+    version: string,
+    loader: "forge" | "fabric" | "unknown"
+
+    depends?: {
+        [key: string]: string
+    } | Array<forgeDep | string>
+    bugReportURL?: string,
+    description?: string,
+    mcversion?: string,
+    credits?: string,
+    logoFile?: string,
+    url?: string,
+    updateUrl?: string,
+    parent?: string,
+    screenshots?: string[],
+    source?: string,
+    licence?: string,
+    type: "mod" | "coremod" | "jarmod",
+    //Here if GMLL could not find any mod information about the mod
+    error?: boolean,
+
 }

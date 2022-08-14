@@ -41,9 +41,9 @@ export function stringify(json: object) {
 const isWin = platform() == "win32";
 
 export class dir {
-static tmpdir() {
-    return new dir(tmpdir());
-}
+    static tmpdir() {
+        return new dir(tmpdir());
+    }
     isRelative() {
         if (this.path.length < 1) return true
         if (isWin) return !this.path[0].includes(":");
@@ -147,11 +147,15 @@ export class file extends dir {
         super(...path);
         this.name = this.path.pop();
     }
-readRaw(){
-    return readFileSync(this.sysPath())
-}
+    readRaw() {
+        return readFileSync(this.sysPath())
+    }
     read(): string {
         return this.readRaw().toString();
+    }
+
+    toBase64() {
+        return readFileSync(this.sysPath(), 'base64url')
     }
     toJSON<T>() {
         if (this.exists())
@@ -276,6 +280,18 @@ readRaw(){
             })
         }
         return new Promise<void>(e => _cmd(com, (err: any) => { if (err) console.error(err); e() }));
+    }
+    extract(path: dir, files: string[]) {
+        var com = ['x', this.sysPath(), '-y', '-o' + path.sysPath()]
+
+        files.forEach(e => {
+            var f = String(e);
+            if (f.endsWith("/")) f += "*"
+            com.push(f);
+        })
+        com.push("-r");
+        return new Promise<void>(e => _cmd(com, (err: any) => { if (err) console.error(err); e() }));
+
     }
     isExecutable(): Promise<boolean> {
         return new Promise((res) => {

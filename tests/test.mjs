@@ -7,7 +7,7 @@ await init();
 import {auth } from "msmc";
 import { getLauncherVersion } from "gmll/config";
 const aobj = new auth("select_account");
-const i = new instance({version:"a1.0.15"});
+const i = new instance();
 i.setIcon("icon_32x32.png", "icon_16x16.png");
 
 //await installForge();
