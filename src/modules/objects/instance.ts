@@ -533,7 +533,9 @@ export default class instance {
         save.getFile(`manifest_${fsSanitiser(name)}.json`).write(manifest);
         return ver;
     }
-
+    /**
+     * @returns Some low level meta paths used to obtain some key files of this instance. 
+     */
     async getMetaPaths(): Promise<instanceMetaPaths> {
         const version = await this.getVersion();
         const p = this.getDir();
@@ -545,36 +547,52 @@ export default class instance {
             configs: p.getDir("config")
         }
     }
-
+    /**
+     * Gets some general information about all the world files in this instance.
+     * It also decodes the level.DAT file for you and returns the decoded file a json file. 
+     */
     async getWorlds(): Promise<metaSave[]> {
+        emit("parser.start", "save file", this);
         console.log("[GMLL]: Getting level data. This may take a while.")
         const meta = await this.getMetaPaths();
         let saves: metaSave[] = [];
         if (!meta.saves.exists()) return saves
         const l = meta.saves.ls()
+        let c = l.length;
+        let n = 0;
         for (const e of l) {
-            console.log(`[GMLL]: Computing -> ${e.sysPath()}`)
-            if (e instanceof file) return;
-            const DAT = e.getFile("level.dat");
-            const IMG = e.getFile("icon.png");
-            let icon = null;
-            if (!DAT.exists()) return;
-            if (IMG.exists()) {
-                icon = IMG.sysPath();
+            try {
+                emit('parser.progress', e.sysPath(), ++n, c, c - n, this);
+                if (e instanceof file) return;
+                const DAT = e.getFile("level.dat");
+                const IMG = e.getFile("icon.png");
+                let icon = null;
+                if (!DAT.exists()) return;
+                if (IMG.exists()) {
+                    icon = IMG.sysPath();
+                }
+                const level = await readDat<levelDat>(DAT);
+                saves.push({ name: level.Data?.LevelName || e.getName(), level, path: e, icon })
+            } catch (err) {
+                emit('parser.fail', 'save file', err, file);
             }
-            const level = await readDat<levelDat>(DAT);
-            saves.push({ name: level.Data?.LevelName || e.getName(), level, path: e, icon })
         }
+        emit("parser.done", "save file", this);
         return saves;
     }
-
+    /**
+     * Gets information about the installed resource and texture packs of this instance. 
+     * This includes information like the pack icon, name, description, legal documents and credits. 
+     */
     async getResourcePacks(): Promise<metaResourcePack[]> {
+        emit("parser.start", "resource/texture pack", this);
         const meta = await this.getMetaPaths();
         let packs: metaResourcePack[] = [];
         if (!meta.resourcePacks.exists()) return packs
         const l = meta.resourcePacks.ls()
         const tmp = dir.tmpdir().getDir("gmll", "resources", this.getDir().getName(), createHash("sha1").update(this.path).digest("hex")).rm().mkdir();
         function readPackData(d: dir, source: file | dir): metaResourcePack {
+
             let icon = null;
             const i = d.getFile("pack.png");
             if (i.exists()) {
@@ -602,34 +620,49 @@ export default class instance {
             let license = lfile.exists() ? lfile.read() : null
             const lcred = d.getFile("credits.txt");
             let credits = lcred.exists() ? lcred.read() : null
+
             return { credits, license, name, description, format, icon, path: source }
         }
+        let c = l.length;
+        let n = 0;
         for (const e of l) {
-            if (e instanceof file) {
-                const name = e.getName();
-                const d = tmp.getDir(name.slice(0, name.lastIndexOf(".")))
-                await e.unzip(d, ["*/*", "*/"]);
-                packs.push(readPackData(d, e))
-            } else {
-                packs.push(readPackData(e, e))
+            emit('parser.progress', e.sysPath(), ++n, c, c - n, this);
+            try {
+                if (e instanceof file) {
+                    const name = e.getName();
+                    const d = tmp.getDir(name.slice(0, name.lastIndexOf(".")))
+                    await e.unzip(d, ["*/*", "*/"]);
+                    packs.push(readPackData(d, e))
+                } else {
+                    packs.push(readPackData(e, e))
+                }
+            } catch (err) {
+                emit('parser.fail', 'resource/texture pack', err, file);
             }
         }
+        emit("parser.done", "resource/texture pack", this);
         return packs
     }
 
-
+    /**
+      * Gets information about mods in this instance. This includes the loader version plus some general 
+      * information about the mod author and mod itself. This will also provide you the icon for a set mod if it can be obtained.\
+      * 
+      * Works with Legacy forge, forge, fabric, riftloader and liteloader
+      */
     async getMods(): Promise<modInfo[]> {
+        emit("parser.start", "mod", this);
         const meta = await this.getMetaPaths();
         let mods: modInfo[] = [];
 
         const tmp = dir.tmpdir().getDir("gmll", "mods", this.getDir().getName(), createHash("sha1").update(this.path).digest("hex")).rm().mkdir();
-        async function readMod(file: file, type: "mod" | "coremod" | "jarmod", prefix?: string): Promise<modInfo> {
+        async function readMod(file: file, type: "mod" | "coremod" | "jarmod", prefix?: string): Promise<void> {
             let name = file.getName();
             try {
                 name = name.slice(0, name.lastIndexOf("."));
                 const fname = prefix ? join(prefix, name) : name;
                 const d = tmp.getDir(fname).mkdir();
-                await file.extract(d, ["mcmod.info", "fabric.mod.json", "META-INF/mods.toml", "META-INF/MANIFEST.MF"]);
+                await file.extract(d, ["mcmod.info", "fabric.mod.json", "litemod.json", "riftmod.json", "META-INF/mods.toml", "META-INF/MANIFEST.MF"]);
                 let rfile: file;
                 async function getIcon(jarPath: string) {
                     if (!jarPath || jarPath.length < 1) return null
@@ -640,40 +673,41 @@ export default class instance {
                     if (flogo.exists()) return `data:image/png;base64,${flogo.toBase64()}`
                     return null
                 }
-
-
+                //Legacy forge
                 if ((rfile = d.getFile("mcmod.info")).exists()) {
                     type minfo = [{ "modid": string, "name": string, "mcversion": string, "description": string, "version": string, "credits": string, "authorsList"?: string[], "authors"?: string[], "logoFile": string, "url": string, "updateUrl": string, "parent": string, "screenshots": string[], "dependencies": string[] }]
-                    let minfo = rfile.toJSON<minfo>()[0];
-                    let icon = await getIcon(minfo.logoFile);
-
-                    return {
-                        id: minfo.modid,
-                        authors: minfo.authorsList ? minfo.authorsList : minfo.authors,
-                        loader: "forge",
-                        name: minfo.name ? (prefix ? join(prefix, minfo.name) : minfo.name) : name,
-                        version: minfo.version,
-                        path: file,
-                        depends: minfo.dependencies,
-                        screenshots: minfo.screenshots,
-                        parent: minfo.parent,
-                        updateUrl: minfo.updateUrl,
-                        url: minfo.url,
-                        description: minfo.description,
-                        credits: minfo.credits,
-                        mcversion: minfo.mcversion,
-                        icon, type
-
+                    let minfos = rfile.toJSON<minfo>();
+                    for (let minfo of minfos) {
+                        let icon = await getIcon(minfo.logoFile);
+                        mods.push({
+                            id: minfo.modid,
+                            authors: minfo.authorsList ? minfo.authorsList : minfo.authors,
+                            loader: "forge",
+                            name: minfo.name ? (prefix ? join(prefix, minfo.name) : minfo.name) : name,
+                            version: minfo.version,
+                            path: file,
+                            depends: minfo.dependencies,
+                            screenshots: minfo.screenshots,
+                            parent: minfo.parent,
+                            updateUrl: minfo.updateUrl,
+                            url: minfo.url,
+                            description: minfo.description,
+                            credits: minfo.credits,
+                            mcversion: minfo.mcversion,
+                            icon, type
+                        })
                     }
+                    return
                 }
-                if ((rfile = d.getFile("fabric.mod.json")).exists()) {
+                //Fabric and rift
+                if ((rfile = d.getFile("fabric.mod.json")).exists() || (rfile = d.getFile("riftmod.json")).exists()) {
                     type finfo = { "schemaVersion": number, "id": string, "version": string, "name": string, "description": string, "authors": string[], "contact": { "homepage": string, "sources": string }, "license": string, "icon": string, "environment": string, "entrypoints": { "main": string[], "client": string[] }, "mixins": string[], "depends": { [key: string]: string }, "suggests": { [key: string]: string } }
                     let minfo = rfile.toJSON<finfo>();
                     let icon = await getIcon(minfo.icon);
-                    return {
+                    mods.push({
                         id: minfo.id,
                         authors: minfo.authors,
-                        loader: "fabric",
+                        loader: rfile.getName().endsWith("fabric.mod.json") ? "fabric" : "riftMod",
                         name: minfo.name ? (prefix ? join(prefix, minfo.name) : minfo.name) : name,
                         version: minfo.version,
                         path: file,
@@ -683,8 +717,25 @@ export default class instance {
                         source: minfo.contact?.sources,
                         licence: minfo.license,
                         icon, type
-                    }
+                    })
+                    return
                 }
+                //LiteLoader
+                if ((rfile = d.getFile("litemod.json")).exists()) {
+                    type liteInf = { name: string, displayName: string, version: string, author: string, mcversion: string, revision: string, description: string, url: string }
+                    let minfo = rfile.toJSON<liteInf>();
+                    mods.push({
+                        id: minfo.name,
+                        name: minfo.name ? (prefix ? join(prefix, minfo.name) : minfo.name) : name,
+                        authors: [minfo.author],
+                        version: minfo.version || minfo.revision || "unknown",
+                        loader: "liteLoader",
+                        description: minfo.description,
+                        type, path: file
+                    })
+                    return
+                }
+                //Modern forge
                 if ((rfile = d.getFile("META-INF", "mods.toml")).exists()) {
                     let mfinal: modInfo = {
                         type,
@@ -764,8 +815,10 @@ export default class instance {
                     if (mfinal.depends instanceof Array) {
                         mfinal.depends.push(dep)
                     }
-                    return mfinal;
+                    mods.push(mfinal);
+                    return
                 }
+                //Unknown modloader
                 if ((rfile = d.getFile("META-INF", "MANIFEST.MF")).exists()) {
                     let mfinal: modInfo = {
                         type,
@@ -807,15 +860,17 @@ export default class instance {
                         raw[0] = raw[0].trim();
                         if (state1Map.has(raw[0])) { await state1Map.get(raw[0])(raw[1]); continue; }
                     }
-                    return mfinal;
-
+                    mods.push(mfinal);
+                    return
                 }
-            } catch (e) {
-                console.error(`[GMLL] An error occured parsing mod => ${name}`)
-                console.trace(e)
+                emit('parser.fail', 'mod', "Possibly missing mod data!", file);
+                // console.warn(`[GMLL]: Could not parse mod -> ${name}\n[GMLL]: Possibly missing mod data!`)
+            } catch (err) {
+                emit('parser.fail', 'mod', err, file);
+
             }
-            console.warn(`[GMLL] Could not parse mod => ${name}\n[GMLL] Possibly missing mod data!`)
-            return {
+
+            mods.push({
                 id: "unknown",
                 authors: [],
                 version: "unknown",
@@ -824,22 +879,26 @@ export default class instance {
                 path: file,
                 type,
                 error: true
-            };
+            });
         }
-
+        let c = 0;
+        let n = 0;
         async function loop(d: dir, type: "mod" | "coremod" | "jarmod") {
             let l = d.ls();
+            c += l.length
             for (const e of l) {
+                emit('parser.progress', e.sysPath(), ++n, c, c - n, this);
                 if (!(e instanceof file)) {
                     for (const e2 of e.ls())
-                        if (e2 instanceof file) mods.push(await readMod(e2, type))
+                        if (e2 instanceof file) await readMod(e2, type)
                 } else {
-                    mods.push(await readMod(e, type))
+                    await readMod(e, type)
                 }
             }
         }
         await loop(meta.mods, "mod")
         await loop(meta.coremods, "coremod")
+        emit("parser.done", "mods", this);
         return mods
 
     }

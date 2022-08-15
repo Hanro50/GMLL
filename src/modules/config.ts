@@ -4,6 +4,7 @@ import { dir, file } from "./objects/files.js";
 import { getErr, throwErr } from "./internal/util.js";
 import { arch, type } from "os";
 import { getPath } from "./internal/root.cjs";
+import type instance from "./objects/instance.js";
 export let __get = getPath();
 if (!__get.endsWith("get.js")) {
     console.warn("[GMLL]: The internal downloader script may not be within it's own file. GMLL may fail due to this!!");
@@ -40,10 +41,21 @@ export interface Events {
      * done=>Fired when everything is wrapped up.
     */
     on(e: "download.start" | "download.restart" | "download.done" | "encode.start" | "encode.done", f: () => void): void
+    /**
+     * type=>Type of resource being parsed
+     * err=>The thrown error
+     * path=>The path to the file that caused the issue
+    */
+    on(e: 'parser.fail', f: (type: string, err: Error, path: file | dir) => void): void
+    /**
+     * type=>Type of resource being parsed
+     * instance=>The instance of which the load event is applicable. 
+    */
+    on(e: "parser.start" | "parser.done", f: (type: string, instance: instance) => void): void
     /**Used to give setup information. Useful for progress bars. */
     on(e: "download.setup", f: (cores: number) => void): void
     /**Fired when a file has been downloaded and saved to disk */
-    on(e: "download.progress" | "encode.progress", f: (key: string, index: Number, total: Number, left: Number) => void): void
+    on(e: "download.progress" | "encode.progress" | "parser.progress", f: (key: string, index: Number, total: Number, left: Number) => void): void
     /**Fired when GMLL needs to restart a download */
     on(e: "download.fail", f: (key: string, type: "retry" | "fail" | "system", err: any) => void): void
     /**The events fired when GMLL has to spin up an instance of the JVM. 
@@ -60,6 +72,18 @@ export interface Events {
     emit(tag: string, ...args: any): void
 }
 let defEvents: Events = new EventEmitter();
+
+//Encode Manager
+defEvents.on('parser.start', (type, int) => console.log(`[GMLL]: Parsing ${type}s of instance ${int.name}`))
+defEvents.on('parser.progress', (key, index, total, left) => console.log("[GMLL]: Done with " + index + " of " + total + " : " + left + " : " + key))
+defEvents.on('parser.done', (type, int) => console.log(`[GMLL]: Done parsing ${type}s of instance ${int.name}`))
+defEvents.on('parser.fail', (type, err, path) => {
+    console.error(`[GMLL]: Error parsing ${type} => ${path.sysPath()}`);
+    if (typeof err == "string")
+        console.warn(`[GMLL]: Reason => ${err}`);
+    else
+        console.trace(err);
+});
 //Encode Manager
 defEvents.on('encode.start', () => console.log("[GMLL]: Starting to encode files"))
 defEvents.on('encode.progress', (key, index, total, left) => console.log("[GMLL]: Done with " + index + " of " + total + " : " + left + " : " + key))
@@ -241,7 +265,7 @@ export function getNatives() {
 /**
  * For internal use only 
  */
-export function emit(tag: string, ...args: Array<Number | String>) {
+export function emit(tag: string, ...args: Array<Number | String | Object>) {
     defEvents.emit(tag, ...args);
 }
 /**Replaces the current event Listener */

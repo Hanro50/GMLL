@@ -579,12 +579,12 @@ export type forgeDep = {
     ordering: string
     side: string
 }
+export type loader = "forge" | "fabric" | "liteLoader" | "riftMod" | "unknown";
 export interface modInfo extends metaObj {
     id: string,
     authors: string[],
     version: string,
-    loader: "forge" | "fabric" | "unknown"
-
+    loader: loader
     depends?: {
         [key: string]: string
     } | Array<forgeDep | string>
@@ -602,5 +602,5 @@ export interface modInfo extends metaObj {
     type: "mod" | "coremod" | "jarmod",
     //Here if GMLL could not find any mod information about the mod
     error?: boolean,
-
 }
+
