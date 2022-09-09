@@ -6,7 +6,8 @@ import { runtime, libraries, assets } from "../downloader.js";
 import { getManifest, getJavaPath } from "../handler.js";
 import { dir, file } from "./files";
 import { throwErr, classPathResolver, combine, lawyer } from "../internal/util.js";
-import {  mcJarTypeVal, versionManifest, versionJson, artifact } from "../../types.js";
+import { mcJarTypeVal, versionManifest, versionJson, artifact } from "../../types.js";
+import { platform } from "os";
 
 /**
  * Version data is unique. Each version of the game will generate an unique version object. 
@@ -21,6 +22,7 @@ export default class version {
     file: file;
     synced: boolean;
     override?: artifact;
+    private pre1d9: boolean;
     private _mergeFailure: boolean;
     /**Gets a set version based on a given manifest or version string. Either do not have to be contained within the manifest database. */
     static async get(manifest: string | versionManifest): Promise<version> {
@@ -36,9 +38,13 @@ export default class version {
     private constructor(manifest: string | versionManifest) {
 
         this.manifest = typeof manifest == "string" ? getManifest(manifest) : manifest;
-        if (onUnsupportedArm && Date.parse(this.manifest.releaseTime) < Date.parse("2022-05-12T15:36:11+00:00")) {
+        this.pre1d9 = Date.parse(this.manifest.releaseTime) < Date.parse("2022-05-12T15:36:11+00:00");
+        
+        if (onUnsupportedArm && this.pre1d9 && platform() != "win32") {
             console.trace(manifest)
-            throw "Only 1.19 and up is supported on arm based Windows and Linux devices atm."
+            console.warn("Only 1.19 and up is supported on arm based Linux devices atm. As there's no x86 fallback!")
+        } if (onUnsupportedArm && this.pre1d9 ){
+            console.warn("Arm support is experimental!")
         }
         //  console.log(this.manifest)
         this.json;
@@ -85,7 +91,7 @@ export default class version {
                     console.warn("[GMLL]: Dependency merge failed.");
                     this._mergeFailure = true;
                 }
-                if (onUnsupportedArm) { this.json = combine(this.json, getMeta().index.getFile("arm-patch.json").toJSON()) }
+                if (onUnsupportedArm && !this.pre1d9) { this.json = combine(this.json, getMeta().index.getFile("arm-patch.json").toJSON()) }
                 return this.json;
             }
         }
@@ -109,7 +115,7 @@ export default class version {
                 this._mergeFailure = true;
             }
         }
-        if (onUnsupportedArm) { this.json = combine(this.json, getMeta().index.getFile("arm-patch.json").toJSON()) }
+        if (onUnsupportedArm && !this.pre1d9) { this.json = combine(this.json, getMeta().index.getFile("arm-patch.json").toJSON()) }
         return this.json;
     }
     /**

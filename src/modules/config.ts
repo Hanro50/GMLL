@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import { manifests } from "./downloader.js";
 import { dir, file } from "./objects/files.js";
-import { getErr, throwErr } from "./internal/util.js";
+import { getCpuArch, getErr, throwErr } from "./internal/util.js";
 import { arch, type } from "os";
 import { getPath } from "./internal/root.cjs";
 import type instance from "./objects/instance.js";
@@ -11,10 +11,11 @@ if (!__get.endsWith("get.js")) {
     console.warn("[GMLL]: If GMLL does fail. Please update the '__get' property in the config module to point to the correct standalone js file.");
 }
 export type update = "fabric" | "vanilla" | "forge" | "runtime";
-export const onUnsupportedArm = (arch() == "arm64" || arch() == "arm") && type() != "Darwin";
+export const onUnsupportedArm = (getCpuArch() == "arm64" || getCpuArch() == "arm") && type() != "Darwin";
 
-if (onUnsupportedArm)
+if (onUnsupportedArm){
     console.warn("[GMLL]: Running on an non M1 Arm platform! We are desperate for dedicated testers!")
+}
 let initialized = false;
 
 let _packageFile = new file("package.json");

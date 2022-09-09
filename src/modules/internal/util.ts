@@ -26,9 +26,10 @@ const OS = getOS();
 type exCpuArch = cpuArchRuleVal | "ia32" | "x32";
 /**Gets the current CPU architexture for the current running machine. May not be that accurate for Mac OS */
 export function getCpuArch() {
-    let architexture: exCpuArch = arch() as exCpuArch;
-    if (architexture == "ia32" || architexture == "x32") {
-        if (OS == "windows" && process.env.hasOwnProperty('PROCESSOR_ARCHITEW6432')) architexture = "x64";
+    let architexture: exCpuArch = arch() as exCpuArch;//ProgramFiles(Arm)
+    if (OS == "windows") {
+        if (process.env.hasOwnProperty("ProgramFiles(Arm)")) architexture = "arm64";
+        else if (process.env.hasOwnProperty('PROCESSOR_ARCHITEW6432')) architexture = "x64";
         else architexture = "x86";
     }
     return architexture as cpuArchRuleVal

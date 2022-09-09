@@ -4,7 +4,7 @@ import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpd
 //import cluster from "cluster";
 //const fork = cluster.fork;
 //const setupMaster = cluster.setupPrimary || cluster.setupMaster;
-import { cpus } from 'os';
+import { cpus, platform } from 'os';
 import Fetch from 'node-fetch';
 import { dir, file, packAsync } from "./objects/files.js";
 import { readlinkSync } from "fs";
@@ -272,7 +272,13 @@ export async function getRuntimeIndexes(manifest: runtimeManifest) {
     var platform: "gamecore" | "linux" | "linux-i386" | "mac-os" | "mac-os-arm64" | "windows-x64" | "windows-x86" | "linux-arm64" | "linux-arm32" | "windows-arm64";
     switch (getOS()) {
         case ("windows"):
-            if (onUnsupportedArm && "windows-arm64" in manifest) { platform = "windows-arm64"; break; }
+            if (onUnsupportedArm && "windows-arm64" in manifest) {
+                platform = "windows-arm64";
+                console.warn("[GMLL]: Loading intel fallback for Windows on arm. Please contact devs if this bugs out.")
+                for (const key of Object.keys(manifest[platform]))
+                    if (manifest[platform][key].length < 1) manifest[platform][key] = manifest["windows-x86"][key];
+                break;
+            }
             platform = getCpuArch() == "x64" ? "windows-x64" : "windows-x86"; break;
         case ("linux"):
             if (onUnsupportedArm && ("linux-arm32" in manifest || "linux-arm64" in manifest)) { platform = getCpuArch() == "arm" ? "linux-arm32" : "linux-arm64"; break; }
@@ -370,11 +376,11 @@ export async function manifests() {
         }
     }
     if (update.includes("runtime")) {
+        let indexes = (await meta.index.getFile("runtime.json").download(mcRuntimes)).toJSON<runtimeManifest>();
         if (onUnsupportedArm) {
-            getRuntimeIndexes((await meta.index.getFile("runtime-Arm.json").download(armRuntimes)).toJSON<runtimeManifest>());
-        } else {
-            getRuntimeIndexes((await meta.index.getFile("runtime.json").download(mcRuntimes)).toJSON<runtimeManifest>());
-        }
+            indexes = combine(indexes,(await meta.index.getFile("runtime-Arm.json").download(armRuntimes)).toJSON<runtimeManifest>());
+        } 
+        getRuntimeIndexes(indexes);
     }
 }
 
