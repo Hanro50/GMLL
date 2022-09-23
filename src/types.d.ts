@@ -382,7 +382,9 @@ export interface instanceMetaPaths {
     saves: dir,
     resourcePacks: dir,
     coremods: dir,
-    configs: dir
+    configs: dir,
+    jarmods: dir,
+    bin: dir
 }
 /**
  * EACH version of minecraft will have a slightly different structure to it's level DAT file.

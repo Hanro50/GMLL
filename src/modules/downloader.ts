@@ -308,9 +308,7 @@ export async function getRuntimeIndexes(manifest: runtimeManifest) {
  * Updates GMLL's manifest files. Used internally
  */
 export async function manifests() {
-    const forgiacURL = "https://github.com/Hanro50/Forgiac/releases/download/1.8-SNAPSHOT/basic-1.8-SNAPSHOT.jar";
-    const forgiacSHA = "https://github.com/Hanro50/Forgiac/releases/download/1.8-SNAPSHOT/basic-1.8-SNAPSHOT.jar.sha1";
-    const forgiacPath = ["za", "net", "hanro50", "forgiac", "basic"];
+
 
     const fabricLoader = "https://meta.fabricmc.net/v2/versions/loader/";
     const fabricVersions = "https://meta.fabricmc.net/v2/versions/game/";
@@ -368,13 +366,7 @@ export async function manifests() {
         }
     }
 
-    if (update.includes("forge")) {
-        var libzFolder = getlibraries().getDir(...forgiacPath).mkdir();
-        var rURL2 = await Fetch(forgiacSHA);
-        if (rURL2.status == 200) {
-            await libzFolder.getFile("forgiac.jar").download(forgiacURL, { sha1: await rURL2.text() })
-        }
-    }
+    
     if (update.includes("runtime")) {
         let indexes = (await meta.index.getFile("runtime.json").download(mcRuntimes)).toJSON<runtimeManifest>();
         if (onUnsupportedArm) {
@@ -411,7 +403,7 @@ export async function encodeMRF(url: string, root: dir, out: dir) {
             }
             else if (e instanceof file) {
                 const rhash = e.getHash();
-                e.copyto(packed.getFile(rhash, e.name).mkdir())
+                e.copyTo(packed.getFile(rhash, e.name).mkdir())
                 let zip = out.getFile('tmp', e.name + ".7z").mkdir()
                 await packAsync(e.sysPath(), zip.sysPath())
                 const zhash = zip.getHash();
@@ -453,7 +445,7 @@ export async function encodeMRF(url: string, root: dir, out: dir) {
     manifest.write(res)
 
     const mhash = manifest.getHash()
-    manifest.copyto(packed.getFile(mhash, "manifest.json").mkdir())
+    manifest.copyTo(packed.getFile(mhash, "manifest.json").mkdir())
     const index = out.getFile(root.getName() + "_index.json")
     index.write({
         sha1: mhash,

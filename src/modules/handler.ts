@@ -63,8 +63,17 @@ export function getLatest(): { "release": string, "snapshot": string } {
 
 /**Installs a provided version of forge from a provided installer. Only works with forge*/
 export async function installForge(forgeInstallerJar?: file | string): Promise<void> {
+    const forgiacURL = "https://github.com/Hanro50/Forgiac/releases/download/1.8-SNAPSHOT/basic-1.8-SNAPSHOT.jar";
+    const forgiacSHA = "https://github.com/Hanro50/Forgiac/releases/download/1.8-SNAPSHOT/basic-1.8-SNAPSHOT.jar.sha1";
+    const forgiacPath = ["za", "net", "hanro50", "forgiac", "basic"];
     if (typeof forgeInstallerJar == "string") forgeInstallerJar = new file(forgeInstallerJar);
-    isInitialized();
+
+    var libzFolder = getlibraries().getDir(...forgiacPath).mkdir();
+    var rURL2 = await fetch(forgiacSHA);
+    if (rURL2.status == 200) {
+        await libzFolder.getFile("forgiac.jar").download(forgiacURL, { sha1: await rURL2.text() })
+    }
+
 
     const frun: mcRuntimeVal = onUnsupportedArm ? "java-runtime-arm" : "java-runtime-gamma";
     await runtime(frun);

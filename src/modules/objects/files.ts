@@ -49,7 +49,7 @@ export class dir {
         if (isWin) return !this.path[0].includes(":");
         return !this.path[0].startsWith("/");
     }
-
+   
     islink() {
         return lstatSync(this.sysPath()).isSymbolicLink();
     }
@@ -116,6 +116,13 @@ export class dir {
         rmSync(this.sysPath(), { recursive: true, force: true })
         return this;
     }
+    copyTo(dir: this) {
+        copyFileSync(this.sysPath(), dir.sysPath());
+    }
+    moveTo(file: this) {
+        renameSync(this.sysPath(), file.sysPath())
+        return file;
+    }
     exists() {
         return existsSync(this.sysPath());
     }
@@ -178,13 +185,8 @@ export class file extends dir {
     javaPath() {
         return [...this.path, this.name].join("/");
     }
-    copyto(file: file) {
-        copyFileSync(this.sysPath(), file.sysPath());
-    }
-    moveTo(file: file) {
-        renameSync(this.sysPath(), file.sysPath())
-        return file;
-    }
+   
+   
     sha1(expected: string | string[]) {
         if (!this.exists()) return false
         const sha1 = this.getHash();

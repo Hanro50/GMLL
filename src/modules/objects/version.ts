@@ -4,7 +4,7 @@ import { join } from "path";
 import { getlibraries, getMeta, getVersions, isInitialized, onUnsupportedArm } from "../config.js";
 import { runtime, libraries, assets } from "../downloader.js";
 import { getManifest, getJavaPath } from "../handler.js";
-import { dir, file } from "./files";
+import { dir, file, packAsync } from "./files";
 import { throwErr, classPathResolver, combine, lawyer } from "../internal/util.js";
 import { mcJarTypeVal, versionManifest, versionJson, artifact } from "../../types.js";
 import { platform } from "os";
@@ -39,11 +39,11 @@ export default class version {
 
         this.manifest = typeof manifest == "string" ? getManifest(manifest) : manifest;
         this.pre1d9 = Date.parse(this.manifest.releaseTime) < Date.parse("2022-05-12T15:36:11+00:00");
-        
+
         if (onUnsupportedArm && this.pre1d9 && platform() != "win32") {
             console.trace(manifest)
             console.warn("Only 1.19 and up is supported on arm based Linux devices atm. As there's no x86 fallback!")
-        } if (onUnsupportedArm && this.pre1d9 ){
+        } if (onUnsupportedArm && this.pre1d9) {
             console.warn("Arm support is experimental!")
         }
         //  console.log(this.manifest)
@@ -157,11 +157,12 @@ export default class version {
         await this.getLibs();
         await this.getJar("client", this.folder.getFile(this.name + ".jar"));
         await this.getRuntime();
+       
     }
     getJavaPath() {
         return getJavaPath(this.json.javaVersion ? this.json.javaVersion.component : "jre-legacy");
     }
-    getClassPath(mode: "client" | "server" = "client") {
+    getClassPath(mode: "client" | "server" = "client", jarpath?: file) {
         const cp = [];
         this.json.libraries.forEach(lib => {
             if (mode == "client" && lib.hasOwnProperty("clientreq") && !lib.clientreq) return;
@@ -175,9 +176,11 @@ export default class version {
             }
             else if (!cp.includes(p)) cp.push(p);
         });
-        const jar = this.folder.getFile(this.name + ".jar");
-        if (jar.exists())
+        const jar = jarpath || this.folder.getFile(this.name + ".jar");
+        if (jar.exists()) {
+
             cp.push(jar);
+        }
 
         return cp;
     }

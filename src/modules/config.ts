@@ -10,7 +10,7 @@ if (!__get.endsWith("get.js")) {
     console.warn("[GMLL]: The internal downloader script may not be within it's own file. GMLL may fail due to this!!");
     console.warn("[GMLL]: If GMLL does fail. Please update the '__get' property in the config module to point to the correct standalone js file.");
 }
-export type update = "fabric" | "vanilla" | "forge" | "runtime";
+export type update = "fabric" | "vanilla" | "runtime";
 export const onUnsupportedArm = (getCpuArch() == "arm64" || getCpuArch() == "arm") && type() != "Darwin";
 
 if (onUnsupportedArm){
@@ -112,7 +112,7 @@ defEvents.on('jvm.stdout', (app, out) => {
 defEvents.on('jvm.stderr', (app, out) => {
     console.log(("\x1b[31m\x1b[1m[" + app + "] " + out).trim() + "\x1b[0m");
 });
-var updateConf: update[] = ["fabric", "vanilla", "forge", "runtime"];
+var updateConf: update[] = ["fabric", "vanilla", "runtime"];
 
 var files: { assets: dir, libraries: dir, instances: dir, versions: dir, runtimes: dir, launcher: dir, natives: dir }
 /**

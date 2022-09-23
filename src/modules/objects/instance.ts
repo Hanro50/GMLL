@@ -26,7 +26,39 @@ function parseArguments(val = {}, args: launchArguments) {
     })
     return out
 }
+async function jarmod(metapaths: instanceMetaPaths, version: version): Promise<file> {
+    let lst: (dir | file)[]
+    const jarmods = metapaths.jarmods;
+    const custom = metapaths.bin.getFile("minecraft.jar");
+    if (jarmods && jarmods.exists() && (lst = jarmods.ls()).length > 0) {
+        const checksumsfile = metapaths.bin.getFile("minecraft.json");
+        if (checksumsfile.exists()&& custom.exists()  && jarmods.exists()) {
+            try {
+                const sums = checksumsfile.toJSON();
+                if (custom.chkSelf(sums)) return
+            } catch {}
+        }
 
+        console.log("PACKING JAR MODS")
+        const jar = version.folder.getFile(version.name + ".jar");
+        if (!jar.exists()) return;
+        const t = dir.tmpdir().getDir("jarcompile").rm().mkdir();
+        await jar.unzip(t, ["META-INF/*"]);
+
+        for (const e of lst) {
+            if (e instanceof file) {
+                await e.unzip(t);
+            }
+        }
+        await packAsync(t.sysPath() + "/.", custom.rm().sysPath())
+        checksumsfile.write({
+            sha1: custom.getHash(),
+            size: custom.getSize()
+        })
+        return custom;
+    }
+    return undefined;
+}
 
 /**
  * An instance is what the name intails. An instance of the game Minecraft containing Minecraft specific data.
@@ -115,7 +147,7 @@ export default class instance {
         }
         if (!path.exists()) throwErr("Cannot find file");
         const hash = path.getHash();
-        path.copyto(assetTag(getAssets().getDir("objects"), hash).getFile(hash));
+        path.copyTo(assetTag(getAssets().getDir("objects"), hash).getFile(hash));
         if (!this.assets.objects) this.assets.objects = {};
         const asset = { hash: hash, size: path.getSize(), ignore: true };
         this.assets.objects[key] = asset;
@@ -177,6 +209,7 @@ export default class instance {
      * @see {@link getVersion} if you just want the instance's version
      */
     async install() {
+        const metapaths = await this.getMetaPaths()
         //Making links
         getlibraries().linkFrom([this.getPath(), "libraries"]);
         getAssets().linkFrom([this.getPath(), "assets"]);
@@ -230,6 +263,9 @@ export default class instance {
         }
         await version.install();
 
+
+
+
         return version;
     }
     /**
@@ -239,6 +275,8 @@ export default class instance {
      * @param resolution Optional information defining the game's resolution
      */
     async launch(token: player, resolution?: { width: string, height: string }) {
+        //const metapaths = (await this.getMetaPaths());
+
         if (!token) {
             console.warn("[GMLL]: No token detected. Launching game in demo mode!")
             const demoFile = getMeta().index.getFile("demo.txt");
@@ -254,8 +292,9 @@ export default class instance {
             }
         }
         const version = await this.install();
-
-        const cp = version.getClassPath();
+        let jarmoded = await jarmod(await this.getMetaPaths(), version)
+        //   let j = metapaths.bin.getFile("minecraft.jar");
+        const cp = version.getClassPath(undefined, jarmoded);
         var vjson = await version.getJSON();
         var assetRoot = getAssets();
 
@@ -317,6 +356,9 @@ export default class instance {
         const javaPath = this.javaPath == "default" ? version.getJavaPath() : new file(this.javaPath);
         const rawJVMargs: launchArguments = instance.defaultGameArguments;
         rawJVMargs.push(...(vjson.arguments?.jvm || instance.defJVM));
+        // if (metapaths.jarmods.exists()){
+        //      rawJVMargs.unshift("-noverify")
+        //  }
         var jvmArgs = parseArguments(args, rawJVMargs);
 
         let gameArgs = vjson.arguments ? parseArguments(args, vjson.arguments.game) : "";
@@ -332,7 +374,7 @@ export default class instance {
         emit("jvm.start", "Minecraft", this.getPath());
         const largsL = launchCom.trim().split("\x00");
         if (largsL[0] == '') largsL.shift();
-        //console.debug(largsL)
+        console.debug(largsL)
         const s = spawn(javaPath.sysPath(), largsL, { "cwd": this.getPath(), "env": combine(process.env, this.env) })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
@@ -371,7 +413,7 @@ export default class instance {
                     if (typeof save == "string") save = new dir(save);
                     if (e instanceof file) {
                         const f = new file(save.javaPath(), ...path, e.name)
-                        e.copyto(f.mkdir())
+                        e.copyTo(f.mkdir())
                         resources.push({ key: [...path, e.name].join("/"), name: e.name, path: path, url: [baseUrl, ...path, e.name].join("/"), chk: { sha1: f.getHash(), size: f.getSize() } });
                     } else if (!e.islink()) {
                         const path2 = [...path, e.path[e.path.length - 1]];
@@ -422,7 +464,7 @@ export default class instance {
         if (this.assets && this.assets.objects) {
             const assetz = save.getDir("assets").mkdir();
             Object.values(this.assets.objects).forEach((e) => {
-                assetTag(getAssets().getDir("objects"), e.hash).getFile(e.hash).copyto(assetTag(assetz.getDir("objects"), e.hash).mkdir().getFile(e.hash))
+                assetTag(getAssets().getDir("objects"), e.hash).getFile(e.hash).copyTo(assetTag(assetz.getDir("objects"), e.hash).mkdir().getFile(e.hash))
             })
             // console.log(assetz.sysPath())
             const err = await packAsync(assetz.sysPath(), mzip.sysPath());
@@ -494,7 +536,7 @@ export default class instance {
             }
             const forgePath = save.getDir("forge").mkdir();
             Fversion = forgi.toJSON<versionManifest>().id;
-            _forge.copyto(forgePath.getFile(_forge.getName()));
+            _forge.copyTo(forgePath.getFile(_forge.getName()));
             ver.instance.files.push({ key: _forge.getName(), name: _forge.getName(), path: ["forge"], url: [baseUrl, "forge", _forge.getName()].join("/"), chk: { sha1: _forge.getHash(), size: _forge.getSize() } })
             ver.instance.forge = { installer: ["forge", _forge.getName()] };
 
@@ -540,11 +582,13 @@ export default class instance {
         const version = await this.getVersion();
         const p = this.getDir();
         return {
-            mods: p.getDir("mods"),//
+            mods: p.getDir("mods"),
+            jarmods: p.getDir("jarmods"),
             saves: p.getDir("saves"),
             resourcePacks: (p.getDir(Date.parse(version.json.releaseTime) >= Date.parse("2013-06-13T15:32:23+00:00") ? "resourcepacks" : "texturepacks")),
             coremods: p.getDir("coremods"),
-            configs: p.getDir("config")
+            configs: p.getDir("config"),
+            bin: p.getDir("bin")
         }
     }
     /**
@@ -898,6 +942,7 @@ export default class instance {
         }
         await loop(meta.mods, "mod")
         await loop(meta.coremods, "coremod")
+        await loop(meta.jarmods, "jarmod")
         emit("parser.done", "mods", this);
         return mods
 

@@ -125,7 +125,7 @@ export function processAssets(assetManifest: assetIndex) {
             const obj = o[1];
             const to = file.getFile(...key.split("/")).mkdir();
             const finalFile = assetTag(root.getDir("objects"), obj.hash).getFile(obj.hash)
-            finalFile.copyto(to);
+            finalFile.copyTo(to);
         })
     }
 }
