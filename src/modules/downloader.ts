@@ -1,10 +1,7 @@
 import { lawyer, getOS, assetTag, throwErr, classPathResolver, getErr, processAssets, getCpuArch, combine } from "./internal/util.js";
 import { resolve } from "path";
 import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig, onUnsupportedArm, __get } from "./config.js";
-//import cluster from "cluster";
-//const fork = cluster.fork;
-//const setupMaster = cluster.setupPrimary || cluster.setupMaster;
-import { cpus, platform } from 'os';
+import { cpus } from 'os';
 import Fetch from 'node-fetch';
 import { dir, file, packAsync } from "./objects/files.js";
 import { readlinkSync } from "fs";
@@ -14,7 +11,6 @@ import { getWorkerDate } from "./internal/get.js";
 
 const processCMD = "download.progress";
 const failCMD = "download.fail";
-//if (cluster.isWorker) console.warn("[GMLL]: Possible worker context leak detected!");
 /**
  * Download function. Can be used for downloading modpacks and launcher updates.
  * Checks sha1 hashes and can use multiple cores to download files rapidly. 
@@ -27,10 +23,6 @@ const failCMD = "download.fail";
  * Each restart actually increments this value. 
  */
 export function download(obj: Partial<downloadableFile>[], it: number = 1) {
-    // setupMaster({
-    //     exec: __get
-    //});
-
     if (obj.length <= 0) {
         emit('download.done');
         return;

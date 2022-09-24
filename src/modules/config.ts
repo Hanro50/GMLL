@@ -2,7 +2,7 @@ import { EventEmitter } from "events";
 import { manifests } from "./downloader.js";
 import { dir, file } from "./objects/files.js";
 import { getCpuArch, getErr, throwErr } from "./internal/util.js";
-import { arch, type } from "os";
+import { type } from "os";
 import { getPath } from "./internal/root.cjs";
 import type instance from "./objects/instance.js";
 export let __get = getPath();
@@ -13,7 +13,7 @@ if (!__get.endsWith("get.js")) {
 export type update = "fabric" | "vanilla" | "runtime";
 export const onUnsupportedArm = (getCpuArch() == "arm64" || getCpuArch() == "arm") && type() != "Darwin";
 
-if (onUnsupportedArm){
+if (onUnsupportedArm) {
     console.warn("[GMLL]: Running on an non M1 Arm platform! We are desperate for dedicated testers!")
 }
 let initialized = false;

@@ -2,14 +2,14 @@ import { spawn } from "child_process";
 import { join } from "path";
 import { assetTag, combine, fsSanitiser, getClientID, lawyer, processAssets, throwErr } from "../internal/util.js";
 import { dir, file, packAsync } from "./files.js";
-import { cpus, type } from "os";
+import { cpus, platform, type } from "os";
 import { getLatest, installForge, getJavaPath } from "../handler.js";
 import { emit, getAssets, getLauncherName, getLauncherVersion, getlibraries, getMeta, getNatives, resolvePath } from "../config.js";
 
 import version from "./version.js";
 
 import { download, runtime } from "../downloader.js";
-import { assetIndex, downloadableFile, forgeDep, instanceMetaPaths, instancePackConfig, launchArguments, launchOptions, levelDat, mcUserTypeVal, metaObj, metaResourcePack, metaSave, modInfo, player, versionJson, versionManifest } from "../../types";
+import { assetIndex, downloadableFile, forgeDep, instanceMetaPaths, instancePackConfig, launchArguments, launchOptions, levelDat, metaResourcePack, metaSave, modInfo, player, versionJson, versionManifest } from "../../types";
 import { createHash, randomInt, randomUUID } from "crypto";
 import { readDat } from "../nbt.js";
 
@@ -27,37 +27,32 @@ function parseArguments(val = {}, args: launchArguments) {
     return out
 }
 async function jarmod(metapaths: instanceMetaPaths, version: version): Promise<file> {
-    let lst: (dir | file)[]
     const jarmods = metapaths.jarmods;
-    const custom = metapaths.bin.getFile("minecraft.jar");
-    if (jarmods && jarmods.exists() && (lst = jarmods.ls()).length > 0) {
-        const checksumsfile = metapaths.bin.getFile("minecraft.json");
-        if (checksumsfile.exists()&& custom.exists()  && jarmods.exists()) {
-            try {
-                const sums = checksumsfile.toJSON();
-                if (custom.chkSelf(sums)) return
-            } catch {}
-        }
+    const bin = dir.tmpdir().getDir("gmll", "bin").rm().mkdir();
+    const custom = bin.getFile(`${version.name}.jar`);
 
-        console.log("PACKING JAR MODS")
-        const jar = version.folder.getFile(version.name + ".jar");
-        if (!jar.exists()) return;
-        const t = dir.tmpdir().getDir("jarcompile").rm().mkdir();
-        await jar.unzip(t, ["META-INF/*"]);
+    if (!jarmods || !jarmods.exists()) return
+    const lst = jarmods.ls();
+    if (lst.length < 1) return;
+    console.warn("Jar modding is experimental atm.\nWe still don't have a way to order jars\nRecommended for modding legacy versions or mcp...")
+    console.log("Packing custom jar")
+    const tmp = dir.tmpdir().getDir("gmll", "tmp").rm().mkdir()
+    const jar = version.folder.getFile(version.name + ".jar");
+    if (!jar.exists()) return;
+    await jar.unzip(tmp, ["META-INF/*"]);
+    console.log("Running through files")
+    for (const e of lst) {
+        if (e instanceof file) {
+            const n = e.getName()
+            console.log(n)
 
-        for (const e of lst) {
-            if (e instanceof file) {
-                await e.unzip(t);
-            }
+            if (n.endsWith(".zip") || n.endsWith(".jar"))
+                await e.unzip(tmp);
         }
-        await packAsync(t.sysPath() + "/.", custom.rm().sysPath())
-        checksumsfile.write({
-            sha1: custom.getHash(),
-            size: custom.getSize()
-        })
-        return custom;
     }
-    return undefined;
+    console.log("Packing jar")
+    await packAsync(tmp.sysPath() + (platform() == "win32" ? "\\." : "/."), custom.sysPath());
+    return custom;
 }
 
 /**
@@ -73,10 +68,9 @@ export default class instance {
     private path: string;
     assets: Partial<assetIndex>;
     javaPath: "default" | string;
-
+    /**Gets a list of profiles that where saved previously */
     static getProfiles() {
         const profiles: Map<string, (launchOptions & { get: () => instance })> = new Map();
-
         getMeta().profiles.ls().forEach(e => {
             const name = e.getName();
             if (e instanceof file && e.getName().endsWith(".json")) {
@@ -86,13 +80,14 @@ export default class instance {
         })
         return profiles;
     }
-
+    /**Gets a set profile based on the name of that profile */
     static get(profile: string) {
         if (!profile.endsWith(".json")) profile += ".json"
         const _file = getMeta().profiles.getFile(fsSanitiser(profile));
         const json = _file.exists() ? _file.toJSON<launchOptions>() : {};
         return new instance(json);
     }
+    /**The default game arguments, don't mess with these unless you know what you are doing */
     static defaultGameArguments = [
         "-Xms${ram}G",
         "-Xmx${ram}G",
@@ -116,11 +111,7 @@ export default class instance {
         "-cp",
         "${classpath}"
     ]
-
-    /**
-     * 
-     * @param opt This parameter contains information vital to constructing the instance. That being said, GMLL will never the less pull in default values if it is emited
-     */
+    /**@param opt This parameter contains information vital to constructing the instance. That being said, GMLL will never the less pull in default values if it is emited*/
     constructor(opt: launchOptions = {}) {
         this.version = opt.version || getLatest().release;
         this.name = opt.name || this.version;
@@ -142,9 +133,7 @@ export default class instance {
      * @param path The path to the asset file in questions...it must exist!
      */
     injectAsset(key: string, path: string | file) {
-        if (typeof path == "string") {
-            path = new file(path);
-        }
+        if (typeof path == "string") path = new file(path);
         if (!path.exists()) throwErr("Cannot find file");
         const hash = path.getHash();
         path.copyTo(assetTag(getAssets().getDir("objects"), hash).getFile(hash));
@@ -153,7 +142,7 @@ export default class instance {
         this.assets.objects[key] = asset;
         return asset
     }
-
+    /**Injects a set selection of images into the asset files and sets them as the icon for this instance */
     setIcon(x32?: string | file, x16?: string | file, mac?: string | file) {
         if (x32) {
             const x32Icon = this.injectAsset("icons/icon_32x32.png", x32);
@@ -209,7 +198,6 @@ export default class instance {
      * @see {@link getVersion} if you just want the instance's version
      */
     async install() {
-        const metapaths = await this.getMetaPaths()
         //Making links
         getlibraries().linkFrom([this.getPath(), "libraries"]);
         getAssets().linkFrom([this.getPath(), "assets"]);
@@ -262,10 +250,6 @@ export default class instance {
             chk.write(Date.now().toString());
         }
         await version.install();
-
-
-
-
         return version;
     }
     /**
@@ -276,7 +260,6 @@ export default class instance {
      */
     async launch(token: player, resolution?: { width: string, height: string }) {
         //const metapaths = (await this.getMetaPaths());
-
         if (!token) {
             console.warn("[GMLL]: No token detected. Launching game in demo mode!")
             const demoFile = getMeta().index.getFile("demo.txt");
@@ -293,8 +276,8 @@ export default class instance {
         }
         const version = await this.install();
         let jarmoded = await jarmod(await this.getMetaPaths(), version)
-        //   let j = metapaths.bin.getFile("minecraft.jar");
-        const cp = version.getClassPath(undefined, jarmoded);
+        let cp: string[] = version.getClassPath(undefined, jarmoded);
+
         var vjson = await version.getJSON();
         var assetRoot = getAssets();
 
@@ -356,9 +339,6 @@ export default class instance {
         const javaPath = this.javaPath == "default" ? version.getJavaPath() : new file(this.javaPath);
         const rawJVMargs: launchArguments = instance.defaultGameArguments;
         rawJVMargs.push(...(vjson.arguments?.jvm || instance.defJVM));
-        // if (metapaths.jarmods.exists()){
-        //      rawJVMargs.unshift("-noverify")
-        //  }
         var jvmArgs = parseArguments(args, rawJVMargs);
 
         let gameArgs = vjson.arguments ? parseArguments(args, vjson.arguments.game) : "";
@@ -374,7 +354,7 @@ export default class instance {
         emit("jvm.start", "Minecraft", this.getPath());
         const largsL = launchCom.trim().split("\x00");
         if (largsL[0] == '') largsL.shift();
-        console.debug(largsL)
+        //console.debug(largsL)
         const s = spawn(javaPath.sysPath(), largsL, { "cwd": this.getPath(), "env": combine(process.env, this.env) })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
@@ -398,7 +378,7 @@ export default class instance {
         if (typeof save == "string") save = new dir(save);
         await this.install();
         const blacklist = ["usercache.json", "realms_persistence.json", "logs", "profilekeys", "usernamecache.json"]
-        const seperate = ["resourcepacks", "texturepacks", "mods", "coremods", "shaderpacks"]
+        const seperate = ["resourcepacks", "texturepacks", "mods", "coremods", "jarmods", "shaderpacks"]
         const dynamic = ["saves", "config"]
         const bunlde = ["saves"]
         const pack = ["config"]
@@ -407,7 +387,6 @@ export default class instance {
         const resources: downloadableFile[] = [];
 
         const cp = (d: dir, path: string[]) => {
-            //  console.log(d.exists())
             if (d.exists()) {
                 d.ls().forEach(e => {
                     if (typeof save == "string") save = new dir(save);
@@ -426,16 +405,12 @@ export default class instance {
             cp(me.getDir(e), [e]);
         })
         const data = save.getDir(".data").mkdir();
-        //  console.log(1)
         for (var i = 0; i < bunlde.length; i++) {
-            //    console.log(2)
             const e = bunlde[i]
             const ls = me.getDir(e).ls();
             for (var k = 0; k < ls.length; k++) {
-                //  console.log(3)
                 const e2 = ls[k]
                 if (!e2.islink() && e2 instanceof dir && e2.exists()) {
-                    //   console.log(4)
                     const name = e2.getName()
                     const zip = e + "_" + k + ".zip";
                     const file = data.getFile(zip)
@@ -466,7 +441,6 @@ export default class instance {
             Object.values(this.assets.objects).forEach((e) => {
                 assetTag(getAssets().getDir("objects"), e.hash).getFile(e.hash).copyTo(assetTag(assetz.getDir("objects"), e.hash).mkdir().getFile(e.hash))
             })
-            // console.log(assetz.sysPath())
             const err = await packAsync(assetz.sysPath(), mzip.sysPath());
             if (err) console.error(err);
             assetz.rm();
@@ -474,7 +448,6 @@ export default class instance {
         if (!trimMisc)
             for (var k = 0; k < ls2.length; k++) {
                 const e = ls2[k];
-                // console.log(e.getName() + ":" + e.islink())
                 if (!e.islink() && !avoid.includes(e.getName()) && !e.getName().startsWith(".")) {
                     const err = await packAsync(e.sysPath(), mzip.sysPath());
                     if (err) console.error(err);
@@ -587,8 +560,7 @@ export default class instance {
             saves: p.getDir("saves"),
             resourcePacks: (p.getDir(Date.parse(version.json.releaseTime) >= Date.parse("2013-06-13T15:32:23+00:00") ? "resourcepacks" : "texturepacks")),
             coremods: p.getDir("coremods"),
-            configs: p.getDir("config"),
-            bin: p.getDir("bin")
+            configs: p.getDir("config")
         }
     }
     /**
@@ -945,6 +917,5 @@ export default class instance {
         await loop(meta.jarmods, "jarmod")
         emit("parser.done", "mods", this);
         return mods
-
     }
 }

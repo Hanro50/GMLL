@@ -1,7 +1,4 @@
-
 import { arch, networkInterfaces, platform, userInfo, version } from "os";
-
-//import { downloadable } from "./get";
 import { cmd as _cmd } from '7zip-min';
 import { dir, stringify } from "../objects/files.js";
 import { getAssets, getMeta, isInitialized } from "../config.js";
@@ -16,7 +13,6 @@ export function getOS() {
             return "windows";
         case ("darwin"):
             return "osx"
-        //FreeBSD has a linux compatibility layer. That and Linux is generally the fallback for when GMLL doesn't know what it is doing
         default:
             return "linux";
     }
@@ -38,7 +34,6 @@ const archx = getCpuArch();
 /**The processor that handles the rules set out in the version.json for a set version.*/
 export function lawyer(rules: versionJsonRules, properties: any = {}): boolean {
     let end = true, end2 = false;
-    //process.env.hasOwnProperty('PROCESSOR_ARCHITEW6432')
     for (let i = 0; i < rules.length; i++) {
         if (rules[i].features) Object.keys(rules[i].features).forEach(e => {
             if (rules[i].features[e] && !properties[e])
@@ -58,7 +53,6 @@ export function lawyer(rules: versionJsonRules, properties: any = {}): boolean {
     }
     return (end && end2);
 }
-
 /**
  * Generates the sha1 dir listings for assets and compressed runtime files 
  */
@@ -84,8 +78,6 @@ export function throwErr(message: any) {
 export function classPathResolver(name: string) {
     const namespec = name.split(":", 4);
     return `${namespec[0].replace(/\./g, "/")}/${namespec[1]}/${namespec[2]}/${namespec[1]}-${namespec[2]}${(namespec[3] ? '-' + namespec[3].replace(/\:/g, "-") : "")}.jar`;
-
-    //  return namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + (namespec[3] ? namespec[3].replace(/\:/g, "-"):"") + ".jar";
 }
 
 /**Takes two different version.json files and combines them */
@@ -153,4 +145,3 @@ export function getClientID(forceNew: boolean = false) {
     }
     return data;
 }
-

@@ -8,8 +8,6 @@ import { file } from "./objects/files.js";
 import fetch from "node-fetch";
 import instance from "./objects/instance.js";
 import type { modpackApiInfo, versionManifest, mcRuntimeVal } from "../types.js";
-
-
 /**
  * Compiles all manifest objects GMLL knows about into a giant array. This will include almost all fabric versions and any installed version of forge.
  * GMLL can still launch a version if it is not within this folder, although it is not recommended
@@ -73,8 +71,6 @@ export async function installForge(forgeInstallerJar?: file | string): Promise<v
     if (rURL2.status == 200) {
         await libzFolder.getFile("forgiac.jar").download(forgiacURL, { sha1: await rURL2.text() })
     }
-
-
     const frun: mcRuntimeVal = onUnsupportedArm ? "java-runtime-arm" : "java-runtime-gamma";
     await runtime(frun);
 

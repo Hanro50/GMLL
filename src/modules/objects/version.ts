@@ -4,11 +4,10 @@ import { join } from "path";
 import { getlibraries, getMeta, getVersions, isInitialized, onUnsupportedArm } from "../config.js";
 import { runtime, libraries, assets } from "../downloader.js";
 import { getManifest, getJavaPath } from "../handler.js";
-import { dir, file, packAsync } from "./files";
+import { dir, file } from "./files";
 import { throwErr, classPathResolver, combine, lawyer } from "../internal/util.js";
 import { mcJarTypeVal, versionManifest, versionJson, artifact } from "../../types.js";
 import { platform } from "os";
-
 /**
  * Version data is unique. Each version of the game will generate an unique version object. 
  * Take note however. GMLL,unlike the default launcher, will store version data in the same folder as the version it is based upon. 
@@ -46,7 +45,6 @@ export default class version {
         } if (onUnsupportedArm && this.pre1d9) {
             console.warn("Arm support is experimental!")
         }
-        //  console.log(this.manifest)
         this.json;
         this.name = this.manifest.base || this.manifest.id;
         this.folder = getVersions().getDir(this.name);
@@ -157,13 +155,13 @@ export default class version {
         await this.getLibs();
         await this.getJar("client", this.folder.getFile(this.name + ".jar"));
         await this.getRuntime();
-       
+
     }
     getJavaPath() {
         return getJavaPath(this.json.javaVersion ? this.json.javaVersion.component : "jre-legacy");
     }
     getClassPath(mode: "client" | "server" = "client", jarpath?: file) {
-        const cp = [];
+        const cp: string[] = [];
         this.json.libraries.forEach(lib => {
             if (mode == "client" && lib.hasOwnProperty("clientreq") && !lib.clientreq) return;
             else if (mode == "server" && !lib.serverreq && lib.hasOwnProperty("clientreq")) return
@@ -177,11 +175,7 @@ export default class version {
             else if (!cp.includes(p)) cp.push(p);
         });
         const jar = jarpath || this.folder.getFile(this.name + ".jar");
-        if (jar.exists()) {
-
-            cp.push(jar);
-        }
-
+        if (jar.exists()) { cp.push(jar.sysPath()); }
         return cp;
     }
 }

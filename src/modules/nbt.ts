@@ -97,7 +97,6 @@ export async function readDat<T>(path: file, typed?: true): Promise<T | typedNBT
     const p = dir.tmpdir().getDir("gmll", path.getHash()).mkdir();
     //We need to uncompress the dat file
     await path.unzip(p);
-
     const file = p.ls()[0] as file;
     //We'll be working with a buffer here 
     let raw = file.readRaw();

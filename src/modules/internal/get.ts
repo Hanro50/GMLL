@@ -1,4 +1,3 @@
-
 /*
  * This is the core of the download manager. No code from the main thread should interact with it!
  * DO NOT WRAP THIS FUNTION UP WITH WEBPACK IF YOU DO NOT WANT THINGS TO BREAK BADLY. 
@@ -7,21 +6,15 @@
  */
 import type { downloadableFile } from "gmll/types";
 import { dir, file } from "gmll/objects/files";
-//import cluster from 'cluster';
 import { parentPort, workerData } from "worker_threads";
 
 export type getWorkerDate = { processCMD: string, failCMD: string, keys: downloadableFile[] };
-
-//if (cluster.isPrimary || cluster.isMaster) throw "[GMLL]: Cannot run this module from main thread!"
 
 const WD: getWorkerDate = workerData;
 const processCMD = WD.processCMD;
 const failCMD = WD.failCMD;
 const keys = WD.keys;
 
-//for (var i = 0; i < new Number(WD.length); i++) {
-//    keys.push(JSON.parse(WD["gmll_" + i]));
-//}
 keys.forEach(o => {
     var retry = 0;
     async function load() {
