@@ -7,7 +7,7 @@ import { spawn } from "child_process";
 import { file } from "./objects/files.js";
 import fetch from "node-fetch";
 import instance from "./objects/instance.js";
-import type { modpackApiInfo, versionManifest, mcRuntimeVal } from "../types.js";
+import type { modpackApiInfo, versionManifest, mcRuntimeVal } from "../types";
 /**
  * Compiles all manifest objects GMLL knows about into a giant array. This will include almost all fabric versions and any installed version of forge.
  * GMLL can still launch a version if it is not within this folder, although it is not recommended

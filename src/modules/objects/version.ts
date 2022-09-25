@@ -6,7 +6,7 @@ import { runtime, libraries, assets } from "../downloader.js";
 import { getManifest, getJavaPath } from "../handler.js";
 import { dir, file } from "./files";
 import { throwErr, classPathResolver, combine, lawyer } from "../internal/util.js";
-import { mcJarTypeVal, versionManifest, versionJson, artifact } from "../../types.js";
+import { mcJarTypeVal, versionManifest, versionJson, artifact } from "../../types";
 import { platform } from "os";
 /**
  * Version data is unique. Each version of the game will generate an unique version object. 

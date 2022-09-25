@@ -5,7 +5,7 @@ import { cpus } from 'os';
 import Fetch from 'node-fetch';
 import { dir, file, packAsync } from "./objects/files.js";
 import { readlinkSync } from "fs";
-import type { downloadableFile, versionManifest, runtimeManifestEntry, runtimeManifest, mcRuntimeVal, versionJson, assetIndex, artifact, mojangResourceManifest, mojangResourceFile } from "../types.js";
+import type { downloadableFile, versionManifest, runtimeManifestEntry, runtimeManifest, mcRuntimeVal, versionJson, assetIndex, artifact, mojangResourceManifest, mojangResourceFile } from "../types";
 import { Worker } from "worker_threads";
 import { getWorkerDate } from "./internal/get.js";
 
