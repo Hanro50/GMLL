@@ -381,6 +381,6 @@ It should be mentioned that for GMLL to wrap a forge based modpack. The forge in
 ## A note on jarmods
 atm GMLL handles jar mods by extracting the vanilla jar of a set version, it will then take all jars and zips located in the ./jarmods folder within a set instance's folder, extract them over the already extracted internals of a set version and will then compress it all back into a jar. 
 
-Bar you take the necessary precautions to ensure your old mods are formatted correctly or abide by Mojang's EULA before inserting your mcp client jar, this system will create a custom jar with the required files overwriten for those mods to work. Do note that this system isn't to smart atm, this will change at a later date if there is significant interest.
+Bar you take the necessary precautions to ensure your old mods are formatted correctly or abide by Mojang's EULA before inserting your mcp client jar, this system will create a custom jar with the required files overwriten for those mods to work. Atm it will use a json (priority.json) file to modify the order in which it loads mods. Failing that it will go off alphabetical order. 
 
-The download servers for 1.4.7 and 1.5 versions of forge are borked, I have tested this with version 1.2.5 to test if the system works and it did. 
+The download servers for 1.4.7 and 1.5 versions of forge are borked, I have tested this with version 1.2.5 to test if the system works and it did. atm patching methods like xdelta are recommended to be done manually by you the launcher dev. If there is a significant push to include xdelta patching (or something similar) then I will include it. Although at this moment it is outside the scope of this project. 
