@@ -1,5 +1,5 @@
 /**The compatibility lib for integration with other libraries */
-import type { player } from "../types.js";
+import type { player } from "../types";
 import { throwErr } from "./internal/util.js";
 
 /**The return object that all the async login procedures return */

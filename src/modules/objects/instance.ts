@@ -40,16 +40,42 @@ async function jarmod(metapaths: instanceMetaPaths, version: version): Promise<f
     const jar = version.folder.getFile(version.name + ".jar");
     if (!jar.exists()) return;
     await jar.unzip(tmp, ["META-INF/*"]);
+
+    let priority = { "_comment": "0 is the default, the lower the priority. The sooner a mod will be loaded. Deleting this file resets it" };
+    const pfile = jarmods.getFile("priority.json");
+    let freset = false;
+    if (pfile.exists()) {
+        try {
+            priority = pfile.toJSON();
+        } catch (e) {
+
+        }
+    } else freset = true
+    lst.sort((aF, bF) => {
+        const a = aF.getName();
+        const b = bF.getName();
+        if (priority[a] != priority[b]) {
+            if (a in priority && b in priority) return priority[a] - priority[b];
+            if (a in priority) return priority[a];
+            if (b in priority) return 0 - priority[b];
+        }
+        return (a > b ? 1 : -1);
+    })
+
     console.log("Running through files")
     for (const e of lst) {
         if (e instanceof file) {
             const n = e.getName()
             console.log(n)
-
-            if (n.endsWith(".zip") || n.endsWith(".jar"))
+            if (n.endsWith(".zip") || n.endsWith(".jar")) {
+                if (!(n in priority)) {
+                    priority[n] = freset ?  (Object.keys(priority).length - 1) * 10:0;
+                }
                 await e.unzip(tmp);
+            }
         }
     }
+    pfile.write(priority);
     console.log("Packing jar")
     await packAsync(tmp.sysPath() + (platform() == "win32" ? "\\." : "/."), custom.sysPath());
     return custom;
@@ -917,5 +943,9 @@ export default class instance {
         await loop(meta.jarmods, "jarmod")
         emit("parser.done", "mods", this);
         return mods
+    }
+
+    getJarModPriority() {
+        return
     }
 }
