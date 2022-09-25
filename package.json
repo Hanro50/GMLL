@@ -141,6 +141,7 @@
         "modpack-api",
         "backend",
         "extendable",
-        "nbt"
+        "nbt",
+        "jarmods"
     ]
 }
