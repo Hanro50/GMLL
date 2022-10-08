@@ -10,7 +10,7 @@ await init();
 import {auth } from "msmc";
 import { getLauncherVersion } from "gmll/config";
 //const aobj = new auth("select_account");
-const i = new instance({version:"1.2.5"});
+const i = new instance({version:"1.19.2-OptiFine_HD_U_H9"});
 i.setIcon("icon_32x32.png", "icon_16x16.png");
 
 //await installForge();

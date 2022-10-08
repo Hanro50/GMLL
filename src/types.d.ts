@@ -10,7 +10,7 @@ import type { dir, file } from "./modules/objects/files";
  * The release type of a set version. Can be used to add filters to a version select field within a launcher so 
  * that a user isn't overwhelmed by the 7 billion different versions of fabric.
  */
-export type mcVersionType = "old_alpha" | "old_beta" | "release" | "snapshot" | "fabric" | "forge" | "custom" | "unknown";
+export type mcVersionType = "generated"|"old_alpha" | "old_beta" | "release" | "snapshot" | "fabric" | "forge" | "custom" | "unknown";
 /**
  * The type of user profiles. Can be used to keep older versions of forge from trying to dynamically refresh your user object. 
  * Which if you logged in without a mojang account could cause tha game to crash

@@ -7,7 +7,7 @@ import { spawn } from "child_process";
 import { file } from "./objects/files.js";
 import fetch from "node-fetch";
 import instance from "./objects/instance.js";
-import type { modpackApiInfo, versionManifest, mcRuntimeVal } from "../types";
+import type { modpackApiInfo, versionManifest, mcRuntimeVal, versionJson } from "../types";
 /**
  * Compiles all manifest objects GMLL knows about into a giant array. This will include almost all fabric versions and any installed version of forge.
  * GMLL can still launch a version if it is not within this folder, although it is not recommended
@@ -31,7 +31,35 @@ export function getManifests(): versionManifest[] {
 
 function findManifest(version: string, manifests: versionManifest[]) {
     const v = version.toLocaleLowerCase().trim();
-    const manifest = manifests.find(e => { try { return e.id.toLocaleLowerCase().trim() == v } catch { return false; } }) || { id: version, type: "unknown" };
+    let manifest = manifests.find(e => { try { return e.id.toLocaleLowerCase().trim() == v } catch { return false; } })  //|| { id: version, type: "unknown" };
+    if (!manifest) {
+        console.warn("[GMLL]: attempting to generate manifest files");
+        const root = getMeta().manifests;
+        const versionjson = getVersions().getFile(version, `${version}.json`);
+        if (versionjson.exists()) {
+
+            let f = root.getFile(`${version}.json`);
+            let i = 1;
+            while (f.exists()) f = root.getFile(`${version}_${i++}.json`);
+            try {
+                const vj = versionjson.toJSON<Partial<versionJson>>()
+                const mf: versionManifest = {
+                    id: vj.id || versionjson.name.split(".")[0],
+                    base: vj.inheritsFrom,
+                    releaseTime: vj.releaseTime,
+                    time: vj.time,
+                    type: vj.type || "generated"
+                }
+                f.write(mf);
+            } catch (e) {
+                console.error("[GMLL]: failed to compile manifest from version json");
+            }
+        } else {
+            console.warn(`[GMLL]: no version json (at ${versionjson.sysPath()}) found, I hope you know what you are doing!`);
+        }
+        manifest = { id: version, type: "unknown" };
+    }
+
     if (manifest.base) {
         const man2 = findManifest(manifest.base, manifests);
         manifest.releaseTime = man2.releaseTime;
