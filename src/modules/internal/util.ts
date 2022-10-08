@@ -24,9 +24,9 @@ type exCpuArch = cpuArchRuleVal | "ia32" | "x32";
 export function getCpuArch() {
     let architexture: exCpuArch = arch() as exCpuArch;//ProgramFiles(Arm)
     if (OS == "windows") {
-        if (process.env.hasOwnProperty("ProgramFiles(Arm)")) architexture = "arm64";
-        else if (process.env.hasOwnProperty('PROCESSOR_ARCHITEW6432')) architexture = "x64";
-        else architexture = "x86";
+        if (process.env.hasOwnProperty("ProgramFiles(Arm)")) architexture = "arm64"; //For arm64
+        else if (process.env.hasOwnProperty('PROCESSOR_ARCHITEW6432')) architexture = "x64"; //For AMD64 with 32-bit node
+        else if (architexture != "x64") architexture = "x86"; //To filter out ia32 or x32 and translate that to x86
     }
     return architexture as cpuArchRuleVal
 }
