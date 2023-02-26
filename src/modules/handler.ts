@@ -68,11 +68,25 @@ function findManifest(version: string, manifests: versionManifest[]) {
     }
     return manifest;
 }
+const spTag = ["latest", "latest:release", "latest:snapshot"]
 /**Gets a specific version manifest based on the version ID provided
  * @param version the version ID
  * @returns a version manifest. It will be of type "unknown" if the specific manifest is not in the manifest database. 
  */
 export function getManifest(version: string) {
+    if (spTag.includes(version)) {
+        console.log("SPTAG")
+        const lt = getLatest();
+        switch (version) {
+            case ("latest:snapshot"):
+                version = lt.snapshot;
+                break;
+            case ("latest:release"):
+            case ("latest"):
+                version = lt.release;
+                break;
+        }
+    }
     isInitialized();
     const manifests = getManifests();
     return findManifest(version, manifests);

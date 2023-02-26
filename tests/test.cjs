@@ -9,18 +9,18 @@ const d = require("gmll/downloader");
 const { dir, file } = require("gmll/objects/files");
 
 
-const { fastLaunch } = require("msmc");
-config.setRoot(".MC")
+const { auth } = require("msmc");
+config.setRoot(".MC3")
 gmll.init().then(async () => {
   // gmll.downloader.runtime("jre-legacy");
-  // const e = await fastLaunch("raw", console.log);
-  //const token = gmll.wrapper.msmc2token(e);
-  var int = new gmll.instance({ version: "1.19.2" })
-  console.log(await int.getMods());
+const token = (await (await new auth().launch("raw")).getMinecraft()).gmll()
+ // const token = gmll.wrapper.msmc2token(e);
+  var int = new gmll.instance({ version: "latest:snapshot"})
+  //console.log(await int.getMods());
  // console.log(JSON.stringify(await readDat((await int.getMetaPaths()).saves.getFile("New World", "level.dat"))))
-  console.log((await int.getMetaPaths()).saves.getFile("New World", "level.dat").sysPath())
+  //console.log((await int.getMetaPaths()).saves.getFile("New World", "level.dat").sysPath())
 
-  //int.launch();
+  int.launch(token);
   // console.log(await int.getMetaPaths())
   //int.setIcon("icon_32x32.png", "icon_16x16.png");
 
