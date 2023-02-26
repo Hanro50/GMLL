@@ -4,32 +4,36 @@
  * 
  * Redefine the property __get in the config module to change where GMLL looks for this file.
  */
-import type { downloadableFile } from "gmll/types";
+
 import { dir, file } from "gmll/objects/files";
 import { parentPort, workerData } from "worker_threads";
 
-export type getWorkerDate = { processCMD: string, failCMD: string, keys: downloadableFile[] };
+export type getWorkerDate = { processCMD:string, failCMD:string,getCMD:string,postCMD:string };
 
-const WD: getWorkerDate = workerData;
-const processCMD = WD.processCMD;
-const failCMD = WD.failCMD;
-const keys = WD.keys;
+const {processCMD, failCMD,getCMD,postCMD}: getWorkerDate = workerData;
 
-keys.forEach(o => {
-    var retry = 0;
-    async function load() {
-        await file.process(o);
-        parentPort.postMessage({ cmd: processCMD, key: o.key });
-    }
-    load().catch(e => {
-        if (retry <= 3) {
-            retry++;
-            parentPort.postMessage({ cmd: failCMD,type: "retry", key: o.key, err: e });
-            return;
+parentPort.on("message", async (a) => {
+    if (a.data && a.cmd == postCMD) {
+        let retry = 0;
+        async function load() {
+            const o = a.data;
+            try {
+                await file.process(o);
+                parentPort.postMessage({ cmd: processCMD, key: o.key });
+                return;
+            } catch (e) {
+                if (retry <= 3) {
+                    retry++;
+                    parentPort.postMessage({ cmd: failCMD, type: "retry", key: o.key, err: e });
+                    await load();
+                    return;
+                }
+                console.error("[GMLL]: procedural failure : " + new dir(...o.path));
+                parentPort.postMessage({ cmd: failCMD, type: "system", key: o.path, err: e });
+                parentPort.postMessage({ cmd: processCMD, key: o.path });
+            }
         }
-        load();
-        console.log("[GMLL]: procedural failure : " + new dir(...o.path));
-        parentPort.postMessage({ cmd: failCMD, type: "system", key: o.path, err: e });
-        parentPort.postMessage({ cmd: processCMD, key: o.path });
-    });
-});
+        await load();
+    }
+})
+parentPort.postMessage({ cmd: getCMD, type: "system" });

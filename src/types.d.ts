@@ -245,6 +245,8 @@ export interface versionJson {
          * Lower = better for many smaller files. Higher is better for fewer larger files.
          * Formula restart_Multiplier x 15 seconds = amount of time before assuming crash.
          * Timer is reset every time GMLL downloads and saves a file successfully 
+         * 
+         * @deprecated No longer used by the new downloader
          */
         restart_Multiplier?: number,
         /**

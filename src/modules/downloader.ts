@@ -7,97 +7,64 @@ import { dir, file, packAsync } from "./objects/files.js";
 import { readlinkSync } from "fs";
 import type { downloadableFile, versionManifest, runtimeManifestEntry, runtimeManifest, mcRuntimeVal, versionJson, assetIndex, artifact, mojangResourceManifest, mojangResourceFile } from "../types";
 import { Worker } from "worker_threads";
-import { getWorkerDate } from "./internal/get.js";
 
-const processCMD = "download.progress";
-const failCMD = "download.fail";
 /**
  * Download function. Can be used for downloading modpacks and launcher updates.
  * Checks sha1 hashes and can use multiple cores to download files rapidly. 
  * Untested on Intel's new CPUs, use at own risk and report to me if it breaks. -Hanro50
  * 
  * @param obj The objects that will be downloaded
- * 
- * @param it The retry factor. Will effect how long it takes before the system assumes a crash and restarts. 
- * Lower is better for small files with 1 being the minimum. Higher might cause issues if fetch decides to hang on a download. 
- * Each restart actually increments this value. 
  */
-export function download(obj: Partial<downloadableFile>[], it: number = 1) {
+export function download(obj: Partial<downloadableFile>[]) : Promise<void> {
+    const processCMD = "download.progress";
+    const failCMD = "download.fail";
+    const getCMD = "download.get";
+    const postCMD = "download.post";
+
     if (obj.length <= 0) {
         emit('download.done');
         return;
     }
-    if (it < 1) it = 1;
     emit("download.started");
-    obj.sort((a, b) => { return (b.chk.size || 0) - (a.chk.size || 0) });
-    var temp = {};
+    obj.sort((a, b) => { return (b.chk.size || Number.MAX_VALUE) - (a.chk.size || Number.MAX_VALUE) });
+    let temp = {};
+    obj.forEach((e, k) => temp[e.key] = e);
+    const totalItems = Object.values(temp).length;
 
-    obj.forEach((e, k) => {
-        temp[e.key] = e;
-    })
-
-    function resolve() {
-        var active = true;
-        const totalItems = Object.values(temp).length;
-        return new Promise<void>(res => {
-            const numCPUs = Math.max(cpus().length - 1, 1);
-            emit("download.setup", numCPUs);
-            var done = 0;
-            var arr = [];
-            const data = Object.values(temp);
-            const workers: Worker[] = [];
-            const fire = () => workers.forEach(w => w.terminate());
-            for (let i3 = 0; i3 < numCPUs; i3++) {
-                var iCpu = [];
-                for (let i = i3; i < data.length; i += numCPUs) iCpu.push(data[i]);
-                arr.push(iCpu);
-            }
-
-            const to = setTimeout(async () => {
-                if (!active) return;
-                active = false;
-                emit('download.restart');
-                fire();
-                it++;
-                res(await resolve());
-            }, 15000 * it);
-
-            for (let i = 0; i < arr.length; i++) {
-
-                let cpu: getWorkerDate = {
-                    processCMD,
-                    failCMD,
-                    keys: []
-                };
-                for (var i7 = 0; i7 < arr[i].length; i7++) {
-                    cpu.keys.push(arr[i][i7]);
-                }
-
-                const w = new Worker(__get, { workerData: cpu });
-                workers.push(w);
-                w.on('message', (msg) => {
-                    if (!msg.cmd) return;
-                    if (active) to.refresh();
-                    if (msg.cmd === processCMD) {
+    return new Promise<void>(res => {
+        const numCPUs = Math.max(cpus().length, 2);
+        emit("download.setup", numCPUs);
+        var done = 0;
+        let todo = 0;
+        const data = Object.values(temp) as downloadableFile[];
+        const workers: Worker[] = [];
+        const fire = () => workers.forEach(w => w.terminate());
+        for (let i3 = 0; i3 < numCPUs; i3++) {
+            const w = new Worker(__get, { workerData: { processCMD, failCMD,getCMD,postCMD } });
+            workers.push(w);
+            w.on('message', (msg) => {
+                switch (msg.cmd) {
+                    case (processCMD): {
                         done++;
                         delete temp[msg.key]
                         const left = Object.values(temp).length;
                         emit('download.progress', msg.key, done, totalItems, left);
+
                         if (left < 1) {
-                            active = false;
-                            clearTimeout(to);
+                            //   active = false;
+                            //     clearTimeout(to);
                             emit('download.done');
                             fire();
-
                             return res();
                         }
                     }
-                    else if (msg.cmd === failCMD) emit(msg.cmd, msg.key, msg.type, msg.err);
-                });
-            }
-        });
-    }
-    return resolve();
+                    case (getCMD): w.postMessage({ cmd: postCMD, data: data[todo] }); todo++; break;
+                    case (failCMD): emit(msg.cmd, msg.key, msg.type, msg.err); break;
+                    default: return;
+                }
+            });
+        }
+    })
 }
 /**
  * Installs a set version of Java locally.
@@ -164,7 +131,7 @@ export function mojangRFDownloader(file: mojangResourceManifest, baseFile: dir, 
                 break;
         }
     });
-    return download(arr, 5);
+    return download(arr);
 }
 
 
@@ -257,7 +224,7 @@ export async function libraries(version: versionJson) {
             arr.push(file.toDownloadable(e.url + path, path, { sha1: sha1 }))
         }
     }
-    return await download(arr, 3);
+    return await download(arr);
 }
 export async function getRuntimeIndexes(manifest: runtimeManifest) {
     const runtimes = getMeta().runtimes.mkdir();
@@ -358,12 +325,12 @@ export async function manifests() {
         }
     }
 
-    
+
     if (update.includes("runtime")) {
         let indexes = (await meta.index.getFile("runtime.json").download(mcRuntimes)).toJSON<runtimeManifest>();
         if (onUnsupportedArm) {
-            indexes = combine(indexes,(await meta.index.getFile("runtime-Arm.json").download(armRuntimes)).toJSON<runtimeManifest>());
-        } 
+            indexes = combine(indexes, (await meta.index.getFile("runtime-Arm.json").download(armRuntimes)).toJSON<runtimeManifest>());
+        }
         getRuntimeIndexes(indexes);
     }
 }

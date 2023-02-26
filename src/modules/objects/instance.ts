@@ -258,7 +258,7 @@ export default class instance {
                 throw "Security exception!\nFound '..' in file path which is not allowed as it allows one to escape the instance folder"
             }
 
-            await download(insta.files, insta.restart_Multiplier || 1)
+            await download(insta.files)
             if (!chk.exists()) {
                 if (insta.meta)
                     this.meta = combine(this.meta, insta.meta);
@@ -495,7 +495,7 @@ export default class instance {
         }
         const ver: Partial<versionJson> = {
             instance: {
-                restart_Multiplier: 1,
+          //      restart_Multiplier: 1,
                 files: resources,
                 assets: this.assets,
                 meta: this.meta
