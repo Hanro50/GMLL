@@ -1,6 +1,6 @@
 import { spawn } from "child_process";
 import { join } from "path";
-import { assetTag, combine, fsSanitiser, getClientID, lawyer, processAssets, throwErr } from "../internal/util.js";
+import { assetTag, combine, fsSanitiser, getClientID, getCpuArch, lawyer, processAssets, throwErr } from "../internal/util.js";
 import { dir, file, packAsync } from "./files.js";
 import { cpus, platform, type } from "os";
 import { getLatest, installForge, getJavaPath } from "../handler.js";
@@ -12,6 +12,8 @@ import { download, runtime } from "../downloader.js";
 import { assetIndex, downloadableFile, forgeDep, instanceMetaPaths, instancePackConfig, launchArguments, launchOptions, levelDat, metaResourcePack, metaSave, modInfo, player, playerDat, playerStats, versionJson, versionManifest } from "../../types";
 import { createHash, randomInt, randomUUID } from "crypto";
 import { readDat } from "../nbt.js";
+import { proximate } from "../internal/proxy.js";
+import { Server } from "http";
 
 /**
  * For internal use only
@@ -89,7 +91,7 @@ export default class instance {
     env: any;
     name: string;
     version: string;
-    ram: Number;
+    ram: number;
     meta: any;
     private path: string;
     assets: Partial<assetIndex>;
@@ -98,7 +100,6 @@ export default class instance {
     static getProfiles() {
         const profiles: Map<string, (launchOptions & { get: () => instance })> = new Map();
         getMeta().profiles.ls().forEach(e => {
-            const name = e.getName();
             if (e instanceof file && e.getName().endsWith(".json")) {
                 const profile = e.toJSON<launchOptions>()
                 profiles.set(profile.name, { ...profile, get: () => this.get(e.getName()) })
@@ -113,10 +114,19 @@ export default class instance {
         const json = _file.exists() ? _file.toJSON<launchOptions>() : {};
         return new instance(json);
     }
+    /**Additional arguments added for legacy versions */
+    static oldJVM = [
+
+        "-Dhttp.proxyHost=127.0.0.1", "-Dhttp.proxyPort=${port}",
+
+
+        "-Djava.util.Arrays.useLegacyMergeSort=true"
+    ]
+
     /**The default game arguments, don't mess with these unless you know what you are doing */
     static defaultGameArguments = [
-        "-Xms${ram}G",
-        "-Xmx${ram}G",
+        "-Xms${ram}M",
+        "-Xmx${ram}M",
         "-XX:+UnlockExperimentalVMOptions",
         "-XX:+UseG1GC",
         "-XX:G1NewSizePercent=20",
@@ -149,6 +159,10 @@ export default class instance {
         this.env = opt.env || {};
         new dir(this.getPath()).mkdir();
         const MESA = "MESA_GL_VERSION_OVERRIDE"
+        if (!["x64", "arm64", "ppc64"].includes(getCpuArch()) && this.ram > 1.4) {
+            console.warn("[GMLL]: Setting ram limit to 1.4GB due to running on a 32-bit version of java!")
+            this.ram = 1.4;
+        }
         if (!(MESA in this.env) && process.platform == "linux") {
             this.env[MESA] = "4.6"
         }
@@ -318,6 +332,7 @@ export default class instance {
             processAssets(AssetIndex);
         }
 
+
         if (AssetIndex.virtual || AssetIndex.map_to_resources) {
             assetRoot = getAssets().getDir("legacy", AssetIndex.virtual ? "virtual" : "resources");
             assetsFile = this.getDir().getFile("resources").rm();
@@ -328,7 +343,7 @@ export default class instance {
         const classPath = cp.join(classpath_separator);
 
         const args = {
-            ram: this.ram,
+            ram: Math.floor(this.ram * 1024),
             cores: cpus().length,
 
             is_demo_user: !!token.profile.demo,
@@ -359,12 +374,25 @@ export default class instance {
 
             classpath_separator: classpath_separator,
             library_directory: getlibraries(),
-            user_properties: JSON.stringify(token.profile.properties || {})
+            user_properties: JSON.stringify(token.profile.properties || {}),
 
+            port: 0
         }
         const javaPath = this.javaPath == "default" ? version.getJavaPath() : new file(this.javaPath);
         const rawJVMargs: launchArguments = instance.defaultGameArguments;
+
         rawJVMargs.push(...(vjson.arguments?.jvm || instance.defJVM));
+        //AssetIndex.virtual || AssetIndex.map_to_resources
+        //  if (version.manifest.releaseTime && Date.parse(version.manifest.releaseTime) < Date.parse("2012-11-18T22:00:00+00:00")) {
+        let proxy: Server
+        if (AssetIndex.virtual || AssetIndex.map_to_resources) {
+            // if (this.getDir().getFile("resources").islink()) this.getDir().getFile("resources").rm();
+            const px = await proximate(AssetIndex);
+            args.port = px.port;
+            console.log("USING PORT" + px.port)
+            rawJVMargs.push(...instance.oldJVM);
+            proxy = px.server;
+        }
         var jvmArgs = parseArguments(args, rawJVMargs);
 
         let gameArgs = vjson.arguments ? parseArguments(args, vjson.arguments.game) : "";
@@ -384,6 +412,8 @@ export default class instance {
         const s = spawn(javaPath.sysPath(), largsL, { "cwd": this.getPath(), "env": combine(process.env, this.env) })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
+        if (proxy) s.on("exit", () => proxy.close())
+
     }
 
     /**An version of the wrap function that takes an object as a variable instead of the mess the base function takes. */
@@ -495,7 +525,7 @@ export default class instance {
         }
         const ver: Partial<versionJson> = {
             instance: {
-          //      restart_Multiplier: 1,
+                //      restart_Multiplier: 1,
                 files: resources,
                 assets: this.assets,
                 meta: this.meta

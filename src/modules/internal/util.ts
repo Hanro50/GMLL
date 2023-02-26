@@ -22,15 +22,15 @@ const OS = getOS();
 type exCpuArch = cpuArchRuleVal | "ia32" | "x32";
 /**Gets the current CPU architexture for the current running machine. May not be that accurate for Mac OS */
 export function getCpuArch() {
-    let architexture: exCpuArch = arch() as exCpuArch;//ProgramFiles(Arm)
+    let architecture: exCpuArch = arch() as exCpuArch;//ProgramFiles(Arm)
     if (OS == "windows") {
-        if (process.env.hasOwnProperty("ProgramFiles(Arm)")) architexture = "arm64"; //For arm64
-        else if (process.env.hasOwnProperty('PROCESSOR_ARCHITEW6432')) architexture = "x64"; //For AMD64 with 32-bit node
-        else if (architexture != "x64") architexture = "x86"; //To filter out ia32 or x32 and translate that to x86
+        if (process.env.hasOwnProperty("ProgramFiles(Arm)")) architecture = "arm64"; //For arm64
+        else if (process.env.hasOwnProperty('PROCESSOR_ARCHITEW6432')) architecture = "x64"; //For AMD64 with 32-bit node
+        else if (architecture != "x64") architecture = "x86"; //To filter out ia32 or x32 and translate that to x86
     }
-    return architexture as cpuArchRuleVal
+    return architecture as cpuArchRuleVal
 }
-const archx = getCpuArch();
+const archX = getCpuArch();
 /**The processor that handles the rules set out in the version.json for a set version.*/
 export function lawyer(rules: versionJsonRules, properties: any = {}): boolean {
     let end = true, end2 = false;
@@ -42,12 +42,12 @@ export function lawyer(rules: versionJsonRules, properties: any = {}): boolean {
         const os = !rules[i].os || (
             (!rules[i].os.name || rules[i].os.name == OS) &&
             (!rules[i].os.version || version().match(rules[i].os.version)) &&
-            (!rules[i].os.arch || (rules[i].os.arch == archx)))
+            (!rules[i].os.arch || (rules[i].os.arch == archX)))
         if (rules[i].action == "disallow" && os) {
             end = false;
         }
         else if (rules[i].action == "allow" && os) {
-            end = true && end;
+           // end = true && end;
             end2 = true;
         }
     }
@@ -88,8 +88,6 @@ export function combine<T, T2>(ob1: T, ob2: T2): T & T2 {
         }
         else if (typeof ob1[e] == typeof ob2[e]) {
             if (ob1[e] instanceof Array) {
-                let f = []
-
                 ob1[e] = [...ob2[e], ...ob1[e]]
             }
             else if (typeof ob1[e] == "string") {

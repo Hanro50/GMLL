@@ -134,7 +134,7 @@ export function mojangRFDownloader(file: mojangResourceManifest, baseFile: dir, 
     return download(arr);
 }
 
-
+export const assetURL = "https://resources.download.minecraft.net/"
 /**Install a set version's assets based on a provided asset index. */
 export async function assets(index: artifact) {
     const root = getAssets();
@@ -142,7 +142,7 @@ export async function assets(index: artifact) {
     var file = indexes.getFile(index.id + ".json");
     let assetIndex = (await file.download(index.url, { sha1: index.sha1, size: index.size })).toJSON<assetIndex>()
     var downloader: downloadableFile[] = [];
-    const getURL = (obj: { hash: string; size: Number; }) => "https://resources.download.minecraft.net/" + obj.hash.substring(0, 2) + "/" + obj.hash;
+    const getURL = (obj: { hash: string; size: Number; }) => assetURL + obj.hash.substring(0, 2) + "/" + obj.hash;
 
     if (assetIndex.map_to_resources) {
         let addin = (path: string | number, sck: { hash: string; size: number; }) => {

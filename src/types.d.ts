@@ -317,7 +317,7 @@ export interface launchOptions {
     /**The installation path */
     path?: string,
     /**Ram in GB */
-    ram?: Number,
+    ram?: number,
     /**Custom data your launcher can use */
     meta?: any,
     /**Asset index injection */

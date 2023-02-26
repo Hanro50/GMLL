@@ -14,7 +14,7 @@ gmll.init().then(async () => {
   // gmll.downloader.runtime("jre-legacy");
 const token = (await (await new auth().launch("raw")).getMinecraft()).gmll()
  // const token = gmll.wrapper.msmc2token(e);
-  var int = new gmll.instance({ version: "latest"})
+  var int = new gmll.instance({ version: "b1.7"})
 
  // console.log(JSON.stringify(await int.getWorlds()));
   // (await int.getWorlds()).forEach(e=>{
