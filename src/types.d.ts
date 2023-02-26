@@ -10,7 +10,7 @@ import type { dir, file } from "./modules/objects/files";
  * The release type of a set version. Can be used to add filters to a version select field within a launcher so 
  * that a user isn't overwhelmed by the 7 billion different versions of fabric.
  */
-export type mcVersionType = "generated"|"old_alpha" | "old_beta" | "release" | "snapshot" | "fabric" | "forge" | "custom" | "unknown";
+export type mcVersionType = "generated" | "old_alpha" | "old_beta" | "release" | "snapshot" | "fabric" | "forge" | "custom" | "unknown";
 /**
  * The type of user profiles. Can be used to keep older versions of forge from trying to dynamically refresh your user object. 
  * Which if you logged in without a mojang account could cause tha game to crash
@@ -356,8 +356,17 @@ export interface metaResourcePack extends metaObj {
     credits?: string,
     license?: string,
 }
+export interface playerStats {
+    stats: {
+        [key: string]: {
+            [key: string]: number
+        }
+    },
+    DataVersion: number
+}
 export interface metaSave extends metaObj {
-    level: levelDat
+    level: levelDat,
+    players: { [playerID: string]: { data: playerDat, stats?: playerStats } },
 }
 
 
@@ -384,6 +393,73 @@ export interface instanceMetaPaths {
     coremods: dir,
     configs: dir,
     jarmods: dir,
+}
+export interface playerDat {
+    abilities: {
+        flying: number,
+        flySpeed?: number
+        instabuild: number,
+        invulnerable: number,
+        mayBuild?: number,
+        mayfly: number,
+        walkSpeed: number,
+    },
+    Attributes?: [{
+        "Base": number,
+        "Name": string
+    }],
+    recipeBook?: {
+        isBlastingFurnaceFilteringCraftable: number,
+        isBlastingFurnaceGuiOpen: number,
+        isFilteringCraftable: number,
+        isFurnaceFilteringCraftable: number,
+        isFurnaceGuiOpen: number,
+        isGuiOpen: number,
+        isSmokerFilteringCraftable: number
+        isSmokerGuiOpen: number,
+        recipes: string[],
+        toBeDisplayed: string[],
+    },
+    warden_spawn_tracker?: {
+        warning_level: number,
+        ticks_since_last_warning: number,
+        cooldown_ticks: number
+    },
+    AbsorptionAmount?: number,
+    Air: number,
+    Brain?: { memories: {} },
+    DataVersion?: number,
+    DeathTime: number,
+    Dimension: number | "minecraft:overworld" | "minecraft:the_nether" | "minecraft:the_end",
+    EnderItems: [],
+    FallDistance: number,
+    FallFlying?: number,
+    Fire: number,
+    foodExhaustionLevel: number,
+    foodLevel: number,
+    foodSaturationLevel: number,
+    foodTickTimer: number
+    Health: number,
+    HurtByTimestamp?: number,
+    HurtTime: number,
+    Inventory: [],
+    Invulnerable?: number,
+    Motion: number[],
+    OnGround: number,
+    playerGameType?: number,
+    PortalCooldown?: number,
+    Pos: number[],
+    previousPlayerGameType?: number,
+    Rotation: number[],
+    Score: number,
+    seenCredits?: number,
+    SelectedItemSlot?: number,
+    SleepTimer: number,
+    UUID?: number[],
+    XpLevel: number,
+    XpP: number,
+    XpSeed?: number,
+    XpTotal: number,
 }
 /**
  * EACH version of minecraft will have a slightly different structure to it's level DAT file.
@@ -447,73 +523,7 @@ export interface levelDat {
             spectatorsGenerateChunks: 'true' | 'false',
             universalAnger: 'true' | 'false',
         }>,
-        Player: {
-            abilities: {
-                flying: number,
-                flySpeed?: number
-                instabuild: number,
-                invulnerable: number,
-                mayBuild?: number,
-                mayfly: number,
-                walkSpeed: number,
-            },
-            Attributes?: [{
-                "Base": number,
-                "Name": string
-            }],
-            recipeBook?: {
-                isBlastingFurnaceFilteringCraftable: number,
-                isBlastingFurnaceGuiOpen: number,
-                isFilteringCraftable: number,
-                isFurnaceFilteringCraftable: number,
-                isFurnaceGuiOpen: number,
-                isGuiOpen: number,
-                isSmokerFilteringCraftable: number
-                isSmokerGuiOpen: number,
-                recipes: string[],
-                toBeDisplayed: string[],
-            },
-            warden_spawn_tracker?: {
-                warning_level: number,
-                ticks_since_last_warning: number,
-                cooldown_ticks: number
-            },
-            AbsorptionAmount?: number,
-            Air: number,
-            Brain?: { memories: {} },
-            DataVersion?: number,
-            DeathTime: number,
-            Dimension: number | "minecraft:overworld" | "minecraft:the_nether" | "minecraft:the_end",
-            EnderItems: [],
-            FallDistance: number,
-            FallFlying?: number,
-            Fire: number,
-            foodExhaustionLevel: number,
-            foodLevel: number,
-            foodSaturationLevel: number,
-            foodTickTimer: number
-            Health: number,
-            HurtByTimestamp?: number,
-            HurtTime: number,
-            Inventory: [],
-            Invulnerable?: number,
-            Motion: number[],
-            OnGround: number,
-            playerGameType?: number,
-            PortalCooldown?: number,
-            Pos: number[],
-            previousPlayerGameType?: number,
-            Rotation: number[],
-            Score: number,
-            seenCredits?: number,
-            SelectedItemSlot?: number,
-            SleepTimer: number,
-            UUID?: number[],
-            XpLevel: number,
-            XpP: number,
-            XpSeed?: number,
-            XpTotal: number,
-        },
+        Player: playerDat,
         Version?: number | { Snapshot: number, Series: string, Id: number, Name: string },
         version?: number,
         WorldGenSettings?: Partial<{

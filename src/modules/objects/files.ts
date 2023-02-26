@@ -7,6 +7,8 @@ import { platform, tmpdir, type } from "os";
 import { execSync } from "child_process";
 import { cmd as _cmd, pack } from '7zip-min';
 import type { downloadableFile } from "../../types";
+export interface wrappedObj { save: () => void, getFile: () => file }
+
 /**
  * @param dest Path to create the link in
  * @param path Path to the file to link to
@@ -208,7 +210,18 @@ export class file extends dir {
         if (typeof data == "object") data = stringify(data);
         writeFileSync(this.sysPath(), data);
     }
-
+    /**Loads a json object from the file system and adds some shortcut functions to make it easier to save. */
+    load<T>(def: T, serializer: (raw: T) => T = (raw) => raw) {
+        let obj: T = this.exists() ? serializer(this.toJSON<T>()) : serializer(def)
+        return this.wrap(obj)
+    }
+    /**Turns an object into a wrappedObj. Essentially this just adds functions to make it easier to save. */
+    wrap<T>(obj: T) {
+        const result = obj as T & wrappedObj;
+        result.getFile = () => this;
+        result.save = () => this.write(result);
+        return result
+    }
     toDownloadable(url: string, key?: string, chk?: { sha1?: string | string[], size?: number }, opt?: { executable?: boolean | string, unzip?: { file: dir, exclude?: string[] } }) {
         this.mkdir();
         let d: downloadableFile = { key: key || [...this.path, this.name].join("/"), name: this.name, path: this.path, url: url, chk: {} }

@@ -9,7 +9,7 @@ import { emit, getAssets, getLauncherName, getLauncherVersion, getlibraries, get
 import version from "./version.js";
 
 import { download, runtime } from "../downloader.js";
-import { assetIndex, downloadableFile, forgeDep, instanceMetaPaths, instancePackConfig, launchArguments, launchOptions, levelDat, metaResourcePack, metaSave, modInfo, player, versionJson, versionManifest } from "../../types";
+import { assetIndex, downloadableFile, forgeDep, instanceMetaPaths, instancePackConfig, launchArguments, launchOptions, levelDat, metaResourcePack, metaSave, modInfo, player, playerDat, playerStats, versionJson, versionManifest } from "../../types";
 import { createHash, randomInt, randomUUID } from "crypto";
 import { readDat } from "../nbt.js";
 
@@ -69,7 +69,7 @@ async function jarmod(metapaths: instanceMetaPaths, version: version): Promise<f
             console.log(n)
             if (n.endsWith(".zip") || n.endsWith(".jar")) {
                 if (!(n in priority)) {
-                    priority[n] = freset ?  (Object.keys(priority).length - 1) * 10:0;
+                    priority[n] = freset ? (Object.keys(priority).length - 1) * 10 : 0;
                 }
                 await e.unzip(tmp);
             }
@@ -591,7 +591,9 @@ export default class instance {
     }
     /**
      * Gets some general information about all the world files in this instance.
-     * It also decodes the level.DAT file for you and returns the decoded file a json file. 
+     * It also decodes the level.DAT file for you and returns the decoded file as a JSON file. 
+     * 
+     * It also decodes the player data stored in the "playerdata" and "stats" subfolder in newer versions of the game. 
      */
     async getWorlds(): Promise<metaSave[]> {
         emit("parser.start", "save file", this);
@@ -608,13 +610,34 @@ export default class instance {
                 if (e instanceof file) return;
                 const DAT = e.getFile("level.dat");
                 const IMG = e.getFile("icon.png");
-                let icon = null;
+                const PDAT = e.getDir("playerdata");
+                const PSTAT = e.getDir("stats");
+                let icon = undefined;
                 if (!DAT.exists()) return;
-                if (IMG.exists()) {
-                    icon = IMG.sysPath();
-                }
+                if (IMG.exists()) icon = IMG.sysPath();
                 const level = await readDat<levelDat>(DAT);
-                saves.push({ name: level.Data?.LevelName || e.getName(), level, path: e, icon })
+                let players: metaSave["players"] = {};
+                if (PDAT.exists()) {
+                    for (const plr of PDAT.ls()) {
+                        if (plr instanceof file && plr.name.endsWith(".dat")) {
+                            try {
+                                const nm = plr.name.substring(0, plr.name.length - 4);
+                                const PD = await readDat<playerDat>(plr);
+                                let stats = undefined;
+                                const statefile = PSTAT.getFile(`${nm}.json`);
+                                if (statefile.exists())
+                                    stats = statefile.toJSON<playerStats>();
+                                players[nm] = { "data": PD, stats };
+                            } catch (e) {
+                                console.warn("[GMLL]: Failed to parse player data!")
+                            }
+                        }
+                    }
+                } else {
+                    players["Player"] = { "data": level.Data.Player };
+                }
+
+                saves.push({ players, name: level.Data?.LevelName || e.getName(), level, path: e, icon })
             } catch (err) {
                 emit('parser.fail', 'save file', err, file);
             }
@@ -945,7 +968,7 @@ export default class instance {
         return mods
     }
 
-    getJarModPriority() {
-        return
+    async getJarModPriority() {
+        return (await this.getMetaPaths()).jarmods.getFile("priority.json").load<{ [key: string]: number }>({})
     }
 }

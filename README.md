@@ -312,6 +312,11 @@ export function initializationListener(func: () => void | Promise<void>):void;
 //Does some preflight checks and is actually called by the "init" function in the index file. This can be called directly and will be no different then calling "init" in the index file.
 export async function initialize();
 ```
+# NBT Shenanigans
+GMLL has a sub module capable of reading NBT Data. 
+GMLL does provide two translations for NBT data out of the box, one that discards type information and one that preserves it.
+If the demand arises then we could in the future add the ability to save NBT data back into a format Minecraft can comprehend. 
+
 
 # modpacks 
 ```ts
