@@ -369,7 +369,7 @@ export default class instance {
             launcher_name: getLauncherName(),
             launcher_version: getLauncherVersion(),
             classpath: classPath,
-            auth_session: "token:" + token.access_token,
+            auth_session:  token.access_token,
             game_assets: assetsFile,
 
             classpath_separator: classpath_separator,

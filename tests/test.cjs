@@ -14,16 +14,7 @@ gmll.init().then(async () => {
   // gmll.downloader.runtime("jre-legacy");
 const token = (await (await new auth().launch("raw")).getMinecraft()).gmll()
  // const token = gmll.wrapper.msmc2token(e);
-  var int = new gmll.instance({ version: "b1.7"})
-
- // console.log(JSON.stringify(await int.getWorlds()));
-  // (await int.getWorlds()).forEach(e=>{
-   // console.log(e.players);
-
- // })
- // console.log(JSON.stringify(await readDat((await int.getMetaPaths()).saves.getFile("New World", "level.dat"))))
-  //console.log((await int.getMetaPaths()).saves.getFile("New World", "level.dat").sysPath())
-
+  var int = new gmll.instance({ version: "a1.1.2"})
   int.launch(token);
   // console.log(await int.getMetaPaths())
   //int.setIcon("icon_32x32.png", "icon_16x16.png");
