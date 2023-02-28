@@ -12,11 +12,15 @@ export default function _default(code: { index?: assetIndex, port?: number, skin
     const PORT = code.port || 0;
     const skinServer = code.skinServer;
     const resourceURL = "http://www.minecraft.net/resources/";
+    const resource2URL = "http://s3.amazonaws.com/MinecraftResources/"
+
+
     const skinURL = "/skin/";
     const skin2URL = "/MinecraftSkins/";
     const capeURL = "/cloak/";
     const cape2URL = "/MinecraftCloaks/";
     const authUrl = "http://www.minecraft.net/game/";
+    const forgeURL = "http://files.minecraftforge.net/fmllibs/"
     const auth2Url = authUrl.replace("www", "session");
     const D = Date.now();
     const server = http.createServer();
@@ -44,6 +48,12 @@ export default function _default(code: { index?: assetIndex, port?: number, skin
         }
 
         try {
+            function forward(url: string) {
+                fetch(url).then(f_res => {
+                    f_res.body.pipe(res, { end: true });
+                    res.on("close", () => res.end());
+                }).catch(() => res.writeHead(500).end());
+            }
             if (req.url.startsWith(resourceURL) && !InValidIndex) {
                 const uri = req.url.substring(resourceURL.length);
                 if (uri.length == 0) {
@@ -58,18 +68,23 @@ export default function _default(code: { index?: assetIndex, port?: number, skin
                     else return res.writeHead(404).end();
                 }
             }
+            else if (req.url.startsWith(resource2URL) && !InValidIndex){
+
+            }
+
+
             else if (req.url.includes(capeURL)) return getCape(capeURL, "CAPE");
             else if (req.url.includes(cape2URL)) return getCape(cape2URL, "CAPE");
             else if (req.url.includes(skin2URL)) return getCape(skin2URL, "SKIN");
             else if (req.url.includes(skinURL)) return getCape(skinURL, "SKIN");
+            //Fixing 1.5.2 forge
+            else if (req.url.startsWith(forgeURL)) { emit("proxy.request", req.url); return forward(`https://download.hanro50.net.za/fmllibs/${req.url.substring(forgeURL.length)}`); }
+            //Session server redirect
             else if (req.url.startsWith(authUrl)) return res.writeHead(301, { "Location": req.url.replace("www", "session") }).end();
             //Sensoring token URL
             else if (req.url.startsWith(auth2Url)) emit("proxy.request", `${req.url.split("?")[0]}...`)
             else emit("proxy.request", req.url);
-            fetch(req.url).then(f_res => {
-                f_res.body.pipe(res, { end: true });
-                res.on("close", () => res.end());
-            }).catch(() => res.writeHead(500).end());
+            return forward(req.url);
         } catch (e) { emit("proxy:fail", `Experienced a general error trying resolve ${req.url}`, e); return res.writeHead(500).end(); };
     });
     return new Promise(async (res) => server.listen(PORT, () => {

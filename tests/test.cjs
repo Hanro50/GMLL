@@ -14,7 +14,7 @@ gmll.init().then(async () => {
   // gmll.downloader.runtime("jre-legacy");
 const token = (await (await new auth().launch("raw")).getMinecraft()).gmll()
  // const token = gmll.wrapper.msmc2token(e);
-  var int = new gmll.instance({ version: "b1.7.2",legacyProxy:{port:8080}})
+  var int = new gmll.instance({ version: "1.5.2",legacyProxy:{port:8080}})
   int.launch(token);
   // console.log(await int.getMetaPaths())
   //int.setIcon("icon_32x32.png", "icon_16x16.png");

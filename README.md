@@ -329,6 +329,9 @@ Minecraft cape fixes (From Minecraft Beta)
 Minecraft Authentication server fixes
 > Please note this only fixes the client side checks. However, the proxy module can be ran independently from the rest of GMLL to a degree. Meaning it can be used as a proxy to fix the server side checks as well. 
 
+Minecraft forge for 1.5.2, 1.5.1, 1.5 and 1.4.7
+> I redirect the download requests from these older versions of forge to an archive. This allows these versions to get the files they require to function. 
+
 # NBT Shenanigans
 GMLL has a sub module capable of reading NBT Data. 
 GMLL does provide two translations for NBT data out of the box, one that discards type information and one that preserves it.

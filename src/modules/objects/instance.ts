@@ -115,7 +115,7 @@ export default class instance {
     static oldJVM = [
         "-Dhttp.proxyHost=127.0.0.1",
         "-Dhttp.proxyPort=${port}",
-        "-Djava.util.Arrays.useLegacyMergeSort=true"
+        "-Djava.util.Arrays.useLegacyMergeSort=true",
     ]
 
     /**The default game arguments, don't mess with these unless you know what you are doing */
@@ -139,6 +139,8 @@ export default class instance {
         "-Djava.library.path=${natives_directory}",
         "-Dminecraft.launcher.brand=${launcher_name}",
         "-Dminecraft.launcher.version=${launcher_version}",
+        "-Duser.dir=${game_directory}",
+        "-Dminecraft.applet.TargetDirectory=${game_directory}",
         "-cp",
         "${classpath}"
     ]
@@ -349,7 +351,7 @@ export default class instance {
 
             auth_player_name: token.profile.name,
             version_name: vjson.inheritsFrom || vjson.id,
-            game_directory: this.getPath(),
+            game_directory: this.getPath() + "/",
 
             assets_root: assetsFile,
             assets_index_name: assets_index_name,
@@ -403,8 +405,7 @@ export default class instance {
         emit("jvm.start", "Minecraft", this.getPath());
         const largsL = launchCom.trim().split("\x00");
         if (largsL[0] == '') largsL.shift();
-        //console.debug(largsL)
-        const s = spawn(javaPath.sysPath(), largsL, { "cwd": this.getPath(), "env": combine(process.env, this.env) })
+        const s = spawn(javaPath.sysPath(), largsL, { "cwd": join(this.getPath()), "env":  combine(process.env, this.env)})
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
         if (proxy) s.on("exit", () => proxy.close())
