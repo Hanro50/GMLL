@@ -69,9 +69,9 @@ export class dir {
         mkdir(join(...this.path));
         return this;
     }
-    /**Creats a system link to this file and puts the link at the destination file that was provided as input (similar to {@link linkFrom})*/
+    /**Creates a system link to this file and puts the link at the destination file that was provided as input (similar to {@link linkFrom})*/
     linkTo(dest: string | string[] | this) {
-        if (this instanceof file && platform() == "win32") console.warn("[GMLL]: Symlinks in Windows need administrator priviliges!\nThings are about to go wrong!")
+        if (this instanceof file && platform() == "win32") console.warn("[GMLL]: Symlinks in Windows need administrator privileges!\nThings are about to go wrong!")
         if (dest instanceof file)
             dest = [...dest.path, dest.name];
         if (dest instanceof dir)
@@ -80,9 +80,9 @@ export class dir {
             dest = join(...dest);
         mklink(dest, this.sysPath());
     }
-    /**Creats a system link to a set file or directory using this file or folder as the the placeholder for the link (similar to {@link linkTo})*/
+    /**Creates a system link to a set file or directory using this file or folder as the the placeholder for the link (similar to {@link linkTo})*/
     linkFrom(path: string | string[] | this) {
-        if (this instanceof file && platform() == "win32") console.warn("[GMLL]: Symlinks in Windows need administrator priviliges!\nThings are about to go wrong!")
+        if (this instanceof file && platform() == "win32") console.warn("[GMLL]: Symlinks in Windows need administrator privileges!\nThings are about to go wrong!")
         if (path instanceof file)
             path = [...path.path, path.name];
         if (path instanceof dir)

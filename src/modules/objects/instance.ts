@@ -1,6 +1,6 @@
 import { spawn } from "child_process";
 import { join } from "path";
-import { assetTag, combine, fsSanitiser, getClientID, getCpuArch, lawyer, processAssets, throwErr } from "../internal/util.js";
+import { assetTag, combine, fsSanitizer, getClientID, getCpuArch, lawyer, processAssets, throwErr } from "../internal/util.js";
 import { dir, file, packAsync } from "./files.js";
 import { cpus, platform, type } from "os";
 import { getLatest, installForge, getJavaPath } from "../handler.js";
@@ -96,6 +96,8 @@ export default class instance {
     private path: string;
     assets: Partial<assetIndex>;
     javaPath: "default" | string;
+    legacyProxy: { disabled?: boolean; port?: number; skinServer?: string };
+
     /**Gets a list of profiles that where saved previously */
     static getProfiles() {
         const profiles: Map<string, (launchOptions & { get: () => instance })> = new Map();
@@ -110,16 +112,14 @@ export default class instance {
     /**Gets a set profile based on the name of that profile */
     static get(profile: string) {
         if (!profile.endsWith(".json")) profile += ".json"
-        const _file = getMeta().profiles.getFile(fsSanitiser(profile));
+        const _file = getMeta().profiles.getFile(fsSanitizer(profile));
         const json = _file.exists() ? _file.toJSON<launchOptions>() : {};
         return new instance(json);
     }
     /**Additional arguments added for legacy versions */
     static oldJVM = [
-
-        "-Dhttp.proxyHost=127.0.0.1", "-Dhttp.proxyPort=${port}",
-
-
+        "-Dhttp.proxyHost=127.0.0.1",
+        "-Dhttp.proxyPort=${port}",
         "-Djava.util.Arrays.useLegacyMergeSort=true"
     ]
 
@@ -151,12 +151,13 @@ export default class instance {
     constructor(opt: launchOptions = {}) {
         this.version = opt.version || getLatest().release;
         this.name = opt.name || this.version;
-        this.path = opt.path || join("<instance>", fsSanitiser(this.name));
+        this.path = opt.path || join("<instance>", fsSanitizer(this.name));
         this.ram = opt.ram || 2;
         this.meta = opt.meta || undefined;
         this.assets = opt.assets || {};
         this.javaPath = opt.javaPath || "default";
         this.env = opt.env || {};
+        this.legacyProxy = opt.legacyProxy || {};
         new dir(this.getPath()).mkdir();
         const MESA = "MESA_GL_VERSION_OVERRIDE"
         if (!["x64", "arm64", "ppc64"].includes(getCpuArch()) && this.ram > 1.4) {
@@ -222,7 +223,7 @@ export default class instance {
      * @see {@link get} for more info
      */
     save() {
-        getMeta().profiles.getFile(fsSanitiser(this.name + ".json")).write(this);
+        getMeta().profiles.getFile(fsSanitizer(this.name + ".json")).write(this);
         return this;
     }
     /**
@@ -327,7 +328,7 @@ export default class instance {
         let assets_index_name = vjson.assetIndex.id;
         if (this.assets.objects) {
             AssetIndex = combine(AssetIndex, this.assets);
-            assets_index_name = (fsSanitiser(assets_index_name + "_" + this.name))
+            assets_index_name = (fsSanitizer(assets_index_name + "_" + this.name))
             getAssets().getFile("indexes", (assets_index_name + ".json")).write(AssetIndex);
             processAssets(AssetIndex);
         }
@@ -369,7 +370,7 @@ export default class instance {
             launcher_name: getLauncherName(),
             launcher_version: getLauncherVersion(),
             classpath: classPath,
-            auth_session:  token.access_token,
+            auth_session: token.access_token,
             game_assets: assetsFile,
 
             classpath_separator: classpath_separator,
@@ -380,19 +381,19 @@ export default class instance {
         }
         const javaPath = this.javaPath == "default" ? version.getJavaPath() : new file(this.javaPath);
         const rawJVMargs: launchArguments = instance.defaultGameArguments;
-
         rawJVMargs.push(...(vjson.arguments?.jvm || instance.defJVM));
-        //AssetIndex.virtual || AssetIndex.map_to_resources
-        //  if (version.manifest.releaseTime && Date.parse(version.manifest.releaseTime) < Date.parse("2012-11-18T22:00:00+00:00")) {
+
+        /**Handling the proxy service for legacy versions */
         let proxy: Server
-        if (AssetIndex.virtual || AssetIndex.map_to_resources) {
-            // if (this.getDir().getFile("resources").islink()) this.getDir().getFile("resources").rm();
-            const px = await proximate(AssetIndex);
+        const legacy = this.legacyProxy;
+        if (!legacy.disabled && (AssetIndex.virtual || AssetIndex.map_to_resources)) {
+            const px = await proximate({ index: AssetIndex, port: legacy.port, skinServer: legacy.skinServer });
             args.port = px.port;
             console.log("USING PORT" + px.port)
             rawJVMargs.push(...instance.oldJVM);
             proxy = px.server;
         }
+        
         var jvmArgs = parseArguments(args, rawJVMargs);
 
         let gameArgs = vjson.arguments ? parseArguments(args, vjson.arguments.game) : "";
@@ -587,7 +588,7 @@ export default class instance {
         function read(f: dir, directory = []) {
 
             f.ls().forEach(e => {
-                if (e.getName() == "index.html" || e.getName() == `manifest_${fsSanitiser(name)}.json`) return;
+                if (e.getName() == "index.html" || e.getName() == `manifest_${fsSanitizer(name)}.json`) return;
                 if (e instanceof file) {
                     const entry = ([...directory, e.getName()].join("/"));
                     index += `<br><div class="element button" onclick="document.location.href='./${entry}'">${entry}</div>`
@@ -601,7 +602,7 @@ export default class instance {
         index += `</body></html>`
         console.log(index);
         save.getFile("index.html").write(index);
-        save.getFile(`manifest_${fsSanitiser(name)}.json`).write(manifest);
+        save.getFile(`manifest_${fsSanitizer(name)}.json`).write(manifest);
         return ver;
     }
     /**

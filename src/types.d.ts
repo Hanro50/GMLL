@@ -28,9 +28,9 @@ export type mcJarTypeVal = "client" | "client_mappings" | "server" | "server_map
  */
 export type mcRuntimeVal = "java-runtime-arm" | "java-runtime-gamma" | "java-runtime-alpha" | "java-runtime-beta" | "jre-legacy" | "minecraft-java-exe";
 /**
- * Potential architextures. Only x86, x64 and arm64 are fixed valuas at this stage and are technically supported.
+ * Potential architectures. Only x86, x64 and arm64 are fixed values at this stage and are technically supported.
  * Use the others for stuff at your own risk since GMLL might be forced to change this if mojang suddenly chooses 
- * to support one of the other architextures 
+ * to support one of the other architectures 
  */
 export type cpuArchRuleVal = "x86" | "x64" | "arm" | "arm64" | "mips" | "mipsel" | "ppc" | "ppc64" | "s390" | 's390x'
 /**
@@ -326,10 +326,20 @@ export interface launchOptions {
     env?: any
     /**Define a custom java path. 
      * @warning It is recommended to let GMLL handle this for you. It is solely changable to achieve parody with the vanilla launcher. 
-     * Changing this can easily break older versions of forge, cause grathical corruption, crash legacy versions of minecraft, cause issues with arm Macs and a whole host of random BS.  
+     * Changing this can easily break older versions of forge, cause graphical corruption, crash legacy versions of minecraft, cause issues with arm Macs and a whole host of random BS.  
      * If brought up in the support channels for GMLL, you'll be asked to set this to it's default value if we see that you have changed it.
      */
     javaPath?: "default" | string;
+    /**By default GMLL spins up a proxy server when launching Minecraft 1.5.2 and older to reroute some requests that no longer work*/
+    legacyProxy?: {
+        /**Disable this behavior */
+        disabled: true,
+    } | {
+        disabled?: false,
+        /**The port the proxy server should use*/
+        port?: number,
+        skinServer?: string
+    }
 }
 
 export interface instancePackConfig {
@@ -475,7 +485,7 @@ export interface playerDat {
  * =>Some number values are actually booleans. 
  * However a byte is the smallest unit the level.dat file can save.
  * 
- * Note: Saving back values is not currectly supported!
+ * Note: Saving back values is not currently supported!
  */
 export interface levelDat {
     Data: {

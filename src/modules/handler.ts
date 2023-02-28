@@ -2,7 +2,7 @@
 
 import { emit, getInstances, getlibraries, getMeta, getRuntimes, getVersions, isInitialized, onUnsupportedArm } from "./config.js";
 import { runtime } from "./downloader.js";
-import { fsSanitiser, getOS, throwErr } from "./internal/util.js";
+import { fsSanitizer, getOS, throwErr } from "./internal/util.js";
 import { spawn } from "child_process";
 import { file } from "./objects/files.js";
 import fetch from "node-fetch";
@@ -75,7 +75,6 @@ const spTag = ["latest", "latest:release", "latest:snapshot"]
  */
 export function getManifest(version: string) {
     if (spTag.includes(version)) {
-        console.log("SPTAG")
         const lt = getLatest();
         switch (version) {
             case ("latest:snapshot"):
@@ -108,22 +107,21 @@ export async function installForge(forgeInstallerJar?: file | string): Promise<v
     const forgiacPath = ["za", "net", "hanro50", "forgiac", "basic"];
     if (typeof forgeInstallerJar == "string") forgeInstallerJar = new file(forgeInstallerJar);
 
-    var libzFolder = getlibraries().getDir(...forgiacPath).mkdir();
+    var libsFolder = getlibraries().getDir(...forgiacPath).mkdir();
     var rURL2 = await fetch(forgiacSHA);
     if (rURL2.status == 200) {
-        await libzFolder.getFile("forgiac.jar").download(forgiacURL, { sha1: await rURL2.text() })
+        await libsFolder.getFile("forgiac.jar").download(forgiacURL, { sha1: await rURL2.text() })
     }
-    const frun: mcRuntimeVal = onUnsupportedArm ? "java-runtime-arm" : "java-runtime-gamma";
-    await runtime(frun);
+    const fRun: mcRuntimeVal = onUnsupportedArm ? "java-runtime-arm" : "java-runtime-gamma";
+    await runtime(fRun);
 
-    const javaPath = getJavaPath(frun);
+    const javaPath = getJavaPath(fRun);
     const path = getInstances().getDir(".forgiac");
     const logFile = path.getFile("log.txt")
     const args: string[] = ["-jar", getlibraries().getFile("za", "net", "hanro50", "forgiac", "basic", "forgiac.jar").sysPath(), " --log", logFile.sysPath(), "--virtual", getVersions().sysPath(), getlibraries().sysPath(), "--mk_manifest", getMeta().manifests.sysPath()];
     if (forgeInstallerJar) {
         args.push("--installer", forgeInstallerJar.sysPath());
     }
-    //  console.log(args)
     path.mkdir();
     emit("jvm.start", "Forgiac", path.sysPath());
     const s = spawn(javaPath.sysPath(), args, { "cwd": path.sysPath() })
@@ -137,7 +135,7 @@ export async function installForge(forgeInstallerJar?: file | string): Promise<v
 /**
  * Imports a modpack off the internet compatible with GMLL via a link.
  * See the {@link instance.wrap()  wrapper function} to generate the files to upload to your web server to make this work  
- * @param url the afformentioned link. 
+ * @param url the aforementioned link. 
  */
 export async function importLink(url: string): Promise<versionManifest>;
 export async function importLink(url: string, name: string): Promise<instance>;
@@ -149,7 +147,7 @@ export async function importLink(url: string, name?: string): Promise<instance |
     if (v.version != 1) {
         throw "Incompatible version ID detected";
     }
-    const manfile = fsSanitiser(v.name) + ".json"
+    const manfile = fsSanitizer(v.name) + ".json"
     const manifest = (await getMeta().manifests.getFile(manfile).download(url + "/.meta/manifest.json", { sha1: v.sha })).toJSON<versionManifest>();
     // console.log(manfile)
     if (!name) return manifest;
@@ -159,7 +157,7 @@ export async function importLink(url: string, name?: string): Promise<instance |
 /**
  * Gets the path to an installed version of Java. GMLL manages these versions and they're not provided by the system. 
  * @param java the name of the Java runtime. Based on the names Mojang gave them.
- * @returns The location of the hava executable. 
+ * @returns The location of the have executable. 
  */
 export function getJavaPath(java: mcRuntimeVal = "jre-legacy") {
     return getRuntimes().getFile(java, "bin", getOS() == "windows" ? "java.exe" : "java");

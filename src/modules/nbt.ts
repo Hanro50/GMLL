@@ -95,7 +95,7 @@ export async function readDat(path: file, typed: true): Promise<typedNBT>
 export async function readDat<T>(path: file, typed?: true): Promise<T | typedNBT> {
     if (!path.sysPath().toLocaleLowerCase().endsWith(".dat")) console.warn("Potentially unsupported file extention detected!")
     const p = dir.tmpdir().getDir("gmll", path.getHash()).mkdir();
-    //We need to uncompress the dat file
+    //We need to deccompress the dat file
     await path.unzip(p);
     const file = p.ls()[0] as file;
     //We'll be working with a buffer here 

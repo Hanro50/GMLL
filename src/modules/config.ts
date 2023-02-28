@@ -166,7 +166,7 @@ export function setInstances(_instances: dir | string) {
 }
 /**
  * Used to store version.json files and client jars GMLL uses to download the dependencies a 
- * set version of minecraft or a set modeloader needs inorder to function properly
+ * set version of minecraft or a set modeloader needs in order to function properly
  * @param _versions The location you want the version directory to be at
  */
 export function setVersions(_versions: dir | string) {

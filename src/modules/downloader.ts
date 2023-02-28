@@ -69,15 +69,15 @@ export function download(obj: Partial<downloadableFile>[]) : Promise<void> {
 /**
  * Installs a set version of Java locally.
  * @param runtime the name of the Java runtime. Based on the names Mojang gave them.
- * @returns This is an asyn function!
+ * @returns This is an async function!
  */
 export function runtime(runtime: mcRuntimeVal) {
     const meta = getMeta();
-    const cfile = meta.runtimes.getFile(runtime + ".json");
-    if (!cfile.exists()) {
+    const cFile = meta.runtimes.getFile(runtime + ".json");
+    if (!cFile.exists()) {
         throwErr("Cannot find runtime");
     }
-    return mojangRFDownloader(cfile.toJSON<mojangResourceManifest>(), getRuntimes().getDir(runtime), getRuntimes().getDir("lzma"))
+    return mojangRFDownloader(cFile.toJSON<mojangResourceManifest>(), getRuntimes().getDir(runtime), getRuntimes().getDir("lzma"))
 }
 /**
  * Did you know you can use this file to download dungeons?
@@ -145,18 +145,18 @@ export async function assets(index: artifact) {
     const getURL = (obj: { hash: string; size: Number; }) => assetURL + obj.hash.substring(0, 2) + "/" + obj.hash;
 
     if (assetIndex.map_to_resources) {
-        let addin = (path: string | number, sck: { hash: string; size: number; }) => {
+        let addIn = (path: string | number, sck: { hash: string; size: number; }) => {
             if (!assetIndex[path]) {
                 assetIndex.objects[path] = sck;
             }
         }
-        addin("icons/icon_16x16.png", { "hash": "bdf48ef6b5d0d23bbb02e17d04865216179f510a", "size": 3665 });
-        addin("icons/icon_32x32.png", { "hash": "92750c5f93c312ba9ab413d546f32190c56d6f1f", "size": 5362 });
-        addin("icons/minecraft.icns", { "hash": "991b421dfd401f115241601b2b373140a8d78572", "size": 114786 });
+        addIn("icons/icon_16x16.png", { "hash": "bdf48ef6b5d0d23bbb02e17d04865216179f510a", "size": 3665 });
+        addIn("icons/icon_32x32.png", { "hash": "92750c5f93c312ba9ab413d546f32190c56d6f1f", "size": 5362 });
+        addIn("icons/minecraft.icns", { "hash": "991b421dfd401f115241601b2b373140a8d78572", "size": 114786 });
 
-        addin("minecraft/icons/icon_16x16.png", { "hash": "bdf48ef6b5d0d23bbb02e17d04865216179f510a", "size": 3665 });
-        addin("minecraft/icons/icon_32x32.png", { "hash": "92750c5f93c312ba9ab413d546f32190c56d6f1f", "size": 5362 });
-        addin("minecraft/icons/minecraft.icns", { "hash": "991b421dfd401f115241601b2b373140a8d78572", "size": 114786 });
+        addIn("minecraft/icons/icon_16x16.png", { "hash": "bdf48ef6b5d0d23bbb02e17d04865216179f510a", "size": 3665 });
+        addIn("minecraft/icons/icon_32x32.png", { "hash": "92750c5f93c312ba9ab413d546f32190c56d6f1f", "size": 5362 });
+        addIn("minecraft/icons/minecraft.icns", { "hash": "991b421dfd401f115241601b2b373140a8d78572", "size": 114786 });
     }
 
     Object.entries(assetIndex.objects).forEach(o => {
@@ -281,7 +281,7 @@ export async function manifests() {
 
     const update = getUpdateConfig();
     const meta = getMeta();
-    interface jsloaderInf {
+    interface jsLoaderInf {
         "separator": string,
         "build": Number,
         "maven": string,
@@ -305,7 +305,7 @@ export async function manifests() {
     if (update.includes("fabric")) {
         try {
             const jsgame = (await meta.index.getFile("fabric_game.json").download(fabricVersions)).toJSON<[jsgameInf]>();
-            const jsloader = (await meta.index.getFile("fabric_loader.json").download(fabricLoader)).toJSON<[jsloaderInf]>();
+            const jsloader = (await meta.index.getFile("fabric_loader.json").download(fabricLoader)).toJSON<[jsLoaderInf]>();
             const result = [];
             jsgame.forEach(game => {
                 const version = game.version;
@@ -342,17 +342,17 @@ export async function encodeMRF(url: string, root: dir, out: dir) {
     let res: mojangResourceManifest = { files: {} }
     let packed = out.getDir('encoded').mkdir();
     console.log("[GMLL]: Starting to encode as Mojang resource file")
-    let tfiles = 0;
-    let cfiles = 0;
+    let tFiles = 0;
+    let cFiles = 0;
     emit('encode.start');
     async function encodeDir(path: string, root: dir) {
         const ls = root.ls().sort((a, b) => a.sysPath().length - b.sysPath().length);
-        tfiles += ls.length;
+        tFiles += ls.length;
         for (let index = 0; index < ls.length; index++) {
             const e = ls[index]
             const directory = [path, e.getName()].join("/")
-            cfiles++
-            emit('encode.progress', directory, cfiles, tfiles, tfiles - cfiles);
+            cFiles++
+            emit('encode.progress', directory, cFiles, tFiles, tFiles - cFiles);
             if (e.islink()) {
                 res.files[directory] = {
                     "type": "link",
@@ -361,28 +361,28 @@ export async function encodeMRF(url: string, root: dir, out: dir) {
                 continue;
             }
             else if (e instanceof file) {
-                const rhash = e.getHash();
-                e.copyTo(packed.getFile(rhash, e.name).mkdir())
+                const rHash = e.getHash();
+                e.copyTo(packed.getFile(rHash, e.name).mkdir())
                 let zip = out.getFile('tmp', e.name + ".7z").mkdir()
                 await packAsync(e.sysPath(), zip.sysPath())
-                const zhash = zip.getHash();
+                const zHash = zip.getHash();
                 let downloadable: mojangResourceFile = {
                     "type": "file",
                     "executable": await e.isExecutable(),
                     "downloads": {
                         "raw": {
-                            "sha1": rhash,
+                            "sha1": rHash,
                             "size": e.getSize(),
-                            "url": [url, rhash, e.name].join("/")
+                            "url": [url, rHash, e.name].join("/")
                         }
                     }
                 }
                 if (zip.getSize() < e.getSize()) {
-                    zip = zip.moveTo(packed.getFile(zhash, e.name).mkdir())
+                    zip = zip.moveTo(packed.getFile(zHash, e.name).mkdir())
                     downloadable.downloads.lzma = {
-                        "sha1": zhash,
+                        "sha1": zHash,
                         "size": zip.getSize(),
-                        "url": [url, zhash, e.name].join("/")
+                        "url": [url, zHash, e.name].join("/")
                     }
                 } else {
                     zip.rm()
@@ -403,13 +403,13 @@ export async function encodeMRF(url: string, root: dir, out: dir) {
     const manifest = out.getFile(root.getName() + "_manifest.json")
     manifest.write(res)
 
-    const mhash = manifest.getHash()
-    manifest.copyTo(packed.getFile(mhash, "manifest.json").mkdir())
+    const mHash = manifest.getHash()
+    manifest.copyTo(packed.getFile(mHash, "manifest.json").mkdir())
     const index = out.getFile(root.getName() + "_index.json")
     index.write({
-        sha1: mhash,
+        sha1: mHash,
         size: manifest.getSize(),
-        url: [url, mhash, "manifest.json"].join("/")
+        url: [url, mHash, "manifest.json"].join("/")
     })
     emit('encode.done');
     out.getDir('tmp').rm();

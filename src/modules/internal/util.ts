@@ -4,7 +4,6 @@ import { dir, stringify } from "../objects/files.js";
 import { getAssets, getMeta, isInitialized } from "../config.js";
 import { createHash, randomUUID } from "crypto";
 import { cpuArchRuleVal, versionJsonRules, assetIndex } from "../../types";
-
 /**Gets the current operating system GMLL thinks it is running under */
 export function getOS() {
     const operatingSystem = platform();
@@ -20,7 +19,7 @@ export function getOS() {
 
 const OS = getOS();
 type exCpuArch = cpuArchRuleVal | "ia32" | "x32";
-/**Gets the current CPU architexture for the current running machine. May not be that accurate for Mac OS */
+/**Gets the current CPU architecture for the current running machine. May not be that accurate for Mac OS */
 export function getCpuArch() {
     let architecture: exCpuArch = arch() as exCpuArch;//ProgramFiles(Arm)
     if (OS == "windows") {
@@ -62,7 +61,7 @@ export function assetTag(path: dir, sha1: string) {
     return file;
 }
 /**Sanitizes folder names for use in file paths */
-export function fsSanitiser(text: string) {
+export function fsSanitizer(text: string) {
     return text.normalize("NFKC").trim().toLowerCase().replace(/[\,\!\@\#\$\%\^\&\*\(\)\[\]\{\}\;\:\"\<\>\\\/\?\~\`\'\|\=\+\s\t]/g, "_")
 }
 /**Used to throw error messages that are easy to find in a busy terminal */
@@ -121,7 +120,7 @@ export function processAssets(assetManifest: assetIndex) {
 }
 
 /**
- * Used to get a unique ID to recognise this machine. Used by mojang in some snapshot builds.
+ * Used to get a unique ID to recognize this machine. Used by mojang in some snapshot builds.
  * We're just making sure it is sufficiently random
  */
 export function getClientID(forceNew: boolean = false) {
