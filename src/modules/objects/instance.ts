@@ -1,25 +1,25 @@
 import { spawn } from "child_process";
 import { join } from "path";
 import { assetTag, combine, fsSanitizer, getClientID, getCpuArch, lawyer, processAssets, throwErr } from "../internal/util.js";
-import { dir, file, packAsync } from "./files.js";
+import { dir, file, packAsync } from "gmll/objects/files";
 import { cpus, platform, type } from "os";
-import { getLatest, installForge, getJavaPath } from "../handler.js";
-import { emit, getAssets, getLauncherName, getLauncherVersion, getlibraries, getMeta, getNatives, resolvePath } from "../config.js";
+import { getLatest, installForge, getJavaPath } from "gmll/handler";
+import { emit, getAssets, getLauncherName, getLauncherVersion, getlibraries, getMeta, getNatives, resolvePath } from "gmll/config";
 
-import version from "./version.js";
+import version from "gmll/objects/version";
 
-import { download, runtime } from "../downloader.js";
-import { assetIndex, downloadableFile, forgeDep, instanceMetaPaths, instancePackConfig, launchArguments, launchOptions, levelDat, metaResourcePack, metaSave, modInfo, player, playerDat, playerStats, versionJson, versionManifest } from "../../types";
+import { download, runtime } from "gmll/downloader";
+import type { assetIndex, downloadableFile, forgeDep, instanceMetaPaths, instancePackConfig, launchArguments, launchOptions, levelDat, metaResourcePack, metaSave, modInfo, player, playerDat, playerStats, versionJson, versionManifest } from "../../types";
 import { createHash, randomInt, randomUUID } from "crypto";
-import { readDat } from "../nbt.js";
-import { proximate } from "../internal/proxy.js";
+import { readDat } from "gmll/nbt";
+import proximate from "gmll/proxy";
 import { Server } from "http";
 
 /**
  * For internal use only
  */
 function parseArguments(val = {}, args: launchArguments) {
-    let out = ""
+    let out = "";
     args.forEach(e => {
         if (typeof e == "string")
             out += "\u0000" + e.trim().replace(/\s/g, "");
@@ -33,26 +33,23 @@ async function jarmod(metapaths: instanceMetaPaths, version: version): Promise<f
     const bin = dir.tmpdir().getDir("gmll", "bin").rm().mkdir();
     const custom = bin.getFile(`${version.name}.jar`);
 
-    if (!jarmods || !jarmods.exists()) return
+    if (!jarmods || !jarmods.exists()) return;
     const lst = jarmods.ls();
     if (lst.length < 1) return;
-    console.warn("Jar modding is experimental atm.\nWe still don't have a way to order jars\nRecommended for modding legacy versions or mcp...")
-    console.log("Packing custom jar")
-    const tmp = dir.tmpdir().getDir("gmll", "tmp").rm().mkdir()
+    console.warn("[GMLL]: Jar modding is experimental atm.\nWe still don't have a way to order jars\nRecommended for modding legacy versions or mcp...");
+    console.log("[GMLL]: Packing custom jar");
+    const tmp = dir.tmpdir().getDir("gmll", "tmp").rm().mkdir();
     const jar = version.folder.getFile(version.name + ".jar");
     if (!jar.exists()) return;
     await jar.unzip(tmp, ["META-INF/*"]);
 
     let priority = { "_comment": "0 is the default, the lower the priority. The sooner a mod will be loaded. Deleting this file resets it" };
-    const pfile = jarmods.getFile("priority.json");
-    let freset = false;
-    if (pfile.exists()) {
-        try {
-            priority = pfile.toJSON();
-        } catch (e) {
-
-        }
-    } else freset = true
+    const pFile = jarmods.getFile("priority.json");
+    let fReset = false;
+    if (pFile.exists())
+        try { priority = pFile.toJSON(); } catch (e) { console.warn("[GMLL]: Failed to parse priorities file!"); }
+    else
+        fReset = true;
     lst.sort((aF, bF) => {
         const a = aF.getName();
         const b = bF.getName();
@@ -62,23 +59,21 @@ async function jarmod(metapaths: instanceMetaPaths, version: version): Promise<f
             if (b in priority) return 0 - priority[b];
         }
         return (a > b ? 1 : -1);
-    })
+    });
 
-    console.log("Running through files")
+    console.log("[GMLL]: Running through files");
     for (const e of lst) {
         if (e instanceof file) {
-            const n = e.getName()
-            console.log(n)
+            const n = e.getName();
+            console.log(n);
             if (n.endsWith(".zip") || n.endsWith(".jar")) {
-                if (!(n in priority)) {
-                    priority[n] = freset ? (Object.keys(priority).length - 1) * 10 : 0;
-                }
+                if (!(n in priority)) { priority[n] = fReset ? (Object.keys(priority).length - 1) * 10 : 0; }
                 await e.unzip(tmp);
             }
         }
     }
-    pfile.write(priority);
-    console.log("Packing jar")
+    pFile.write(priority);
+    console.log("[GMLL]: Packing jar");
     await packAsync(tmp.sysPath() + (platform() == "win32" ? "\\." : "/."), custom.sysPath());
     return custom;
 }
@@ -389,11 +384,10 @@ export default class instance {
         if (!legacy.disabled && (AssetIndex.virtual || AssetIndex.map_to_resources)) {
             const px = await proximate({ index: AssetIndex, port: legacy.port, skinServer: legacy.skinServer });
             args.port = px.port;
-            console.log("USING PORT" + px.port)
             rawJVMargs.push(...instance.oldJVM);
             proxy = px.server;
         }
-        
+
         var jvmArgs = parseArguments(args, rawJVMargs);
 
         let gameArgs = vjson.arguments ? parseArguments(args, vjson.arguments.game) : "";

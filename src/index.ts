@@ -18,6 +18,9 @@ export * as wrapper from "./modules/wrapper.js";
 export * as files from "./modules/objects/files.js"
 /**Provides access to the nbt data reader in gmll */
 export * as nbt from "./modules/nbt.js"
+
 import instance from "./modules/objects/instance.js";
+
+export * as proxy from "./modules/proxy.js";
 import type types from "./types";
 export { instance, types } 

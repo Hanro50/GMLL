@@ -41,7 +41,7 @@ export interface Events {
      * restart=>Used when the downloader has detected a timeout and decides to reset so it can try again
      * done=>Fired when everything is wrapped up.
     */
-    on(e: "download.start" | "download.restart" | "download.done" | "encode.start" | "encode.done", f: () => void): void
+    on(e: "download.start" | "download.done" | "encode.start" | "encode.done", f: () => void): void
     /**
      * type=>Type of resource being parsed
      * err=>The thrown error
@@ -70,47 +70,58 @@ export interface Events {
     */
     on(e: "jvm.stdout" | "jvm.stderr", f: (app: string, chunk: any) => void): void
 
+    on(e: "proxy.start", f: (port: number) => void): void;
+    on(e: "proxy.fail", f: (reason: string, error?: any) => void): void;
+    on(e: "proxy.request", f: (url: string) => void): void;
+    on(e: "proxy.skinURL", f: (username: string, uuid: string, clothing: "SKIN" | "CAPE") => void): void;
+    on(e: "proxy.skinURL.fail", f: (username: string, clothing: "SKIN" | "CAPE") => void): void;
+
     emit(tag: string, ...args: any): void
 }
 let defEvents: Events = new EventEmitter();
 
 //Encode Manager
-defEvents.on('parser.start', (type, int) => console.log(`[GMLL]: Parsing ${type}s of instance ${int.name}`))
-defEvents.on('parser.progress', (key, index, total, left) => console.log("[GMLL]: Done with " + index + " of " + total + " : " + left + " : " + key))
-defEvents.on('parser.done', (type, int) => console.log(`[GMLL]: Done parsing ${type}s of instance ${int.name}`))
+defEvents.on('parser.start', (type, int) => console.log(`[GMLL:parser]: Parsing ${type}s of instance ${int.name}`))
+defEvents.on('parser.progress', (key, index, total, left) => console.log(`[GMLL:parser]: Done with ${index} of ${total} : ${left} : ${key}`))
+defEvents.on('parser.done', (type, int) => console.log(`[GMLL:parser]: Done parsing ${type}s of instance ${int.name}`))
 defEvents.on('parser.fail', (type, err, path) => {
-    console.error(`[GMLL]: Error parsing ${type} => ${path.sysPath()}`);
+    console.error(`[GMLL:parser]: Error parsing ${type} => ${path.sysPath()}`);
     if (typeof err == "string")
-        console.warn(`[GMLL]: Reason => ${err}`);
+        console.warn(`[GMLL:parser]: Reason => ${err}`);
     else
         console.trace(err);
 });
 //Encode Manager
-defEvents.on('encode.start', () => console.log("[GMLL]: Starting to encode files"))
-defEvents.on('encode.progress', (key, index, total, left) => console.log("[GMLL]: Done with " + index + " of " + total + " : " + left + " : " + key))
-defEvents.on('encode.done', () => console.log("[GMLL]: Done with encoding files"))
+defEvents.on('encode.start', () => console.log("[GMLL:encode]: Starting to encode files"))
+defEvents.on('encode.progress', (key, index, total, left) => console.log(`[GMLL:encode]: Done with ${index} of ${total} : ${left} : ${key}`))
+defEvents.on('encode.done', () => console.log("[GMLL:encode]: Done with encoding files"))
 
+//Proxy Manager
+defEvents.on('proxy.start', (port) => console.log(`[GMLL:Proxy]: Proxy server is now listening on port ${port}`))
+defEvents.on('proxy.fail', (reason, error) => console.log(`\x1b[31m\x1b[1m[GMLL:Proxy]: ${reason}\x1b[0m${error ? `\n${error}` : ""}`))
+defEvents.on('proxy.request', (url) => console.log(`[GMLL:Proxy]: Proxying request [${url}]`))
+defEvents.on('proxy.skinURL', (username, uuid, clothing) => console.log(`[GMLL:Proxy]: Resolved ${clothing.toLocaleLowerCase()} for ${username} [${uuid}]`))
+defEvents.on('proxy.skinURL.fail', (username, clothing) => console.log(`\x1b[31m\x1b[1m[GMLL:Proxy]: Could not resolve ${clothing.toLocaleLowerCase()} for ${username}\x1b[0m`))
 //Download Manager
-defEvents.on('download.setup', (cores) => console.log("[GMLL]: Dividing out work to " + cores + " cores"))
-defEvents.on('download.start', () => console.log("[GMLL]: Starting download"))
-defEvents.on('download.restart', () => console.error("[GMLL]: It is taking to long to get update, assuming crash"))
-defEvents.on('download.progress', (key, index, total, left) => console.log("[GMLL]: Done with " + index + " of " + total + " : " + left + " : " + key))
-defEvents.on('download.done', () => console.log("[GMLL]: Done with download"))
+defEvents.on('download.setup', (cores) => console.log(`[GMLL:download]: Dividing out work to ${cores} cores`))
+defEvents.on('download.start', () => console.log("[GMLL:download]: Starting download"))
+defEvents.on('download.progress', (key, index, total, left) => console.log(`[GMLL:download]: Done with ${index} of ${total} : ${left} : ${key}`))
+defEvents.on('download.done', () => console.log("[GMLL:download]: Done with download"))
 defEvents.on('download.fail', (key, type, err) => {
     switch (type) {
-        case ("retry"): console.log("[GMLL]: Trying to download " + key + " again"); break;
+        case ("retry"): console.log("[GMLL:download]: Trying to download " + key + " again"); break;
         case ("fail"): console.log(getErr("Failed to download " + key)); break;
         case ("system"): console.log(getErr("Failed to download " + key + " due to an error \n" + err)); break;
     }
 });
 defEvents.on('jvm.start', (app, cwd) => {
-    console.log(("[GMLL]: starting app <" + app + "> in directory <" + cwd + ">").trim());
+    console.log((`[${app}]: Starting in directory <${cwd}>`).trim());
 });
 defEvents.on('jvm.stdout', (app, out) => {
-    console.log(("[" + app + "] " + out).trim());
+    console.log((`[${app}]: ${out}`).trim());
 });
 defEvents.on('jvm.stderr', (app, out) => {
-    console.log(("\x1b[31m\x1b[1m[" + app + "] " + out).trim() + "\x1b[0m");
+    console.log(`\x1b[31m\x1b[1m[${app}]: ${out}`.trim() + "\x1b[0m");
 });
 var updateConf: update[] = ["fabric", "vanilla", "runtime"];
 

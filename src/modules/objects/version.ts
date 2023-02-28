@@ -1,12 +1,12 @@
 import { copyFileSync } from "fs";
 import { join } from "path";
 
-import { getlibraries, getMeta, getVersions, isInitialized, onUnsupportedArm } from "../config.js";
-import { runtime, libraries, assets } from "../downloader.js";
-import { getManifest, getJavaPath } from "../handler.js";
-import { dir, file } from "./files";
+import { getlibraries, getMeta, getVersions, isInitialized, onUnsupportedArm } from "gmll/config";
+import { runtime, libraries, assets } from "gmll/downloader";
+import { getManifest, getJavaPath } from "gmll/handler";
+import { dir, file } from "gmll/objects/files";
 import { throwErr, classPathResolver, combine, lawyer } from "../internal/util.js";
-import { mcJarTypeVal, versionManifest, versionJson, artifact } from "../../types";
+import { mcJarTypeVal, versionManifest, versionJson, artifact } from "gmll/types";
 import { platform } from "os";
 /**
  * Version data is unique. Each version of the game will generate an unique version object. 
@@ -170,7 +170,7 @@ export default class version {
             const p = join("libraries", ...classPathResolver(lib.name).split("/"));
             const p2 = getlibraries().getDir("..").getFile(p);
             if (!p2.exists()) {
-                console.error(p + " does not exist. Removing to avoid possible error");
+                console.error(`[GMLL]: ${p} does not exist. Removing to avoid possible error`);
             }
             else if (!cp.includes(p)) cp.push(p);
         });

@@ -312,11 +312,27 @@ export function initializationListener(func: () => void | Promise<void>):void;
 //Does some preflight checks and is actually called by the "init" function in the index file. This can be called directly and will be no different then calling "init" in the index file.
 export async function initialize();
 ```
+# Legacy version fixes
+By default GMLL (versions 1.5.0 and newer) will spin up a proxy server when launching versions of minecraft older then Release 1.5.2
+This proxy rewrites http requests. As the endpoints these older versions want access to no longer exist. 
+
+## Fixes include:
+Further sound fixes (Really early Alpha builds)
+> They want a certian resource file that no longer exists. 
+
+Minecraft skin fixes (From Minecraft Alpha)
+> All alpha builds that pinged the skin servers worked! ...or appeared to work. Need more testing.
+
+Minecraft cape fixes (From Minecraft Beta)
+> Results on beta 1.0 and 1.2 may very 
+
+Minecraft Authentication server fixes
+> Please note this only fixes the client side checks. However, the proxy module can be ran independently of the
+
 # NBT Shenanigans
 GMLL has a sub module capable of reading NBT Data. 
 GMLL does provide two translations for NBT data out of the box, one that discards type information and one that preserves it.
 If the demand arises then we could in the future add the ability to save NBT data back into a format Minecraft can comprehend. 
-
 
 # modpacks 
 ```ts
