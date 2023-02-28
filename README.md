@@ -327,7 +327,7 @@ Minecraft cape fixes (From Minecraft Beta)
 > Results on beta 1.0 and 1.2 may very 
 
 Minecraft Authentication server fixes
-> Please note this only fixes the client side checks. However, the proxy module can be ran independently of the
+> Please note this only fixes the client side checks. However, the proxy module can be ran independently from the rest of GMLL to a degree. Meaning it can be used as a proxy to fix the server side checks as well. 
 
 # NBT Shenanigans
 GMLL has a sub module capable of reading NBT Data. 
