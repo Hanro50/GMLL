@@ -383,17 +383,18 @@ export default class instance {
 
         /**Handling the proxy service for legacy versions */
         let proxy: Server
-        const legacy = this.legacyProxy;
-        //if (!legacy.disabled && (AssetIndex.virtual || AssetIndex.map_to_resources)) {
+        const legacy = this.legacyProxy;//
+        if (!legacy.disabled && (version.manifest.releaseTime && Date.parse(version.manifest.releaseTime) < Date.parse("2014-05-14T17:29:23+00:00"))) {
             const px = await proximate({ index: AssetIndex, port: legacy.port, skinServer: legacy.skinServer });
             args.port = px.port;
-         
+
             rawJVMargs.push(...instance.oldJVM);
 
-            rawJVMargs.push(`-javaagent:${agentPath()}`)
+            if (!AssetIndex.virtual && !AssetIndex.map_to_resources)
+                rawJVMargs.push(`-javaagent:${agentPath()}`)
             proxy = px.server;
             console.log(rawJVMargs)
-       // }
+        }
 
         var jvmArgs = parseArguments(args, rawJVMargs);
 
@@ -410,7 +411,7 @@ export default class instance {
         emit("jvm.start", "Minecraft", this.getPath());
         const largsL = launchCom.trim().split("\x00");
         if (largsL[0] == '') largsL.shift();
-        const s = spawn(javaPath.sysPath(), largsL, { "cwd": join(this.getPath()), "env":  combine(process.env, this.env)})
+        const s = spawn(javaPath.sysPath(), largsL, { "cwd": join(this.getPath()), "env": combine(process.env, this.env) })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
         if (proxy) s.on("exit", () => proxy.close())
@@ -574,11 +575,9 @@ export default class instance {
         }
         ver.inheritsFrom = Fversion;
         verfile.write(ver);
-
         const manifest: versionManifest = {
             id: name, type: "custom", sha1: verfile.getHash(), base: Fversion, url: baseUrl + "/" + ".meta/version.json", "_comment": "Drop this into gmll's manifest folder",
         }
-
         delete manifest._comment;
         save.getFile(".meta", "manifest.json").write(manifest);
         save.getFile(".meta", "api.json").write({ name: name, version: 1, sha: save.getFile(".meta", "manifest.json").getHash(), "_comment": "Here for future proofing incase we need to introduce a breaking change to this system." });
@@ -598,7 +597,6 @@ export default class instance {
         }
 
         read(save);
-
         index += `</body></html>`
         console.log(index);
         save.getFile("index.html").write(index);
