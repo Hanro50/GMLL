@@ -8,3 +8,8 @@ module.exports.getPath = () => {
         return "Unknown_Path"
     }
 }
+
+module.exports.agentPath = () => {
+    const T = this.getPath();
+    return T.substring(0, T.length - "get.js".length) + "agent-1.5.2.jar";
+}

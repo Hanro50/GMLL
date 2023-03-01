@@ -48,6 +48,7 @@ export default function _default(code: { index?: assetIndex, port?: number, skin
         }
 
         try {
+            emit("proxy.request", req.url);
             function forward(url: string) {
                 fetch(url).then(f_res => {
                     f_res.body.pipe(res, { end: true });
@@ -68,11 +69,6 @@ export default function _default(code: { index?: assetIndex, port?: number, skin
                     else return res.writeHead(404).end();
                 }
             }
-            else if (req.url.startsWith(resource2URL) && !InValidIndex){
-
-            }
-
-
             else if (req.url.includes(capeURL)) return getCape(capeURL, "CAPE");
             else if (req.url.includes(cape2URL)) return getCape(cape2URL, "CAPE");
             else if (req.url.includes(skin2URL)) return getCape(skin2URL, "SKIN");

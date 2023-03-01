@@ -14,6 +14,8 @@ import { createHash, randomInt, randomUUID } from "crypto";
 import { readDat } from "gmll/nbt";
 import proximate from "gmll/proxy";
 import { Server } from "http";
+import { agentPath } from "../internal/root.cjs";
+
 
 /**
  * For internal use only
@@ -139,7 +141,6 @@ export default class instance {
         "-Djava.library.path=${natives_directory}",
         "-Dminecraft.launcher.brand=${launcher_name}",
         "-Dminecraft.launcher.version=${launcher_version}",
-        "-Duser.dir=${game_directory}",
         "-Dminecraft.applet.TargetDirectory=${game_directory}",
         "-cp",
         "${classpath}"
@@ -383,12 +384,16 @@ export default class instance {
         /**Handling the proxy service for legacy versions */
         let proxy: Server
         const legacy = this.legacyProxy;
-        if (!legacy.disabled && (AssetIndex.virtual || AssetIndex.map_to_resources)) {
+        //if (!legacy.disabled && (AssetIndex.virtual || AssetIndex.map_to_resources)) {
             const px = await proximate({ index: AssetIndex, port: legacy.port, skinServer: legacy.skinServer });
             args.port = px.port;
+         
             rawJVMargs.push(...instance.oldJVM);
+
+            rawJVMargs.push(`-javaagent:${agentPath()}`)
             proxy = px.server;
-        }
+            console.log(rawJVMargs)
+       // }
 
         var jvmArgs = parseArguments(args, rawJVMargs);
 

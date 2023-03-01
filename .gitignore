@@ -115,3 +115,7 @@ some files
 @types
 .MC
 types
+
+/gmllagent/target
+/gmllagent/.editorconfig
+/gmllagent/dependency-reduced-pom.xml

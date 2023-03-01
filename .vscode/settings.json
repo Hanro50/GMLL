@@ -23,5 +23,11 @@
         "serv",
         "Xstart",
         "xuid"
+    ],
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.project.resourceFilters": [
+        
+        "node_modules",
+        "\\.git"
     ]
 }
