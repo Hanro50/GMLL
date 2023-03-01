@@ -1,4 +1,3 @@
-Agent-Class: za.net.hanro50.gmll.App
 Premain-Class: za.net.hanro50.gmll.App
 Can-Redefine-Classes: true
 Can-Retransform-Classes: true

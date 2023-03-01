@@ -1,68 +1,54 @@
 package za.net.hanro50.gmll;
 
-import java.lang.instrument.Instrumentation;
 import java.lang.instrument.ClassFileTransformer;
+import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
 
 import org.apache.ibatis.javassist.ClassPool;
 import org.apache.ibatis.javassist.CtClass;
 import org.apache.ibatis.javassist.CtMethod;
-/**
- * Hello world!
- */
-public final class App {
-  public static void premain(
-      String agentArgs, Instrumentation inst) {
-    System.out.println("[Agent] In premain method");
-    String className = "java.net.URL";
-    transformClass(className, inst);
-  }
 
-  public static void agentmain(
-      String agentArgs, Instrumentation inst) {
-    System.out.println("[Agent] In agentmain method");
-    String className = "java.net.URL";
-    transformClass(className, inst);
-  }
-
-  private static void transformClass(
-      String className, Instrumentation instrumentation) {
-
-    Class<?> targetCls = null;
-    ClassLoader targetClassLoader = null;
-    try {
-      targetCls = Class.forName(className);
-      targetClassLoader = targetCls.getClassLoader();
-      transform(targetCls, targetClassLoader, instrumentation);
-      return;
-    } catch (Exception ex) {
-      System.out.println("Class [{}] not found with Class.forName");
-    }
-    // otherwise iterate all loaded classes and find what we want
-    for (Class<?> clazz : instrumentation.getAllLoadedClasses()) {
-      if (clazz.getName().equals(className)) {
-        targetCls = clazz;
-        targetClassLoader = targetCls.getClassLoader();
-        transform(targetCls, targetClassLoader, instrumentation);
-        return;
-      }
-    }
-    throw new RuntimeException(
-        "Failed to find class [" + className + "]");
-  }
-
-  private static void transform(
-      Class<?> clazz,
-      ClassLoader classLoader,
-      Instrumentation instrumentation) {
-    Refactor dt = new Refactor(
-        clazz.getName(), classLoader);
-    instrumentation.addTransformer(dt, true);
+public final class App implements ClassFileTransformer {
+  final static String targetClassName = "java.net.URL";
+  final static String codeFix = "{return this.openConnection();}";
+  public static void premain(String agentArgs, Instrumentation instrumentation) throws ClassNotFoundException {
+    System.out.println("[Agent] Loading...");
+    Class<?> clazz = Class.forName(targetClassName);
+    instrumentation.addTransformer(new App(), true);
     try {
       instrumentation.retransformClasses(clazz);
     } catch (Exception ex) {
       throw new RuntimeException(
-          "Transform failed for: [" + clazz.getName() + "]", ex);
+          "[Agent] Transform failed for: [" + clazz.getName() + "]", ex);
     }
+  }
+  public static String dotToPath(String dot){
+    return dot.replaceAll("\\.", "/");
+  }
+  @Override
+  public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined,
+      ProtectionDomain protectionDomain, byte[] classfileBuffer) {
+
+    byte[] byteCode = classfileBuffer;
+    String finalTargetClassName = dotToPath(targetClassName);
+    if (!className.equals(finalTargetClassName)) {
+      return byteCode;
+    }
+    System.out.println("[Agent] Transforming class "+targetClassName);
+    try {
+      ClassPool cp = ClassPool.getDefault();
+      CtClass cc = cp.get(targetClassName);
+      CtClass[] cproxy = { cp.get("java/net/Proxy") };
+      if (cproxy[0] == null) {
+        System.out.println("NULL!");
+      }
+      CtMethod method = cc.getDeclaredMethod("openConnection", cproxy);
+      method.insertBefore(codeFix);
+      byteCode = cc.toBytecode();
+      cc.detach();
+    } catch (Exception e) {
+      e.getStackTrace();
+    }
+    return byteCode;
   }
 }
