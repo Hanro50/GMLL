@@ -10,15 +10,33 @@
     <maven.compiler.target>1.8</maven.compiler.target>
   </properties>
   <dependencies>
-    <dependency>
-      <groupId>org.mybatis</groupId>
-      <artifactId>mybatis</artifactId>
-      <version>3.5.11</version>
-    </dependency>
+	<dependency>
+		<groupId>com.google.code.gson</groupId>
+		<artifactId>gson</artifactId>
+		<version>2.10.1</version>
+	  </dependency>
   </dependencies>
   <build>
 	<finalName>agent</finalName>
     <plugins>
+		<plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+                <source>1.9</source>
+                <target>1.9</target>
+                <compilerArgs>
+					<arg>--add-exports</arg><arg>java.base/sun.net.www.file=ALL-UNNAMED</arg>
+					<arg>--add-exports</arg><arg>java.base/sun.net.www.protocol.ftp=ALL-UNNAMED</arg>
+                    <arg>--add-exports</arg><arg>java.base/sun.net.www.protocol.http=ALL-UNNAMED</arg>
+					<arg>--add-exports</arg><arg>java.base/sun.net.www.protocol.https=ALL-UNNAMED</arg>
+					<arg>--add-exports</arg><arg>java.base/sun.net.www.protocol.jar=ALL-UNNAMED</arg>
+					<arg>--add-exports</arg><arg>java.base/sun.net.www.protocol.jmod=ALL-UNNAMED</arg>
+					<arg>--add-exports</arg><arg>java.base/sun.net.www.protocol.jrt=ALL-UNNAMED</arg>
+					<arg>--add-exports</arg><arg>java.base/sun.net.www.protocol.mailto=ALL-UNNAMED</arg>
+                </compilerArgs>
+            </configuration>
+        </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
@@ -65,8 +83,8 @@
 			<configuration>
 			  <transformers>
 				<!-- add Main-Class to manifest file -->
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-					<mainClass>com.mkyong.core.utils.App</mainClass>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+					<mainClass>za.net.hanro50.gmll.App</mainClass>
 				</transformer>
 			  </transformers>
 			</configuration>

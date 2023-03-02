@@ -1,3 +1,5 @@
 Premain-Class: za.net.hanro50.gmll.App
 Can-Redefine-Classes: true
 Can-Retransform-Classes: true
+mainClass: za.net.hanro50.gmll.App
+Add-Exports: java.base/sun.net.www.protocol.file=ALL-UNNAMED java.base/sun.net.www.protocol.ftp=ALL-UNNAMED java.base/sun.net.www.protocol.http=ALL-UNNAMED java.base/sun.net.www.protocol.https=ALL-UNNAMED java.base/sun.net.www.protocol.jar=ALL-UNNAMED java.base/sun.net.www.protocol.jmod=ALL-UNNAMED java.base/sun.net.www.protocol.jrt=ALL-UNNAMED java.base/sun.net.www.protocol.mailto=ALL-UNNAMED

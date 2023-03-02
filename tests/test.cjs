@@ -7,14 +7,16 @@ const gmll = require("gmll");
 const config = require("gmll/config");
 const d = require("gmll/downloader");
 const { dir, file } = require("gmll/objects/files");
-
+const {installForge} = require("gmll/handler")
 const { auth } = require("msmc");
 config.setRoot(".MC3")
 gmll.init().then(async () => {
   // gmll.downloader.runtime("jre-legacy");
 const token = (await (await new auth().launch("raw")).getMinecraft()).gmll()
  // const token = gmll.wrapper.msmc2token(e);
-  var int = new gmll.instance({ version: "1.7.4",legacyProxy:{port:8080}})
+ 
+  var int = new gmll.instance({ version: "1.5.2",legacyProxy:{port:8080}})
+  //await int.installForge();
   int.launch(token);
   // console.log(await int.getMetaPaths())
   //int.setIcon("icon_32x32.png", "icon_16x16.png");

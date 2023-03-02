@@ -4,12 +4,12 @@ import { assetTag, combine, fsSanitizer, getClientID, getCpuArch, lawyer, proces
 import { dir, file, packAsync } from "gmll/objects/files";
 import { cpus, platform, type } from "os";
 import { getLatest, installForge, getJavaPath } from "gmll/handler";
-import { emit, getAssets, getLauncherName, getLauncherVersion, getlibraries, getMeta, getNatives, resolvePath } from "gmll/config";
+import { emit, getAssets, getInstances, getLauncherName, getLauncherVersion, getlibraries, getMeta, getNatives, getVersions, onUnsupportedArm, resolvePath } from "gmll/config";
 
 import version from "gmll/objects/version";
 
-import { download, runtime } from "gmll/downloader";
-import type { assetIndex, downloadableFile, forgeDep, instanceMetaPaths, instancePackConfig, launchArguments, launchOptions, levelDat, metaResourcePack, metaSave, modInfo, player, playerDat, playerStats, versionJson, versionManifest } from "../../types";
+import { download, manifests, runtime } from "gmll/downloader";
+import type { assetIndex, downloadableFile, forgeDep, instanceMetaPaths, instancePackConfig, launchArguments, launchOptions, levelDat, metaResourcePack, metaSave, modInfo, player, playerDat, playerStats, versionJson, versionManifest, mcRuntimeVal } from "../../types";
 import { createHash, randomInt, randomUUID } from "crypto";
 import { readDat } from "gmll/nbt";
 import proximate from "gmll/proxy";
@@ -130,7 +130,7 @@ export default class instance {
         "-XX:G1ReservePercent=20",
         "-XX:MaxGCPauseMillis=50",
         "-XX:G1HeapRegionSize=32M",
-        "-Dlog4j2.formatMsgNoLookups=true"
+        "-Dlog4j2.formatMsgNoLookups=true",
     ]
     /**Do not mess with unless you know what you're doing. Some older versions may not launch if information from this file is missing. */
     static defJVM: launchArguments = [
@@ -339,7 +339,7 @@ export default class instance {
         }
 
         const classpath_separator = type() == "Windows_NT" ? ";" : ":";
-        const classPath = cp.join(classpath_separator);
+        const classPath = [...cp,agentPath()].join(classpath_separator);
 
         const args = {
             ram: Math.floor(this.ram * 1024),
@@ -379,30 +379,31 @@ export default class instance {
         }
         const javaPath = this.javaPath == "default" ? version.getJavaPath() : new file(this.javaPath);
         const rawJVMargs: launchArguments = instance.defaultGameArguments;
-        rawJVMargs.push(...(vjson.arguments?.jvm || instance.defJVM));
-
+         rawJVMargs.push("-Dgmll.main.class=" +vjson.mainClass);
+       rawJVMargs.push(...(vjson.arguments?.jvm || instance.defJVM));
+     //   rawJVMargs.push(`-javaagent:${agentPath()}`);
         /**Handling the proxy service for legacy versions */
-        let proxy: Server
-        const legacy = this.legacyProxy;//
-        if (!legacy.disabled && (version.manifest.releaseTime && Date.parse(version.manifest.releaseTime) < Date.parse("2014-05-14T17:29:23+00:00"))) {
-            const px = await proximate({ index: AssetIndex, port: legacy.port, skinServer: legacy.skinServer });
-            args.port = px.port;
+      //  let proxy: Server
+      //  const legacy = this.legacyProxy;//
+      //  if (!legacy.disabled && (version.manifest.releaseTime && Date.parse(version.manifest.releaseTime) < Date.parse("2014-04-14T17:29:23+00:00"))) {
+       //     const px = await proximate({ index: AssetIndex, port: legacy.port, skinServer: legacy.skinServer });
+       //     args.port = px.port;
 
-            rawJVMargs.push(...instance.oldJVM);
+        //   rawJVMargs.push(...instance.oldJVM);
 
-            if (!AssetIndex.virtual && !AssetIndex.map_to_resources)
-                rawJVMargs.push(`-javaagent:${agentPath()}`)
-            proxy = px.server;
-            console.log(rawJVMargs)
-        }
+            //  if (!AssetIndex.virtual && !AssetIndex.map_to_resources)
+            //      
+          //  proxy = px.server;
+         //   console.log(rawJVMargs)
+      //  }
 
         var jvmArgs = parseArguments(args, rawJVMargs);
 
         let gameArgs = vjson.arguments ? parseArguments(args, vjson.arguments.game) : "";
         gameArgs += vjson.minecraftArguments ? "\x00" + vjson.minecraftArguments.replace(/\s/g, "\x00") : "";
 
-        var launchCom = jvmArgs + "\x00" + vjson.mainClass + (!gameArgs.startsWith("\x00") ? "\x00" : "") + gameArgs;
-
+        var launchCom = jvmArgs + "\x00za.net.hanro50.gmll.App" + (!gameArgs.startsWith("\x00") ? "\x00" : "") + gameArgs;
+    //    var launchCom = jvmArgs + "\x00" + vjson.mainClass + (!gameArgs.startsWith("\x00") ? "\x00" : "") + gameArgs;
 
         Object.keys(args).forEach(key => {
             const regex = new RegExp(`\\\$\{${key}\}`, "g")
@@ -414,7 +415,7 @@ export default class instance {
         const s = spawn(javaPath.sysPath(), largsL, { "cwd": join(this.getPath()), "env": combine(process.env, this.env) })
         s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
         s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
-        if (proxy) s.on("exit", () => proxy.close())
+      //  if (proxy) s.on("exit", () => proxy.close())
 
     }
 
@@ -423,6 +424,57 @@ export default class instance {
         if (typeof config.forgeInstallerPath == "string") config.forgeInstallerPath = new file(config.forgeInstallerPath);
 
         return this.wrap(config.baseDownloadLink, config.outputDir, config.modpackName, config.forgeInstallerPath, config.trimMisc)
+    }
+
+    async installForge(forge?: file | string) {
+        const forgiacURL = "https://github.com/Hanro50/Forgiac/releases/download/1.8-SNAPSHOT/basic-1.8-SNAPSHOT.jar";
+        const forgiacSHA = "https://github.com/Hanro50/Forgiac/releases/download/1.8-SNAPSHOT/basic-1.8-SNAPSHOT.jar.sha1";
+        const forgiacPath = ["za", "net", "hanro50", "forgiac", "basic"];
+        if (typeof forge == "string") forge = new file(forge);
+        let manifest = this.getDir().getDir(".manifest").mkdir();
+        var libsFolder = getlibraries().getDir(...forgiacPath).mkdir();
+        var rURL2 = await fetch(forgiacSHA);
+        if (rURL2.status == 200) {
+            await libsFolder.getFile("forgiac.jar").download(forgiacURL, { sha1: await rURL2.text() })
+        }
+        const fRun: mcRuntimeVal = onUnsupportedArm ? "java-runtime-arm" : "java-runtime-gamma";
+        await runtime(fRun);
+
+        const javaPath = getJavaPath(fRun);
+        const path = getInstances().getDir(".forgiac");
+        const logFile = path.getFile("log.txt")
+        const args: string[] = ["-jar", getlibraries().getFile("za", "net", "hanro50", "forgiac", "basic", "forgiac.jar").sysPath(), " --log", logFile.sysPath(), "--virtual", getVersions().sysPath(), getlibraries().sysPath(), "--mk_manifest", manifest.sysPath()];
+        if (forge) {
+            args.push("--installer", forge.sysPath());
+        }
+        path.mkdir();
+        emit("jvm.start", "Forgiac", path.sysPath());
+        const s = spawn(javaPath.sysPath(), args, { "cwd": path.sysPath() })
+        s.stdout.on('data', (chunk) => emit("jvm.stdout", "Forgiac", chunk));
+        s.stderr.on('data', (chunk) => emit("jvm.stderr", "Forgiac", chunk));
+        const err = await new Promise(e => s.on('exit', e));
+        if (err != 0) {
+            throwErr("Forge failed to install. Forgiac exited with an error code of " + err)
+        }
+
+        const forgiman = manifest.ls()
+        if (forgiman.length < 1) {
+            throw "Manifest file not found?"
+        }
+        const forgi = forgiman[0]
+        if (!(forgi instanceof file)) {
+            throw "Manifest file is a directory?"
+        }
+        //const forgePath = save.getDir("forge").mkdir();
+
+        this.version = forgi.toJSON<versionManifest>().id;
+        forgi.moveTo(getMeta().manifests.getFile(forgi.getName()));
+        return this.version;
+        // _forge.copyTo(forgePath.getFile(_forge.getName()));
+        // this.version
+
+
+        // await new Promise(e => s.on('exit', e));
     }
 
     /**Wraps up an instance in a prepackaged format that can be easily uploaded to a server for distribution 
