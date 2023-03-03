@@ -39,7 +39,8 @@ public class Main {
             Prt.log(Prt.LEVEL.FETAL, "\t2) Use java 8");
             Prt.log(Prt.LEVEL.FETAL, "\t3) Report this error so it can be resolved! (If non of the above worked)");
 
-            Prt.log(Prt.LEVEL.FETAL, "\nAgenta cannot continue. Exiting...");
+            Prt.log(Prt.LEVEL.FETAL, "\nSupport (discord): https://discord.gg/f7THdzEPH2");
+            Prt.log(Prt.LEVEL.FETAL, "Agenta cannot continue. Exiting...");
             System.exit(-1);
         }
         URL.setURLStreamHandlerFactory(new Deligator());
