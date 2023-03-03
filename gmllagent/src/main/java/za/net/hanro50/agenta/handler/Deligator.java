@@ -13,6 +13,7 @@ import za.net.hanro50.agenta.Prt;
 import za.net.hanro50.agenta.handler.Deligates.AuthFix;
 import za.net.hanro50.agenta.handler.Deligates.Deligate;
 import za.net.hanro50.agenta.handler.Deligates.ResourceText;
+import za.net.hanro50.agenta.handler.Deligates.ResourceXML;
 import za.net.hanro50.agenta.handler.Deligates.SkinDeligate;
 
 public class Deligator extends URLStreamHandler implements URLStreamHandlerFactory {
@@ -23,6 +24,7 @@ public class Deligator extends URLStreamHandler implements URLStreamHandlerFacto
         addDeligate(new SkinDeligate(false, "/MinecraftCloaks/"));
         addDeligate(new SkinDeligate(false, "/cloak/"));
         addDeligate(new AuthFix());
+        addDeligate(new ResourceXML());
         addDeligate(new ResourceText());
     }
 

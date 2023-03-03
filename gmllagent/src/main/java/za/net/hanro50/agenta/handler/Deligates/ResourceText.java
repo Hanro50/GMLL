@@ -30,7 +30,7 @@ public class ResourceText extends URLConnection implements Deligate {
           AssetIndex.class);
           Prt.info("Checking index");
       if (index != null && !index.objects.isEmpty()) {
-        indexString = index.compile().trim();
+        indexString = index.compileText().trim();
         return new ByteArrayInputStream(indexString.getBytes(StandardCharsets.UTF_8));
       }
     } catch (IOException | InterruptedException | HTTPException e) {
