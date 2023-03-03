@@ -1,0 +1,13 @@
+[
+  {
+    "modid": "agenta",
+    "name": "Agenta",
+    "description": "A skin and sound fix for legacy version of minecraft",
+    "version": "1.6.0",
+    "authors": [
+      "Hanro50"
+    ],
+    "logoFile": "agenta.png",
+    "screenshots": []
+  }
+]

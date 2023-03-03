@@ -1,0 +1,14 @@
+modLoader="javafml"
+loaderVersion="1.0"
+license="MIT"
+showAsResourcePack=false
+
+[[mods]]
+    modId="agenta"
+    version="1.6.0"
+    displayName="Agenta"
+    logoFile="agenta.png"
+    authors="Hanro50"
+    description='''
+    A skin and sound fix for legacy version of minecraft
+    '''

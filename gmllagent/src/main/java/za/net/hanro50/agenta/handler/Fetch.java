@@ -1,8 +1,10 @@
-package za.net.hanro50.gmll.modules;
+package za.net.hanro50.agenta.handler;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
+
+import za.net.hanro50.agenta.objects.HTTPException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,10 +13,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Scanner;
 
-public class Fetch {
-  private static final Gson gson = (new GsonBuilder()).setPrettyPrinting().create();
-
-  public static <T> T get(String url, Class<T> ClassOfT) throws IOException, InterruptedException, HTTPException {
+class Fetch {
+  static final Gson gson = (new GsonBuilder()).setPrettyPrinting().create();
+  static <T> T get(String url, Class<T> ClassOfT) throws IOException, InterruptedException, HTTPException {
     InputStream res = get(url);
     try (Scanner s = new Scanner(res).useDelimiter("\\A")) {
       String result = s.hasNext() ? s.next() : "";
@@ -26,7 +27,7 @@ public class Fetch {
     return null;
   }
 
-  public static InputStream get(String url) throws MalformedURLException, IOException, HTTPException {
+  static InputStream get(String url) throws MalformedURLException, IOException, HTTPException {
     HttpURLConnection httpURLConnection = (HttpURLConnection) (new URL(url)).openConnection();
     httpURLConnection.connect();
     if (Math.floor((httpURLConnection.getResponseCode() / 100)) == 3.0D)

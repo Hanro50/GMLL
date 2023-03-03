@@ -339,7 +339,7 @@ export default class instance {
         }
 
         const classpath_separator = type() == "Windows_NT" ? ";" : ":";
-        const classPath = [...cp,agentPath()].join(classpath_separator);
+        const classPath = [...cp].join(classpath_separator);
 
         const args = {
             ram: Math.floor(this.ram * 1024),
@@ -381,7 +381,7 @@ export default class instance {
         const rawJVMargs: launchArguments = instance.defaultGameArguments;
          rawJVMargs.push("-Dgmll.main.class=" +vjson.mainClass);
        rawJVMargs.push(...(vjson.arguments?.jvm || instance.defJVM));
-     //   rawJVMargs.push(`-javaagent:${agentPath()}`);
+        rawJVMargs.push(`-javaagent:${agentPath()}`);
         /**Handling the proxy service for legacy versions */
       //  let proxy: Server
       //  const legacy = this.legacyProxy;//
@@ -402,8 +402,8 @@ export default class instance {
         let gameArgs = vjson.arguments ? parseArguments(args, vjson.arguments.game) : "";
         gameArgs += vjson.minecraftArguments ? "\x00" + vjson.minecraftArguments.replace(/\s/g, "\x00") : "";
 
-        var launchCom = jvmArgs + "\x00za.net.hanro50.gmll.App" + (!gameArgs.startsWith("\x00") ? "\x00" : "") + gameArgs;
-    //    var launchCom = jvmArgs + "\x00" + vjson.mainClass + (!gameArgs.startsWith("\x00") ? "\x00" : "") + gameArgs;
+        //var launchCom = jvmArgs + "\x00za.net.hanro50.agenta.App" + (!gameArgs.startsWith("\x00") ? "\x00" : "") + gameArgs;
+        var launchCom = jvmArgs + "\x00" + vjson.mainClass + (!gameArgs.startsWith("\x00") ? "\x00" : "") + gameArgs;
 
         Object.keys(args).forEach(key => {
             const regex = new RegExp(`\\\$\{${key}\}`, "g")

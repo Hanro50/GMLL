@@ -1,4 +1,4 @@
-package za.net.hanro50.gmll.objects;
+package za.net.hanro50.agenta.objects;
 
 public class Player2 {
   public long timestamp;

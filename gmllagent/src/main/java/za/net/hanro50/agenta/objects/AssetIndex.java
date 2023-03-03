@@ -1,4 +1,4 @@
-package za.net.hanro50.gmll.objects;
+package za.net.hanro50.agenta.objects;
 
 import java.util.Date;
 import java.util.Map;

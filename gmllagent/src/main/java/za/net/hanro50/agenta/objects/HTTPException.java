@@ -1,4 +1,4 @@
-package za.net.hanro50.gmll.modules;
+package za.net.hanro50.agenta.objects;
 
 public class HTTPException extends Throwable {
   final int status;

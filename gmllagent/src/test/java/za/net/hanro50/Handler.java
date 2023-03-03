@@ -1,4 +1,4 @@
-package za.net.hanro50.gmll;
+package za.net.hanro50;
 
 import java.net.URLStreamHandler;
 
