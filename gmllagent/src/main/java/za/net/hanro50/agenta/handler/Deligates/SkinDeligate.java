@@ -1,25 +1,36 @@
-package za.net.hanro50.agenta.handler;
+package za.net.hanro50.agenta.handler.Deligates;
 
 import java.io.IOException;
-import java.net.Proxy;
 import java.net.URL;
-import java.net.URLConnection;
-import java.util.logging.Logger;
 
+import za.net.hanro50.agenta.Prt;
+import za.net.hanro50.agenta.handler.Fetch;
 import za.net.hanro50.agenta.objects.Player;
 import za.net.hanro50.agenta.objects.Player2;
 import za.net.hanro50.agenta.objects.Profile;
 import za.net.hanro50.agenta.objects.Textures;
 
-class Skin {
-    final static Logger prn = Logger.getLogger(Skin.class.getName());
+public class SkinDeligate implements Deligate {
+    private boolean skin;
+    private String endpoint;
 
-    static URLConnection get(URL u, boolean skin, Proxy proxy) throws IOException {
+    public SkinDeligate(boolean skin, String endpoint) {
+        this.skin = skin;
+        this.endpoint = endpoint;
+    }
+
+    @Override
+    public Boolean check(URL url) {
+        return url.toString().contains(endpoint);
+    }
+
+    @Override
+    public URL run(URL u) throws IOException {
         try {
             String username = u.toString();
             username = username.substring(username.lastIndexOf("/") + 1);
             username = username.substring(0, username.length() - 4);
-            prn.info(username);
+            Prt.info(username);
             Player player = Fetch.get("http://api.mojang.com/users/profiles/minecraft/" + username, Player.class);
             if (player != null) {
                 Textures[] textures = Fetch.get(
@@ -29,12 +40,14 @@ class Skin {
                     Player2 plr = textures[0].decompile();
                     String text = skin ? plr.getSkin() : plr.getCape();
                     if (text != null)
-                        return Forward.connection(text, proxy);
+                        return new URL(text);
                 }
             }
         } catch (InterruptedException | za.net.hanro50.agenta.objects.HTTPException e) {
             e.printStackTrace();
         }
-        return Forward.connection(u.toString(), proxy);
+        return u;
+
     }
+
 }

@@ -13,7 +13,7 @@ import java.net.Proxy;
 import java.net.URL;
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
-
+/* 
 
 public class App implements URLStreamHandlerFactory {
     private static final Gson gson = (new GsonBuilder()).setPrettyPrinting().create();
@@ -110,3 +110,4 @@ public class App implements URLStreamHandlerFactory {
 
     }
 }
+*/

@@ -13,9 +13,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Scanner;
 
-class Fetch {
+public class Fetch {
   static final Gson gson = (new GsonBuilder()).setPrettyPrinting().create();
-  static <T> T get(String url, Class<T> ClassOfT) throws IOException, InterruptedException, HTTPException {
+ public static <T> T get(String url, Class<T> ClassOfT) throws IOException, InterruptedException, HTTPException {
     InputStream res = get(url);
     try (Scanner s = new Scanner(res).useDelimiter("\\A")) {
       String result = s.hasNext() ? s.next() : "";
@@ -27,7 +27,7 @@ class Fetch {
     return null;
   }
 
-  static InputStream get(String url) throws MalformedURLException, IOException, HTTPException {
+  public static InputStream get(String url) throws MalformedURLException, IOException, HTTPException {
     HttpURLConnection httpURLConnection = (HttpURLConnection) (new URL(url)).openConnection();
     httpURLConnection.connect();
     if (Math.floor((httpURLConnection.getResponseCode() / 100)) == 3.0D)

@@ -6,10 +6,29 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
+import java.util.ArrayList;
+import java.util.List;
 
-import za.net.hanro50.agenta.Main;
+import za.net.hanro50.agenta.Prt;
+import za.net.hanro50.agenta.handler.Deligates.AuthFix;
+import za.net.hanro50.agenta.handler.Deligates.Deligate;
+import za.net.hanro50.agenta.handler.Deligates.ResourceText;
+import za.net.hanro50.agenta.handler.Deligates.SkinDeligate;
 
 public class Deligator extends URLStreamHandler implements URLStreamHandlerFactory {
+    private static List<Deligate> Deligates = new ArrayList<>();
+    static {
+        addDeligate(new SkinDeligate(true, "/MinecraftSkins/"));
+        addDeligate(new SkinDeligate(true, "/skin/"));
+        addDeligate(new SkinDeligate(false, "/MinecraftCloaks/"));
+        addDeligate(new SkinDeligate(false, "/cloak/"));
+        addDeligate(new AuthFix());
+        addDeligate(new ResourceText());
+    }
+
+    public static void addDeligate(Deligate handler) {
+        Deligates.add(handler);
+    }
 
     @Override
     public URLStreamHandler createURLStreamHandler(String protocol) {
@@ -22,35 +41,17 @@ public class Deligator extends URLStreamHandler implements URLStreamHandlerFacto
 
     @Override
     protected URLConnection openConnection(URL u) throws IOException {
-        return openConnection(u,null);
+        return openConnection(u, null);
     }
 
     @Override
     protected URLConnection openConnection(URL url, Proxy proxy) throws IOException {
-        String U = url.toString();
-        Main.prn.info("Rerouting [" + url.getHost() + url.getPath() + "]");
-        if (U.contains("/MinecraftSkins/"))
-            return Skin.get(url, true, proxy);
-        if (U.contains("/skin/"))
-            return Skin.get(url, true, proxy);
-        if (U.contains("/MinecraftCloaks/"))
-            return Skin.get(url, false, proxy);
-        if (U.contains("/cloak/"))
-            return Skin.get(url, false, proxy);
-        if (U.startsWith("http://www.minecraft.net/resources/"))
-            return (URLConnection) new Resource(new URL("forward", url.getHost(), url.getFile()));
-        if (U.startsWith("http://www.minecraft.net/game/"))
-            return forward(new URL("http", "session.minecraft.net", url.getFile()), proxy);
-        return forward(url, proxy);
-    }
-
-    private URLConnection forward(URL url, Proxy proxy) throws IOException {
-        String protocol = url.getProtocol().equals("http") ? "forward" : url.getProtocol();
-        URL urlForward = new URL(protocol, url.getHost(), url.getPort(), url.getFile());
-
-        if (proxy != null)
-            return urlForward.openConnection(proxy);
-        return urlForward.openConnection();
+        Prt.info("Routing: "+url);
+        for (Deligate deligate : Deligates) {
+            if (deligate.check(url))
+                return deligate.run(url, proxy);
+        }
+        return Deligate.forward(url, proxy);
     }
 
 }
