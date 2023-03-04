@@ -2,6 +2,8 @@ package za.net.hanro50.agenta.objects;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -15,11 +17,11 @@ public class AssetIndex {
   public boolean virtual;
 
   public static class assetObj {
-    String hash;
+    public String hash;
 
-    String size;
+    public String size;
 
-    String ignore;
+    public String ignore;
   }
 
   public String compileText() {
@@ -48,9 +50,13 @@ public class AssetIndex {
   public String compileXML() {
     List<Entry<String, assetObj>> field = new ArrayList<>();
     field.addAll(this.objects.entrySet());
-    field.sort((a, b) -> {
-      return a.getKey().compareToIgnoreCase(b.getKey());
+    Collections.sort(field, new Comparator<Entry<String, assetObj>>() {
+      @Override
+      public int compare(Entry<String, assetObj> a, Entry<String, assetObj> b) {
+        return a.getKey().compareToIgnoreCase(b.getKey());
+      }
     });
+
     List<String> list = new ArrayList<>();
     String lstDir = "";
     for (Entry<String, assetObj> entry : field) {

@@ -27,7 +27,7 @@ parentPort.on("message", async (a) => {
                 }
                 console.error("[GMLL]: procedural failure : " + new dir(...o.path));
                 parentPort.postMessage({ cmd: failCMD, type: "system", key: o.path, err: e });
-                parentPort.postMessage({ cmd: processCMD, key: o.path });
+                parentPort.postMessage({ cmd: processCMD, key: o.key });
             }
         }
         await load();

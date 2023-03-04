@@ -333,12 +333,12 @@ export default class instance {
         if (AssetIndex.virtual || AssetIndex.map_to_resources) {
             assetRoot = getAssets().getDir("legacy", AssetIndex.virtual ? "virtual" : "resources");
             assetsFile = this.getDir().getFile("resources").rm();
-            assetRoot.linkFrom(assetsFile);
+          //  assetRoot.linkFrom(assetsFile);
         }
 
         const classpath_separator = type() == "Windows_NT" ? ";" : ":";
        const classPath = [...cp].join(classpath_separator);
-     // const classPath = [...cp,agentPath()].join(classpath_separator);
+     // const classPath = [agentPath(),...cp].join(classpath_separator);
         const args = {
             ram: Math.floor(this.ram * 1024),
             cores: cpus().length,
@@ -379,7 +379,7 @@ export default class instance {
         const rawJVMargs: launchArguments = instance.defaultGameArguments;
        //  rawJVMargs.push("-Dgmll.main.class=" +vjson.mainClass);
        rawJVMargs.push(...(vjson.arguments?.jvm || instance.defJVM));
-       rawJVMargs.push(`-javaagent:${agentPath()}`);
+  //     rawJVMargs.push(`-javaagent:${agentPath()}`);
         /**Handling the proxy service for legacy versions */
       //  let proxy: Server
       //  const legacy = this.legacyProxy;//

@@ -5,12 +5,12 @@ import java.net.Proxy;
 import java.net.URL;
 import java.net.URLConnection;
 
-public interface Deligate {
-    public Boolean check(URL url);
+public abstract class Deligate {
+    public abstract Boolean check(URL url);
 
-    public URL run(URL url) throws IOException;
+    public abstract URL run(URL url) throws IOException;
 
-    public default URLConnection run(URL url, Proxy proxy) throws IOException {
+    public URLConnection run(URL url, Proxy proxy) throws IOException {
         return forward(this.run(url), proxy);
     }
 

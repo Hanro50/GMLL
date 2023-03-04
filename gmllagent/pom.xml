@@ -6,8 +6,8 @@
 	<artifactId>agent</artifactId>
 	<version>1.5.2</version>
 	<properties>
-		<maven.compiler.source>1.6</maven.compiler.source>
-		<maven.compiler.target>1.6</maven.compiler.target>
+		<maven.compiler.source>1.5</maven.compiler.source>
+		<maven.compiler.target>1.5</maven.compiler.target>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -17,12 +17,38 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-core</artifactId>
+			<artifactId>log4j-api</artifactId>
 			<version>2.20.0</version>
-			<optional>true</optional>
+			<optional />
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<!--https://adfoc.us/serve/sitelinks/?id=271228&url=https://maven.minecraftforge.net/net/minecraftforge/forge/1.5.2-7.8.1.738/forge-1.5.2-7.8.1.738-universal.zip-->
+			<groupId>net.minecraftforge</groupId>
+			<artifactId>forge</artifactId>
+			<version>1.6.4-9.11.1.1345</version>
+			<classifier>universal</classifier>
+			<optional />
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.spigotmc</groupId>
+			<artifactId>spigot-api</artifactId>
+			<version>1.19.2-R0.1-SNAPSHOT</version>
+			<optional />
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
-
+	<repositories>
+		<repository>
+			<id>Forge</id>
+			<url>https://maven.minecraftforge.net/</url>
+		</repository>
+		<repository>
+			<id>spigot-repo</id>
+			<url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+		</repository>
+	</repositories>
 	<build>
 		<finalName>agent</finalName>
 		<resources>
@@ -58,8 +84,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>2.3.2</version>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<source>1.7</source>
+					<target>1.7</target>
 				</configuration>
 			</plugin>
 			<!-- Maven Shade Plugin -->
@@ -74,9 +100,20 @@
 						<goals>
 							<goal>shade</goal>
 						</goals>
+
 						<configuration>
+							<filters>
+								<filter>
+									<artifact>*:*</artifact>
+									<excludes>
+
+										<exclude>META-INF/versions/*</exclude>
+									</excludes>
+								</filter>
+							</filters>
 							<artifactSet>
 								<excludes>
+									<exclude>net.minecraftforge:*</exclude>
 									<exclude>org.apache.logging.log4j:*</exclude>
 								</excludes>
 							</artifactSet>

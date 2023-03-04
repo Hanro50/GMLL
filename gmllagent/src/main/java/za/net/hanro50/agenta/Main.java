@@ -9,6 +9,7 @@ import java.net.URL;
 import za.net.hanro50.agenta.handler.Deligator;
 
 public class Main {
+    private static boolean init = false;
 
     public static void main(String[] args) throws ClassNotFoundException, NoSuchMethodException, SecurityException,
             NegativeArraySizeException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
@@ -28,6 +29,8 @@ public class Main {
     }
 
     public static void flight() {
+        if (init)
+            return;
         System.setProperty("fml.ignoreInvalidMinecraftCertificates", "true");
         try {
             Class.forName("sun.net.www.protocol.http.Handler").getConstructor().newInstance();
@@ -41,8 +44,14 @@ public class Main {
 
             Prt.log(Prt.LEVEL.FETAL, "\nSupport (discord): https://discord.gg/f7THdzEPH2");
             Prt.log(Prt.LEVEL.FETAL, "Agenta cannot continue. Exiting...");
-            System.exit(-1);
+            try {
+                Class.forName("System").getMethod("exit", Integer.class).invoke(null, -1);
+            } catch (Exception err) {
+                throw new RuntimeException();
+            }
+
         }
         URL.setURLStreamHandlerFactory(new Deligator());
+        init = true;
     }
 }

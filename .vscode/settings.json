@@ -3,6 +3,7 @@
         "Agenta",
         "ARCHITEW",
         "betacraft",
+        "Bukkit",
         "classpath",
         "clientid",
         "Djava",
@@ -25,7 +26,7 @@
         "Xstart",
         "xuid"
     ],
-    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.configuration.updateBuildConfiguration": "automatic",
     "java.project.resourceFilters": [
         
         "node_modules",

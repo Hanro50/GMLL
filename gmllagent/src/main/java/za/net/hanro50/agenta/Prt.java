@@ -11,12 +11,12 @@ public class Prt {
         INFO
     }
 
-    private static Log sys;
+    public static Log systemLogger;
     static {
         try {
-            sys = new log4jImp();
+            systemLogger = new log4jImp();
         } catch (Throwable w) {
-            sys = new sysImp();
+            systemLogger = new sysImp();
         }
     }
 
@@ -24,12 +24,13 @@ public class Prt {
         Logger logger1;
 
         public log4jImp() {
-            logger1 = LogManager.getLogger("agenta");
+            logger1 = LogManager.getLogger("Agenta");
 
         }
 
         @Override
-        public void log(LEVEL level, String string2) {
+        public void log(LEVEL level, String string2,Object ...args) {
+            string2 = String.format(string2, args);
             switch (level) {
                 case ERROR:
                     logger1.warn(string2);
@@ -46,10 +47,11 @@ public class Prt {
 
     }
 
-    static class sysImp implements Log {
+    public static class sysImp implements Log {
 
         @Override
-        public void log(LEVEL level, String string2) {
+        public void log(LEVEL level, String string2,Object ...args) {
+            string2 = String.format(string2, args);
             switch (level) {
                 case ERROR:
                     System.err.println("\033[1;33m" + string2 + "\033[0m");
@@ -59,7 +61,7 @@ public class Prt {
                     break;
                 default:
                 case INFO:
-                    System.out.println(string2);
+                System.out.println("\033[0m" + string2 );
                     break;
             }
 
@@ -69,21 +71,21 @@ public class Prt {
 
     static public interface Log {
 
-        void log(LEVEL level, String string2);
+        void log(LEVEL level, String string2,Object ...args);
 
     }
 
-    public static void info(String info) {
-        log(LEVEL.INFO, info);
+    public static void info(String info,Object ...args) {
+        log(LEVEL.INFO, info,args);
     }
     // public final static Logger prn = LogManager.getLogger("agenta");
 
-    public static void log(LEVEL level, String messsage) {
-        sys.log(level, messsage);
+    public static void log(LEVEL level, String messsage,Object ...args) {
+        systemLogger.log(level, messsage,args);
     }
 
-    public static void warn(String wrn) {
-        log(LEVEL.ERROR, wrn);
+    public static void warn(String wrn,Object ...args) {
+        log(LEVEL.ERROR, wrn,args);
     }
 
 }
