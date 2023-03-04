@@ -1,9 +1,0 @@
-This is merely a reference document;
-
-[<context>] <property> => <description>
-
-[static] agenta.main.class => The class Agenta should try to load next when running in static module; 
-
-[*] agenta.assets.index => The URL for the asset index Agenta should use as a base;
-[*] agenta.assets.url => The URL for the resource server Agenta should pull assets from;
-[*] agenta.assets.fml => A link to an archive Agenta should forward legacy forge download requests to. 

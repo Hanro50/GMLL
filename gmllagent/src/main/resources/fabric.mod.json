@@ -1,9 +1,0 @@
-{
-    "schemaVersion": 1,
-    "id": "agenta",
-    "version": "1.6.0",
-    "name": "Agenta",
-    "description": "A skin and sound fix for legacy version of minecraft",
-    "license": "MIT",
-    "icon": "agenta.png"
-}

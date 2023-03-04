@@ -1,3 +1,0 @@
-Premain-Class: za.net.hanro50.agenta.Main
-Main-Class: za.net.hanro50.agenta.Main
-Add-Exports: java.base/sun.net.www.protocol.http=ALL-UNNAMED
