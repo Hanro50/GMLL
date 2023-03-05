@@ -151,7 +151,7 @@ export default class version {
             delete this.json;
             this.json = await this.getJSON();
         }
-        await this.getAssets();
+         await this.getAssets();
         await this.getLibs();
         await this.getJar("client", this.folder.getFile(this.name + ".jar"));
         await this.getRuntime();

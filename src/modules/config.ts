@@ -81,9 +81,9 @@ export interface Events {
 let defEvents: Events = new EventEmitter();
 
 //Encode Manager
-defEvents.on('parser.start', (type, int) => console.log(`[GMLL:parser]: Parsing ${type}s of instance ${int.name}`))
+defEvents.on('parser.start', (type, int) => console.log(`[GMLL:parser]: Parsing ${type}s of instance ${int.getName()}`))
 defEvents.on('parser.progress', (key, index, total, left) => console.log(`[GMLL:parser]: Done with ${index} of ${total} : ${left} : ${key}`))
-defEvents.on('parser.done', (type, int) => console.log(`[GMLL:parser]: Done parsing ${type}s of instance ${int.name}`))
+defEvents.on('parser.done', (type, int) => console.log(`[GMLL:parser]: Done parsing ${type}s of instance ${int.getName()}`))
 defEvents.on('parser.fail', (type, err, path) => {
     console.error(`[GMLL:parser]: Error parsing ${type} => ${path.sysPath()}`);
     if (typeof err == "string")

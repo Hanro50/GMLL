@@ -101,6 +101,8 @@ export function getLatest(): { "release": string, "snapshot": string } {
 }
 
 /**Installs a provided version of forge from a provided installer. Only works with forge*/
+
+/**REWRITE */
 export async function installForge(forgeInstallerJar?: file | string): Promise<void> {
     const forgiacURL = "https://github.com/Hanro50/Forgiac/releases/download/1.8-SNAPSHOT/basic-1.8-SNAPSHOT.jar";
     const forgiacSHA = "https://github.com/Hanro50/Forgiac/releases/download/1.8-SNAPSHOT/basic-1.8-SNAPSHOT.jar.sha1";

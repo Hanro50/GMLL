@@ -627,3 +627,6 @@ export interface modInfo extends metaObj {
     error?: boolean,
 }
 
+export interface installDat {
+    legacy:boolean;
+}
