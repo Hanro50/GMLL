@@ -21,6 +21,5 @@ export * as nbt from "./modules/nbt.js"
 
 import instance from "./modules/objects/instance.js";
 
-export * as proxy from "./modules/proxy.js";
 import type types from "./types";
 export { instance, types } 

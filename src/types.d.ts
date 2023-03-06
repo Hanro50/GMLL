@@ -331,15 +331,7 @@ export interface launchOptions {
      */
     javaPath?: "default" | string;
     /**By default GMLL spins up a proxy server when launching Minecraft 1.5.2 and older to reroute some requests that no longer work*/
-    legacyProxy?: {
-        /**Disable this behavior */
-        disabled: true,
-    } | {
-        disabled?: false,
-        /**The port the proxy server should use*/
-        port?: number,
-        skinServer?: string
-    }
+    noLegacyFix?:boolean;
 }
 
 export interface instancePackConfig {

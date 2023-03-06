@@ -34,13 +34,12 @@ export default class instance {
     protected meta: any;
     protected assets: Partial<assetIndex>;
     protected javaPath: "default" | string;
-    protected legacyProxy: { disabled?: boolean; port?: number; skinServer?: string };
+    protected noLegacyFix: boolean;
 
     /**Additional arguments added for legacy versions */
     public static oldJVM = [
-        "-Dhttp.proxyHost=127.0.0.1",
-        "-Dhttp.proxyPort=${port}",
         "-Djava.util.Arrays.useLegacyMergeSort=true",
+        "-Dminecraft.applet.TargetDirectory=\"${game_directory}\"",
     ]
 
     /**The default game arguments, don't mess with these unless you know what you are doing */
@@ -64,7 +63,6 @@ export default class instance {
         "-Djava.library.path=${natives_directory}",
         "-Dminecraft.launcher.brand=${launcher_name}",
         "-Dminecraft.launcher.version=${launcher_version}",
-        "-Dminecraft.applet.TargetDirectory=${game_directory}",
         "-cp",
         "${classpath}"
     ]
@@ -77,7 +75,7 @@ export default class instance {
         this.assets = opt.assets || {};
         this.javaPath = opt.javaPath || "default";
         this.env = opt.env || {};
-        this.legacyProxy = opt.legacyProxy || {};
+        this.noLegacyFix = opt.noLegacyFix || false;
         this.getDir().mkdir();
         const MESA = "MESA_GL_VERSION_OVERRIDE"
         if (!["x64", "arm64", "ppc64"].includes(getCpuArch()) && this.ram > 1.4) {
@@ -134,7 +132,7 @@ export default class instance {
         return new instance(json);
     }
 
-    
+
     /**
  * Saves the instance data. Can be used to automatically get the instance again by using it's name
  * @see {@link get} for more info
@@ -184,8 +182,4 @@ export default class instance {
     getName() {
         return this.name;
     }
-
-
-
-    
 }

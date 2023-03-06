@@ -9,7 +9,3 @@ module.exports.getPath = () => {
     }
 }
 
-module.exports.agentPath = () => {
-    const T = this.getPath();
-    return T.substring(0, T.length - "get.js".length) + "agent.jar";
-}

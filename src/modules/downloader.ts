@@ -15,7 +15,7 @@ import { Worker } from "worker_threads";
  * 
  * @param obj The objects that will be downloaded
  */
-export function download(obj: Partial<downloadableFile>[]) : Promise<void> {
+export function download(obj: Partial<downloadableFile>[]): Promise<void> {
     const processCMD = "download.progress";
     const failCMD = "download.fail";
     const getCMD = "download.get";
@@ -40,7 +40,7 @@ export function download(obj: Partial<downloadableFile>[]) : Promise<void> {
         const workers: Worker[] = [];
         const fire = () => workers.forEach(w => w.terminate());
         for (let i3 = 0; i3 < numCPUs; i3++) {
-            const w = new Worker(__get, { workerData: { processCMD, failCMD,getCMD,postCMD } });
+            const w = new Worker(__get, { workerData: { processCMD, failCMD, getCMD, postCMD } });
             workers.push(w);
             w.on('message', (msg) => {
                 switch (msg.cmd) {
@@ -278,6 +278,7 @@ export async function manifests() {
     const armRuntimes = "https://download.hanro50.net.za/java/index.json"
     const armPatch = "https://download.hanro50.net.za/java/arm-patch.json"
 
+    const agentaURL = "https://download.hanro50.net.za/maven/za/net/hanro50/agenta/1.6.1/agenta-1.6.1.jar"
 
     const update = getUpdateConfig();
     const meta = getMeta();
@@ -324,8 +325,6 @@ export async function manifests() {
             console.error(getErr(e));
         }
     }
-
-
     if (update.includes("runtime")) {
         let indexes = (await meta.index.getFile("runtime.json").download(mcRuntimes)).toJSON<runtimeManifest>();
         if (onUnsupportedArm) {
@@ -333,8 +332,19 @@ export async function manifests() {
         }
         getRuntimeIndexes(indexes);
     }
+    if (update.includes("agent")) {
+        let sha1;
+        try {
+            const r = await Fetch(agentaURL + ".sha1");
+            sha1 = await r.text();
+            await getAgentFile().download(agentaURL, { sha1 });
+        } catch (e) {
+        }
+    }
 }
-
+export function getAgentFile() {
+    return getlibraries().getDir("za", "net", "hanro50", "agenta", "1.6.1").mkdir().getFile("agenta-1.6.1.jar");
+}
 /**
  * Used for runtime management
   */

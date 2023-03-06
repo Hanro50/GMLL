@@ -7,7 +7,7 @@ import { player, assetIndex, launchArguments } from "gmll/types";
 import { type, cpus } from "os";
 import { join } from "path";
 import { combine, fsSanitizer, processAssets, getClientID, lawyer } from "../util.js";
-import { download } from "gmll/downloader";
+import { download, getAgentFile } from "gmll/downloader";
 
 /**
  * For internal use only
@@ -84,7 +84,7 @@ export async function install(this: instance) {
 }
 /**
      * This function is used to launch the game. It also runs the install script for you. 
-     * This essentially does an integraty check. 
+     * This essentially does an integrity check. 
      * @param token The player login token
      * @param resolution Optional information defining the game's resolution
      */
@@ -105,33 +105,31 @@ export async function launch(this: instance, token: player, resolution?: { width
         }
     }
     const version = await this.install();
-    let jarmoded = await instance.jarmod(await this.getMetaPaths(), version)
-    let cp: string[] = version.getClassPath(undefined, jarmoded);
+    let jarModded = await instance.jarmod(await this.getMetaPaths(), version)
+    let cp: string[] = version.getClassPath(undefined, jarModded);
 
-    var vjson = await version.getJSON();
+    var versionJson = await version.getJSON();
     var assetRoot = getAssets();
 
     var assetsFile = this.getDir().getDir("assets");
 
-    let AssetIndex = getAssets().getFile("indexes", (vjson.assets || "pre-1.6") + ".json").toJSON<assetIndex>();
-    let assets_index_name = vjson.assetIndex.id;
+    let AssetIndex = getAssets().getFile("indexes", (versionJson.assets || "pre-1.6") + ".json").toJSON<assetIndex>();
+    let assets_index_name = versionJson.assetIndex.id;
     if (this.assets.objects) {
         AssetIndex = combine(AssetIndex, this.assets);
-        assets_index_name = (fsSanitizer(assets_index_name + "_" + this.name))
+        assets_index_name = (fsSanitizer(assets_index_name + "_" + this.name));
         getAssets().getFile("indexes", (assets_index_name + ".json")).write(AssetIndex);
         processAssets(AssetIndex);
     }
 
-
     if (AssetIndex.virtual || AssetIndex.map_to_resources) {
         assetRoot = getAssets().getDir("legacy", AssetIndex.virtual ? "virtual" : "resources");
         assetsFile = this.getDir().getFile("resources").rm();
-        //  assetRoot.linkFrom(assetsFile);
+        assetRoot.linkFrom(assetsFile);
     }
 
     const classpath_separator = type() == "Windows_NT" ? ";" : ":";
-    const classPath = [...cp].join(classpath_separator);
-    // const classPath = [agentPath(),...cp].join(classpath_separator);
+    const classPath = cp.join(classpath_separator);
     const args = {
         ram: Math.floor(this.ram * 1024),
         cores: cpus().length,
@@ -142,7 +140,7 @@ export async function launch(this: instance, token: player, resolution?: { width
         resolution_height: resolution ? resolution.height : "",
 
         auth_player_name: token.profile.name,
-        version_name: vjson.inheritsFrom || vjson.id,
+        version_name: versionJson.inheritsFrom || versionJson.id,
         game_directory: this.getDir().sysPath() + "/",
 
         assets_root: assetsFile,
@@ -152,7 +150,7 @@ export async function launch(this: instance, token: player, resolution?: { width
         auth_xuid: token.profile.xuid,
         clientid: getClientID(),
 
-        version_type: vjson.type,
+        version_type: versionJson.type,
         auth_access_token: token.access_token,
 
         natives_directory: getNatives(),
@@ -170,42 +168,26 @@ export async function launch(this: instance, token: player, resolution?: { width
     }
     const javaPath = this.javaPath == "default" ? version.getJavaPath() : new file(this.javaPath);
     const rawJVMargs: launchArguments = instance.defaultGameArguments;
-    //  rawJVMargs.push("-Dgmll.main.class=" +vjson.mainClass);
-    rawJVMargs.push(...(vjson.arguments?.jvm || instance.defJVM));
-    //     rawJVMargs.push(`-javaagent:${agentPath()}`);
-    /**Handling the proxy service for legacy versions */
-    //  let proxy: Server
-    //  const legacy = this.legacyProxy;//
-    //  if (!legacy.disabled && (version.manifest.releaseTime && Date.parse(version.manifest.releaseTime) < Date.parse("2014-04-14T17:29:23+00:00"))) {
-    //     const px = await proximate({ index: AssetIndex, port: legacy.port, skinServer: legacy.skinServer });
-    //     args.port = px.port;
-
-    //   rawJVMargs.push(...instance.oldJVM);
-
-    //  if (!AssetIndex.virtual && !AssetIndex.map_to_resources)
-    //      
-    //  proxy = px.server;
-    //   console.log(rawJVMargs)
-    //  }
-
+    rawJVMargs.push(...(versionJson.arguments?.jvm || instance.defJVM));
+    const legacy = this.legacyProxy;
+    const agentFile = getAgentFile();
+    if (!legacy.disabled && (version.manifest.releaseTime && Date.parse(version.manifest.releaseTime) < Date.parse("2014-04-14T17:29:23+00:00"))) {
+        if (agentFile.exists()) rawJVMargs.push(`-javaagent:${agentFile.sysPath()}`);
+        rawJVMargs.push(...instance.oldJVM);
+    }
     var jvmArgs = parseArguments(args, rawJVMargs);
 
-    let gameArgs = vjson.arguments ? parseArguments(args, vjson.arguments.game) : "";
-    gameArgs += vjson.minecraftArguments ? "\x00" + vjson.minecraftArguments.replace(/\s/g, "\x00") : "";
-
-    // var launchCom = jvmArgs + "\x00za.net.hanro50.agenta.Main" + (!gameArgs.startsWith("\x00") ? "\x00" : "") + gameArgs;
-    var launchCom = jvmArgs + "\x00" + vjson.mainClass + (!gameArgs.startsWith("\x00") ? "\x00" : "") + gameArgs;
-
+    let gameArgs = versionJson.arguments ? parseArguments(args, versionJson.arguments.game) : "";
+    gameArgs += versionJson.minecraftArguments ? "\x00" + versionJson.minecraftArguments.replace(/\s/g, "\x00") : "";
+    var launchCom = jvmArgs + "\x00" + versionJson.mainClass + (!gameArgs.startsWith("\x00") ? "\x00" : "") + gameArgs;
     Object.keys(args).forEach(key => {
         const regex = new RegExp(`\\\$\{${key}\}`, "g")
         launchCom = launchCom.replace(regex, args[key])
     })
     emit("jvm.start", "Minecraft", this.getDir().sysPath());
-    const largsL = launchCom.trim().split("\x00");
-    if (largsL[0] == '') largsL.shift();
-    const s = spawn(javaPath.sysPath(), largsL, { "cwd": join(this.getDir().sysPath()), "env": combine(process.env, this.env) })
+    const launchArgs = launchCom.trim().split("\x00");
+    if (launchArgs[0] == '') launchArgs.shift();
+    const s = spawn(javaPath.sysPath(), launchArgs, { "cwd": join(this.getDir().sysPath()), "env": combine(process.env, this.env) })
     s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
     s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
-    //  if (proxy) s.on("exit", () => proxy.close())
-
 }
