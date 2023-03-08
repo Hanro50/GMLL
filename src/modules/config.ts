@@ -262,7 +262,8 @@ export function getMeta() {
         manifests: files.launcher.getDir("manifests"),
         runtimes: files.launcher.getDir("runtimes"),
         index: files.launcher.getDir("index"),
-        profiles: files.launcher.getDir("profiles")
+        profiles: files.launcher.getDir("profiles"),
+        bin: files.launcher.getDir("bin")
     }
     return meta;
 }

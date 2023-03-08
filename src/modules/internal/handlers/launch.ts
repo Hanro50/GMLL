@@ -169,9 +169,9 @@ export async function launch(this: instance, token: player, resolution?: { width
     const javaPath = this.javaPath == "default" ? version.getJavaPath() : new file(this.javaPath);
     const rawJVMargs: launchArguments = instance.defaultGameArguments;
     rawJVMargs.push(...(versionJson.arguments?.jvm || instance.defJVM));
-    const legacy = this.legacyProxy;
+
     const agentFile = getAgentFile();
-    if (!legacy.disabled && (version.manifest.releaseTime && Date.parse(version.manifest.releaseTime) < Date.parse("2014-04-14T17:29:23+00:00"))) {
+    if (!this.noLegacyFix && (version.manifest.releaseTime && Date.parse(version.manifest.releaseTime) < Date.parse("2014-04-14T17:29:23+00:00"))) {
         if (agentFile.exists()) rawJVMargs.push(`-javaagent:${agentFile.sysPath()}`);
         rawJVMargs.push(...instance.oldJVM);
     }

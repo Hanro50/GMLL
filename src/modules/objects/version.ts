@@ -1,8 +1,8 @@
 import { copyFileSync } from "fs";
-import { isInitialized, onUnsupportedArm, getVersions, getMeta, getlibraries } from "../config";
-import { assets, runtime, libraries } from "../downloader";
-import { getManifest, getJavaPath } from "../handler";
-import { combine, throwErr, lawyer, classPathResolver } from "../internal/util";
+import { isInitialized, onUnsupportedArm, getVersions, getMeta, getlibraries } from "../config.js";
+import { assets, runtime, libraries } from "../downloader.js";
+import { getManifest, getJavaPath } from "../handler.js";
+import { combine, throwErr, lawyer, classPathResolver } from "../internal/util.js";
 import { platform } from "os";
 import { join } from "path";
 import { versionJson, versionManifest, artifact, mcJarTypeVal } from "types";

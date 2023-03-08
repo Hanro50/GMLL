@@ -9,8 +9,8 @@ import { emit } from "../../config.js";
 
 
 /**
-     * @returns Some low level meta paths used to obtain some key files of this instance. 
-     */
+ * @returns Some low level meta paths used to obtain some key files of this instance. 
+ */
 export async function getMetaPaths(this:instance): Promise<instanceMetaPaths> {
     const version = await this.getVersion();
     const p = this.getDir();

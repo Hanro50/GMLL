@@ -4,8 +4,7 @@ import fetch from "node-fetch";
 import { existsSync, mkdirSync, unlinkSync, symlinkSync, readFileSync, createWriteStream, statSync, writeFileSync, rmSync, readdirSync, copyFileSync, lstatSync, renameSync, access, constants, } from 'fs';
 import { createHash } from "crypto";
 import { platform, tmpdir, type } from "os";
-import { execSync } from "child_process";
-import { cmd as _cmd, pack } from '7zip-min';
+import { execSync, spawn } from "child_process";
 import type { downloadableFile } from "../../types";
 export interface wrappedObj { save: () => void, getFile: () => file }
 
@@ -32,8 +31,13 @@ export function stringify(json: object) {
     //@ts-ignore
     return JSON.stringify(json, "\n", "\t");
 }
-export function packAsync(pathToDirOrFile: string, pathToArchive: string) {
-    return new Promise<Error | null>(res => pack(pathToDirOrFile, pathToArchive, res))
+export function packAsync(pathToDirOrFile: string, pathToArchive: string, zipDir?: dir) {
+    let com = ["a", "-r", pathToArchive, pathToDirOrFile]
+    return new Promise<void>(e => {
+        const s = spawn(get7zip(zipDir).file.sysPath(), com, { "cwd": join(this.getDir().sysPath()), "env": process.env });
+        s.on("exit", e);
+    });
+
 };
 export class dir {
     path: string[];
@@ -238,15 +242,15 @@ export class file extends dir {
         return d;
     }
 
-    static async process(json: downloadableFile, signal?: AbortSignal) {
+    static async process(json: downloadableFile, zipDir: dir) {
         let f = new this(...json.path, json.name);
         if (json.dynamic && f.exists()) {
             return;
         }
-        await f.download(json.url, json.chk, signal);
+        await f.download(json.url, json.chk);
 
         if (json.unzip) {
-            await f.unzip(new dir(...json.unzip.file), json.unzip.exclude);
+            await f.unzip(new dir(...json.unzip.file), json.unzip.exclude, zipDir);
         }
         if (json.executable) {
             if (typeof json.executable == "boolean")
@@ -257,7 +261,7 @@ export class file extends dir {
         }
     }
     /**Similar to {@link extract}, but uses a blacklist approach */
-    unzip(path: dir, exclude?: string[]) {
+    unzip(path: dir, exclude?: string[], zipDir?: dir) {
         var com = ['x', this.sysPath(), '-y', '-o' + path.sysPath()]
         if (exclude) {
             exclude.forEach(e => {
@@ -266,10 +270,13 @@ export class file extends dir {
                 com.push("-xr!" + f);
             })
         }
-        return new Promise<void>(e => _cmd(com, (err: any) => { if (err) console.error(err); e() }));
+        return new Promise<void>(e => {
+            const s = spawn(get7zip(zipDir).file.sysPath(), com, { "cwd": join(this.getDir().sysPath()), "env": process.env });
+            s.on("exit", e);
+        });
     }
     /**Similar to {@link unzip}, but uses a whitelist approach */
-    extract(path: dir, files: string[]) {
+    extract(path: dir, files: string[], zipDir?: dir) {
         var com = ['x', this.sysPath(), '-y', '-o' + path.sysPath()]
 
         files.forEach(e => {
@@ -278,11 +285,38 @@ export class file extends dir {
             com.push(f);
         })
         com.push("-r");
-        return new Promise<void>(e => _cmd(com, (err: any) => { if (err) console.error(err); e() }));
+        return new Promise<void>(e => {
+            const s = spawn(get7zip(zipDir).file.sysPath(), com, { "cwd": join(this.getDir().sysPath()), "env": process.env });
+            s.on("exit", e);
+        });
 
     }
     //**Checks if a file is executable */
     isExecutable(): Promise<boolean> {
         return new Promise((res) => access(this.sysPath(), constants.F_OK, (err) => res(err ? false : true)));
     }
+}
+let defDir = dir.tmpdir().getDir("gmll", "z7");
+
+function get7zip(dir: dir = defDir) {
+    dir.mkdir();
+    const f = platform() == 'win32' ? "7za.exe" : "7za";
+    return { file: dir.getFile(f), info: dir.getFile(f + ".info") };
+}
+export async function download7zip(dir: dir, os: "linux" | "windows" | "osx", arch: "arm" | "arm64" | "x32" | "x64", repo: string = "https://download.hanro50.net.za/7-zip") {
+    defDir = dir;
+    let chk: { size: number, sha1: string }
+    const files = get7zip(dir);
+    if (files.info.exists()) {
+        try {
+            chk = files.info.toJSON();
+        } catch { }
+    }
+    if (os == "osx" && !arch.endsWith("64")) throw "32 bit macOS is not currently supported!";
+    if (!repo.endsWith("/")) repo += "/";
+    console.log(`${repo}${os}${arch}`)
+    await files.file.download(`${repo}${os}/${arch}/${platform() == 'win32' ? "7za.exe" : "7za"}`, chk);
+    files.info.write({ size: files.file.getSize(), sha1: files.file.getHash() })
+    files.file.chmod();
+    return files.file;
 }

@@ -12,12 +12,12 @@ const { auth } = require("msmc");
 config.setRoot(".MC3")
 gmll.init().then(async () => {
   // gmll.downloader.runtime("jre-legacy");
-const token = (await (await new auth().launch("raw")).getMinecraft()).gmll()
+//const token = (await (await new auth().launch("raw")).getMinecraft()).gmll()
  // const token = gmll.wrapper.msmc2token(e);
  
-  var int = new gmll.instance({ version: "1.2.5"})
+  var int = new gmll.instance({ version: "1.5"})
   //await int.installForge();
-  int.launch(token);
+  int.launch();
   // console.log(await int.getMetaPaths())
   //int.setIcon("icon_32x32.png", "icon_16x16.png");
 

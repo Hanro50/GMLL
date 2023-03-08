@@ -3,7 +3,7 @@ import { resolve } from "path";
 import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig, onUnsupportedArm, __get } from "./config.js";
 import { cpus } from 'os';
 import Fetch from 'node-fetch';
-import { dir, file, packAsync } from "./objects/files.js";
+import { dir, download7zip, file, packAsync } from "./objects/files.js";
 import { readlinkSync } from "fs";
 import type { downloadableFile, versionManifest, runtimeManifestEntry, runtimeManifest, mcRuntimeVal, versionJson, assetIndex, artifact, mojangResourceManifest, mojangResourceFile } from "../types";
 import { Worker } from "worker_threads";
@@ -43,7 +43,7 @@ export function download(obj: Partial<downloadableFile>[]): Promise<void> {
             const workers: Worker[] = [];
             const fire = () => workers.forEach(w => w.terminate());
             for (let i3 = 0; i3 < numCPUs; i3++) {
-                const w = new Worker(__get, { workerData: { processCMD, failCMD, getCMD, postCMD } });
+                const w = new Worker(__get, { workerData: { processCMD, failCMD, getCMD, postCMD, zipDir: getMeta().bin.path } });
                 workers.push(w);
                 w.on('message', (msg) => {
                     switch (msg.cmd) {
@@ -75,7 +75,7 @@ export function download(obj: Partial<downloadableFile>[]): Promise<void> {
             const data = Object.values(temp) as downloadableFile[];
             const fallback = async (o: downloadableFile, retry: number = 0) => {
                 try {
-                    await file.process(o);
+                    await file.process(o, getMeta().bin);
                     return o;
                 } catch (e) {
                     console.trace(e)
@@ -97,12 +97,14 @@ export function download(obj: Partial<downloadableFile>[]): Promise<void> {
                 const left = Object.values(temp).length;
                 emit('download.progress', o.key, done, totalItems, left);
             }
-            let lst = [];
-            for (let i3 = 0; i3 < data.length; i3 += 1) {
-    
-                    lst.push(fallback(data[i3]).then(lf).catch(console.trace))
+
+            for (let i3 = 0; i3 < data.length; i3 += 100) {
+                let lst = [];
+                for (let i2 = 0; i2 < 100 && (i3 + i2) < data.length; i2++)
+                    lst.push(fallback(data[i3 + i2]).then(lf).catch(console.trace))
+                await Promise.all(lst);
+                console.log("TICK!")
             }
-            await Promise.all(lst);
             emit('download.done');
             return res();
         }
@@ -385,7 +387,11 @@ export async function manifests() {
         } catch (e) {
         }
     }
-
+    const arch = getCpuArch();
+    if (["arm", "arm64", "x32", "x64"].includes(arch))
+        await download7zip(meta.bin, getOS(), arch as ("arm" | "arm64" | "x32" | "x64"));
+    else
+        await download7zip(meta.bin, getOS(), getOS() != "osx" ? "x32" : "x64");
 }
 export function getAgentFile() {
     return getlibraries().getDir("za", "net", "hanro50", "agenta", "1.6.1").mkdir().getFile("agenta-1.6.1.jar");

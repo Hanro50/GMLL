@@ -1,13 +1,13 @@
-import { resolvePath, getMeta, getAssets } from "../config";
-import { getLatest } from "../handler";
-import { fsSanitizer, getCpuArch, throwErr, assetTag } from "../internal/util";
+import { resolvePath, getMeta, getAssets } from "../config.js";
+import { getLatest } from "../handler.js";
+import { fsSanitizer, getCpuArch, throwErr, assetTag } from "../internal/util.js";
 import { join } from "path";
 import { assetIndex, launchArguments, launchOptions } from "types";
-import { dir, file } from "./files";
-import version from "./version";
-import * as metaHandler from "../internal/handler/meta.js";
-import * as modsHandler from "../internal/handler/mods.js";
-import * as launchHandler from "../internal/handler/launch.js";
+import { dir, file } from "./files.js";
+import version from "./version.js";
+import * as metaHandler from "../internal/handlers/meta.js";
+import * as modsHandler from "../internal/handlers/mods.js";
+import * as launchHandler from "../internal/handlers/launch.js";
 /**
  * An instance is what the name intails. An instance of the game Minecraft containing Minecraft specific data.
  * This information on where the game is stored and the like. The mods installed and what not. 
@@ -77,18 +77,62 @@ export default class instance {
             this.env[MESA] = "4.6"
         }
     }
+    /**Gets the load order of minecraft jars in jar mod loader. */
     public getJarModPriority = modsHandler.getJarModPriority;
+    /**Install forge in this instance. */
     public installForge = modsHandler.installForge;
+    /**
+     * Used to modify minecraft's jar file (Low level)
+     * @param metapaths 
+     * @param version 
+     * @returns 
+     */
     public static jarmod = modsHandler.jarmod;
+    /**An version of the wrap function that takes an object as a variable instead of the mess the base function takes. */
     public pack = modsHandler.pack;
+    /**Wraps up an instance in a prepackaged format that can be easily uploaded to a server for distribution 
+     * @param baseUrl The base URL the generated files will be stored within on your server. For example http\:\/\/yourawesomdomain.net\/path\/to\/files\/
+     * @param save The file GMLL will generate the final files on. 
+     * @param name The name that should be used to identify the generated version files
+     * @param forge The path to a forge installation jar
+     * @param trimMisc Gets rid of any unnecessary miscellaneous files
+     */
     public wrap = modsHandler.wrap;
-
+    /**
+     * @returns Some low level meta paths used to obtain some key files of this instance. 
+     */
     public getMetaPaths = metaHandler.getMetaPaths;
+    /**
+     * Gets information about mods in this instance. This includes the loader version plus some general 
+     * information about the mod author and mod itself. This will also provide you the icon for a set mod if it can be obtained.\
+     * 
+     * Works with Legacy forge, forge, fabric, riftloader and liteloader
+     */
     public getMods = metaHandler.getMods;
+    /**
+     * Gets information about the installed resource and texture packs of this instance. 
+     * This includes information like the pack icon, name, description, legal documents and credits. 
+     */
     public getResourcePacks = metaHandler.getResourcePacks;
+    /**
+     * Gets some general information about all the world files in this instance.
+     * It also decodes the level.DAT file for you and returns the decoded file as a JSON file. 
+     * 
+     * It also decodes the player data stored in the "playerdata" and "stats" subfolder in newer versions of the game. 
+     */
     public getWorlds = metaHandler.getWorlds;
-
+    /**
+     * This function is used to launch the game. It also runs the install script for you. 
+     * This essentially does an integrity check. 
+     * @param token The player login token
+     * @param resolution Optional information defining the game's resolution
+     */
     public launch = launchHandler.launch;
+    /**
+     * Runs the installer script without launching MC
+     * @returns The instance's version object. 
+     * @see {@link getVersion} if you just want the instance's version
+     */
     public install = launchHandler.install;
     /**
      * 

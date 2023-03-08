@@ -1,5 +1,5 @@
 import { spawn } from "child_process";
-import { getAssets, getlibraries, onUnsupportedArm, getInstances, getVersions, getMeta,emit } from "../../config.js";
+import { getAssets, getlibraries, onUnsupportedArm, getInstances, getVersions, getMeta, emit } from "../../config.js";
 import { runtime } from "../../downloader.js";
 import { getJavaPath } from "../../handler.js";
 import { dir, file, packAsync } from "../../objects/files.js";
@@ -9,9 +9,7 @@ import { platform } from "os";
 import { downloadableFile, versionJson, versionManifest, instancePackConfig, mcRuntimeVal, instanceMetaPaths } from "types.js";
 
 import { assetTag, fsSanitizer, throwErr } from "../util.js";
-
-
-
+/**Gets the load order of minecraft jars in jar mod loader. */
 export async function getJarModPriority(this: instance) {
     return (await this.getMetaPaths()).jarmods.getFile("priority.json").load<{ [key: string]: number }>({})
 }
@@ -63,8 +61,8 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
                 const name = e2.getName()
                 const zip = e + "_" + k + ".zip";
                 const file = data.getFile(zip)
-                const err = await packAsync(e2.sysPath(), file.sysPath());
-                if (err) console.error(err);
+                await packAsync(e2.sysPath(), file.sysPath());
+
                 resources.push({ dynamic: dynamic.includes(e), unzip: { file: [e] }, key: [e, name].join("/"), name: zip, path: [".data"], url: [baseUrl, ".data", zip].join("/"), chk: { sha1: file.getHash(), size: file.getSize() } });
             }
         }
@@ -75,8 +73,8 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
         if (directory.exists() && !directory.islink()) {
             const zip = e + ".zip";
             const file = data.getFile(zip)
-            const err = await packAsync(directory.sysPath(), file.sysPath());
-            if (err) console.error(err);
+            await packAsync(directory.sysPath(), file.sysPath());
+
             resources.push({ dynamic: dynamic.includes(e), unzip: { file: [] }, key: [e, name].join("/"), name: zip, path: [".data"], url: [baseUrl, ".data", zip].join("/"), chk: { sha1: file.getHash(), size: file.getSize() } });
         }
     }
@@ -90,17 +88,16 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
         Object.values(this.assets.objects).forEach((e) => {
             assetTag(getAssets().getDir("objects"), e.hash).getFile(e.hash).copyTo(assetTag(assetz.getDir("objects"), e.hash).mkdir().getFile(e.hash))
         })
-        const err = await packAsync(assetz.sysPath(), mzip.sysPath());
-        if (err) console.error(err);
+        await packAsync(assetz.sysPath(), mzip.sysPath());
+
         assetz.rm();
     }
     if (!trimMisc)
         for (var k = 0; k < ls2.length; k++) {
             const e = ls2[k];
-            if (!e.islink() && !avoid.includes(e.getName()) && !e.getName().startsWith(".")) {
-                const err = await packAsync(e.sysPath(), mzip.sysPath());
-                if (err) console.error(err);
-            }
+            if (!e.islink() && !avoid.includes(e.getName()) && !e.getName().startsWith("."))
+                await packAsync(e.sysPath(), mzip.sysPath());
+
         }
     if (mzip.exists()) {
         resources.push(
@@ -186,7 +183,6 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
             else read(e, [...directory, e.getName()])
         })
     }
-
     read(save);
     index += `</body></html>`
     console.log(index);
@@ -200,7 +196,7 @@ export function pack(this: instance, config: instancePackConfig) {
 
     return this.wrap(config.baseDownloadLink, config.outputDir, config.modpackName, config.forgeInstallerPath, config.trimMisc)
 }
-
+/**Install forge in this instance. */
 export async function installForge(this: instance, forge?: file | string) {
     const forgiacURL = "https://github.com/Hanro50/Forgiac/releases/download/1.8-SNAPSHOT/basic-1.8-SNAPSHOT.jar";
     const forgiacSHA = "https://github.com/Hanro50/Forgiac/releases/download/1.8-SNAPSHOT/basic-1.8-SNAPSHOT.jar.sha1";
@@ -240,18 +236,17 @@ export async function installForge(this: instance, forge?: file | string) {
     if (!(forgi instanceof file)) {
         throw "Manifest file is a directory?"
     }
-    //const forgePath = save.getDir("forge").mkdir();
 
     this.version = forgi.toJSON<versionManifest>().id;
     forgi.moveTo(getMeta().manifests.getFile(forgi.getName()));
     return this.version;
-    // _forge.copyTo(forgePath.getFile(_forge.getName()));
-    // this.version
-
-
-    // await new Promise(e => s.on('exit', e));
 }
-
+/**
+ * Used to modify minecraft's jar file (Low level)
+ * @param metapaths 
+ * @param version 
+ * @returns 
+ */
 export async function jarmod(metapaths: instanceMetaPaths, version: version): Promise<file> {
     const jarmods = metapaths.jarmods;
     const bin = dir.tmpdir().getDir("gmll", "bin").rm().mkdir();
