@@ -8,6 +8,10 @@ import { readlinkSync } from "fs";
 import type { downloadableFile, versionManifest, runtimeManifestEntry, runtimeManifest, mcRuntimeVal, versionJson, assetIndex, artifact, mojangResourceManifest, mojangResourceFile } from "../types";
 import { Worker } from "worker_threads";
 
+const processCMD = "download.progress";
+const failCMD = "download.fail";
+const getCMD = "download.get";
+const postCMD = "download.post";
 /**
  * Download function. Can be used for downloading modpacks and launcher updates.
  * Checks sha1 hashes and can use multiple cores to download files rapidly. 
@@ -16,10 +20,7 @@ import { Worker } from "worker_threads";
  * @param obj The objects that will be downloaded
  */
 export function download(obj: Partial<downloadableFile>[]): Promise<void> {
-    const processCMD = "download.progress";
-    const failCMD = "download.fail";
-    const getCMD = "download.get";
-    const postCMD = "download.post";
+
 
     if (obj.length <= 0) {
         emit('download.done');
@@ -28,44 +29,87 @@ export function download(obj: Partial<downloadableFile>[]): Promise<void> {
     emit("download.started");
     obj.sort((a, b) => { return (b.chk.size || Number.MAX_VALUE) - (a.chk.size || Number.MAX_VALUE) });
     let temp = {};
-    obj.forEach((e, k) => temp[e.key] = e);
+    obj.forEach((e) => temp[e.key] = e);
     const totalItems = Object.values(temp).length;
 
-    return new Promise<void>(res => {
+    return new Promise<void>(async res => {
         const numCPUs = Math.max(cpus().length, 2);
-        emit("download.setup", numCPUs);
-        var done = 0;
-        let todo = 0;
-        const data = Object.values(temp) as downloadableFile[];
-        const workers: Worker[] = [];
-        const fire = () => workers.forEach(w => w.terminate());
-        for (let i3 = 0; i3 < numCPUs; i3++) {
-            const w = new Worker(__get, { workerData: { processCMD, failCMD, getCMD, postCMD } });
-            workers.push(w);
-            w.on('message', (msg) => {
-                switch (msg.cmd) {
-                    case (processCMD): {
-                        done++;
-                        delete temp[msg.key]
-                        const left = Object.values(temp).length;
-                        emit('download.progress', msg.key, done, totalItems, left);
 
-                        if (left < 1) {
-                            //   active = false;
-                            //     clearTimeout(to);
-                            emit('download.done');
-                            fire();
-                            return res();
+        if (new file(__get).exists()) {
+            emit("download.setup", numCPUs);
+            var done = 0;
+            let todo = 0;
+            const data = Object.values(temp) as downloadableFile[];
+            const workers: Worker[] = [];
+            const fire = () => workers.forEach(w => w.terminate());
+            for (let i3 = 0; i3 < numCPUs; i3++) {
+                const w = new Worker(__get, { workerData: { processCMD, failCMD, getCMD, postCMD } });
+                workers.push(w);
+                w.on('message', (msg) => {
+                    switch (msg.cmd) {
+                        case (processCMD): {
+                            done++;
+                            delete temp[msg.key]
+                            const left = Object.values(temp).length;
+                            emit('download.progress', msg.key, done, totalItems, left);
+
+                            if (left < 1) {
+                                //   active = false;
+                                //     clearTimeout(to);
+                                emit('download.done');
+                                fire();
+                                return res();
+                            }
                         }
+                        case (getCMD): w.postMessage({ cmd: postCMD, data: data[todo] }); todo++; break;
+                        case (failCMD): emit(msg.cmd, msg.key, msg.type, msg.err); break;
+                        default: return;
                     }
-                    case (getCMD): w.postMessage({ cmd: postCMD, data: data[todo] }); todo++; break;
-                    case (failCMD): emit(msg.cmd, msg.key, msg.type, msg.err); break;
-                    default: return;
+                });
+            }
+        } else {
+            console.warn("[GMLL]: Could not start main downloader, using single threaded fallback!");
+            emit("download.setup", 1);
+            let f = 1;
+            var done = 0;
+            const data = Object.values(temp) as downloadableFile[];
+            const fallback = async (o: downloadableFile, retry: number = 0) => {
+                try {
+                    await file.process(o);
+                    return o;
+                } catch (e) {
+                    console.trace(e)
+                    if (retry <= 3) {
+                        retry++;
+                        emit(failCMD, o.key, "retry", e.err);
+                        await fallback(o, retry);
+                        return o;
+                    }
+                    console.error("[GMLL]: procedural failure : " + new dir(...o.path));
+                    emit(failCMD, o.key, "system", e.err);
                 }
-            });
+                return o;
+            }
+            const lf = async (o: downloadableFile) => {
+                if (!o) return;
+                done++;
+                delete temp[o.key]
+                const left = Object.values(temp).length;
+                emit('download.progress', o.key, done, totalItems, left);
+            }
+            let lst = [];
+            for (let i3 = 0; i3 < data.length; i3 += 1) {
+    
+                    lst.push(fallback(data[i3]).then(lf).catch(console.trace))
+            }
+            await Promise.all(lst);
+            emit('download.done');
+            return res();
         }
     })
 }
+
+
 /**
  * Installs a set version of Java locally.
  * @param runtime the name of the Java runtime. Based on the names Mojang gave them.
@@ -341,6 +385,7 @@ export async function manifests() {
         } catch (e) {
         }
     }
+
 }
 export function getAgentFile() {
     return getlibraries().getDir("za", "net", "hanro50", "agenta", "1.6.1").mkdir().getFile("agenta-1.6.1.jar");

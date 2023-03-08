@@ -1,14 +1,16 @@
-
-import { emit, getAssets, getInstances, getlibraries, getMeta, getVersions, onUnsupportedArm } from "gmll/config";
-import version from "gmll/objects/version";
-import { dir, file, packAsync } from "gmll/objects/files";
-import { instanceMetaPaths, versionManifest, downloadableFile, versionJson, instancePackConfig, mcRuntimeVal } from "gmll/types";
-import { platform } from "os";
-import { getJavaPath } from "gmll/handler";
 import { spawn } from "child_process";
-import { runtime } from "gmll/downloader";
+import { getAssets, getlibraries, onUnsupportedArm, getInstances, getVersions, getMeta,emit } from "../../config.js";
+import { runtime } from "../../downloader.js";
+import { getJavaPath } from "../../handler.js";
+import { dir, file, packAsync } from "../../objects/files.js";
+import instance from "../../objects/instance.js";
+import version from "../../objects/version.js";
+import { platform } from "os";
+import { downloadableFile, versionJson, versionManifest, instancePackConfig, mcRuntimeVal, instanceMetaPaths } from "types.js";
+
 import { assetTag, fsSanitizer, throwErr } from "../util.js";
-import { instance } from "gmll";
+
+
 
 export async function getJarModPriority(this: instance) {
     return (await this.getMetaPaths()).jarmods.getFile("priority.json").load<{ [key: string]: number }>({})

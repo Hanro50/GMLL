@@ -1,13 +1,13 @@
 import { copyFileSync } from "fs";
-import { join } from "path";
-
-import { getlibraries, getMeta, getVersions, isInitialized, onUnsupportedArm } from "gmll/config";
-import { runtime, libraries, assets } from "gmll/downloader";
-import { getManifest, getJavaPath } from "gmll/handler";
-import { dir, file } from "gmll/objects/files";
-import { throwErr, classPathResolver, combine, lawyer } from "../internal/util.js";
-import { mcJarTypeVal, versionManifest, versionJson, artifact } from "gmll/types";
+import { isInitialized, onUnsupportedArm, getVersions, getMeta, getlibraries } from "../config";
+import { assets, runtime, libraries } from "../downloader";
+import { getManifest, getJavaPath } from "../handler";
+import { combine, throwErr, lawyer, classPathResolver } from "../internal/util";
 import { platform } from "os";
+import { join } from "path";
+import { versionJson, versionManifest, artifact, mcJarTypeVal } from "types";
+import { dir, file } from "./files";
+
 /**
  * Version data is unique. Each version of the game will generate an unique version object. 
  * Take note however. GMLL,unlike the default launcher, will store version data in the same folder as the version it is based upon. 

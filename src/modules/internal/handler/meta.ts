@@ -1,10 +1,11 @@
 import { createHash, randomInt } from "crypto";
-import { instance } from "gmll";
-import { emit } from "gmll/config";
-import { readDat } from "gmll/nbt";
-import { dir, file } from "gmll/objects/files";
-import { modInfo, forgeDep, playerDat, playerStats, levelDat, metaSave, instanceMetaPaths, metaResourcePack } from "gmll/types";
+import  instance from "../../objects/instance.js";
+
+import { modInfo, forgeDep, playerDat, playerStats, levelDat, metaSave, instanceMetaPaths, metaResourcePack } from "../../../types.js";
 import { join } from "path";
+import { readDat } from "../../nbt.js";
+import { dir, file } from "../../objects/files.js";
+import { emit } from "../../config.js";
 
 
 /**
@@ -21,6 +22,15 @@ export async function getMetaPaths(this:instance): Promise<instanceMetaPaths> {
         coremods: p.getDir("coremods"),
         configs: p.getDir("config")
     }
+}
+async function getIcon(file:file,d:dir ,jarPath: string) {
+    if (!jarPath || jarPath.length < 1) return null
+    file.extract(d, [jarPath]);
+    const fjar = jarPath.split("/");
+    console.log(fjar)
+    const flogo = d.getFile(...fjar)
+    if (flogo.exists()) return `data:image/png;base64,${flogo.toBase64()}`
+    return null
 }
 /**
   * Gets information about mods in this instance. This includes the loader version plus some general 
@@ -42,21 +52,13 @@ export async function getMods(this:instance): Promise<modInfo[]> {
             const d = tmp.getDir(fname).mkdir();
             await file.extract(d, ["mcmod.info", "fabric.mod.json", "litemod.json", "riftmod.json", "META-INF/mods.toml", "META-INF/MANIFEST.MF"]);
             let rfile: file;
-            async function getIcon(jarPath: string) {
-                if (!jarPath || jarPath.length < 1) return null
-                file.extract(d, [jarPath]);
-                const fjar = jarPath.split("/");
-                console.log(fjar)
-                const flogo = d.getFile(...fjar)
-                if (flogo.exists()) return `data:image/png;base64,${flogo.toBase64()}`
-                return null
-            }
+            
             //Legacy forge
             if ((rfile = d.getFile("mcmod.info")).exists()) {
                 type minfo = [{ "modid": string, "name": string, "mcversion": string, "description": string, "version": string, "credits": string, "authorsList"?: string[], "authors"?: string[], "logoFile": string, "url": string, "updateUrl": string, "parent": string, "screenshots": string[], "dependencies": string[] }]
                 let minfos = rfile.toJSON<minfo>();
                 for (let minfo of minfos) {
-                    let icon = await getIcon(minfo.logoFile);
+                    let icon = await getIcon(file,d,minfo.logoFile);
                     mods.push({
                         id: minfo.modid,
                         authors: minfo.authorsList ? minfo.authorsList : minfo.authors,
@@ -81,7 +83,7 @@ export async function getMods(this:instance): Promise<modInfo[]> {
             if ((rfile = d.getFile("fabric.mod.json")).exists() || (rfile = d.getFile("riftmod.json")).exists()) {
                 type finfo = { "schemaVersion": number, "id": string, "version": string, "name": string, "description": string, "authors": string[], "contact": { "homepage": string, "sources": string }, "license": string, "icon": string, "environment": string, "entrypoints": { "main": string[], "client": string[] }, "mixins": string[], "depends": { [key: string]: string }, "suggests": { [key: string]: string } }
                 let minfo = rfile.toJSON<finfo>();
-                let icon = await getIcon(minfo.icon);
+                let icon = await  getIcon(file,d,minfo.icon);
                 mods.push({
                     id: minfo.id,
                     authors: minfo.authors,
@@ -140,7 +142,7 @@ export async function getMods(this:instance): Promise<modInfo[]> {
                 let state1Map = new Map();
                 state1Map.set("license", (val: string) => mfinal.licence = val)
                 state1Map.set("credits", (val: string) => mfinal.credits = val)
-                state1Map.set("logoFile", async (val: string) => mfinal.icon = await getIcon(val))
+                state1Map.set("logoFile", async (val: string) => mfinal.icon = await  getIcon(file,d,val))
                 let state2Map = new Map();
                 state2Map.set("modId", (val: string) => mfinal.id = val)
                 state2Map.set("version", (val: string) => mfinal.version = val)

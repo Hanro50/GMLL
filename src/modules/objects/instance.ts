@@ -1,22 +1,13 @@
-import { spawn } from "child_process";
+import { resolvePath, getMeta, getAssets } from "../config";
+import { getLatest } from "../handler";
+import { fsSanitizer, getCpuArch, throwErr, assetTag } from "../internal/util";
 import { join } from "path";
-import { assetTag, combine, fsSanitizer, getClientID, getCpuArch, lawyer, processAssets, throwErr } from "../internal/util.js";
-import { dir, file } from "gmll/objects/files";
-import { cpus, type } from "os";
-import { emit, getAssets, getLauncherName, getLauncherVersion, getlibraries, getMeta, getNatives, resolvePath } from "gmll/config";
-
-
-import type { assetIndex, instanceMetaPaths, launchArguments, launchOptions, player } from "../../types";
-import { randomUUID } from "crypto";
-import * as modsHandler from "../internal/handler/mods.js";
+import { assetIndex, launchArguments, launchOptions } from "types";
+import { dir, file } from "./files";
+import version from "./version";
 import * as metaHandler from "../internal/handler/meta.js";
+import * as modsHandler from "../internal/handler/mods.js";
 import * as launchHandler from "../internal/handler/launch.js";
-import { download } from "../downloader.js";
-import { getLatest, installForge } from "../handler.js";
-import version from "./version.js";
-
-
-
 /**
  * An instance is what the name intails. An instance of the game Minecraft containing Minecraft specific data.
  * This information on where the game is stored and the like. The mods installed and what not. 

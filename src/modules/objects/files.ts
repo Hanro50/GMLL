@@ -191,11 +191,11 @@ export class file extends dir {
      * @param chk The file check
      * @returns this object to allow for chaining
      */
-    async download(url: string, chk?: { sha1?: string | string[], size?: number }) {
+    async download(url: string, chk?: { sha1?: string | string[], size?: number }, signal?: AbortSignal) {
         if (this.chkSelf(chk))
             await new Promise((resolve, reject) => {
                 const file = createWriteStream(this.sysPath());
-                fetch(url).then(res => {
+                fetch(url, { signal }).then(res => {
                     if (!res.ok) reject(res.status);
                     res.body.pipe(file, { end: true });
                     file.on("close", resolve);
@@ -204,7 +204,7 @@ export class file extends dir {
         return this;
     }
     /**Sets the execution bit on a set file, used on Linux and Mac systems */
-    chmod() { if (type() != "Windows_NT") execSync(`chmod +x "${this.sysPath()}"`) }
+    chmod() { if (type() != "Windows_NT" && this.exists()) execSync(`chmod +x "${this.sysPath()}"`) }
     /**Writes data to file. Automatically converts JSON objects to parsable strings before saving them*/
     write(data: string | ArrayBuffer | object) {
         if (typeof data == "object") data = stringify(data);
@@ -238,12 +238,12 @@ export class file extends dir {
         return d;
     }
 
-    static async process(json: downloadableFile) {
+    static async process(json: downloadableFile, signal?: AbortSignal) {
         let f = new this(...json.path, json.name);
         if (json.dynamic && f.exists()) {
             return;
         }
-        await f.download(json.url, json.chk);
+        await f.download(json.url, json.chk, signal);
 
         if (json.unzip) {
             await f.unzip(new dir(...json.unzip.file), json.unzip.exclude);

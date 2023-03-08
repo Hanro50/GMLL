@@ -3,7 +3,7 @@ import { cmd as _cmd } from '7zip-min';
 import { dir, stringify } from "../objects/files.js";
 import { getAssets, getMeta, isInitialized } from "../config.js";
 import { createHash, randomUUID } from "crypto";
-import { cpuArchRuleVal, versionJsonRules, assetIndex } from "../../types";
+import { cpuArchRuleVal, versionJsonRules, assetIndex } from "../../types.js";
 /**Gets the current operating system GMLL thinks it is running under */
 export function getOS() {
     const operatingSystem = platform();

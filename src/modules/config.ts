@@ -3,12 +3,12 @@ import { manifests } from "./downloader.js";
 import { dir, file } from "./objects/files.js";
 import { getCpuArch, getErr, throwErr } from "./internal/util.js";
 import { type } from "os";
-import { getPath } from "./internal/root.cjs";
 import type instance from "./objects/instance.js";
+import { getPath } from "./internal/root.js"
 export let __get = getPath();
 if (!__get.endsWith("get.js")) {
-    console.warn("[GMLL]: The internal downloader script may not be within it's own file. GMLL may fail due to this!!");
-    console.warn("[GMLL]: If GMLL does fail. Please update the '__get' property in the config module to point to the correct standalone js file.");
+    console.warn("[GMLL]: The internal downloader script may not be within it's own file. GMLL will use the much slower fallback downloader!");
+    console.warn("[GMLL]: Please update the '__get' property in the config module to point to the correct standalone js file.");
 }
 export type update = "fabric" | "vanilla" | "runtime" | "agent";
 export const onUnsupportedArm = (getCpuArch() == "arm64" || getCpuArch() == "arm") && type() != "Darwin";
