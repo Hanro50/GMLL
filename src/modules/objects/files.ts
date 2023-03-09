@@ -34,7 +34,7 @@ export function stringify(json: object) {
 export function packAsync(pathToDirOrFile: string, pathToArchive: string, zipDir?: dir) {
     let com = ["a", "-r", pathToArchive, pathToDirOrFile]
     return new Promise<void>(e => {
-        const s = spawn(get7zip(zipDir).file.sysPath(), com, { "cwd": join(this.getDir().sysPath()), "env": process.env });
+        const s = spawn(get7zip(zipDir).file.sysPath(), com, { "env": process.env });
         s.on("exit", e);
     });
 
@@ -303,7 +303,13 @@ function get7zip(dir: dir = defDir) {
     const f = platform() == 'win32' ? "7za.exe" : "7za";
     return { file: dir.getFile(f), info: dir.getFile(f + ".info") };
 }
-export async function download7zip(dir: dir, os: "linux" | "windows" | "osx", arch: "arm" | "arm64" | "x32" | "x64", repo: string = "https://download.hanro50.net.za/7-zip") {
+
+/**The location serving 7zip binaries*/
+export function set7zipRepo(z7: string) {
+    z7Repo = z7;
+}
+let z7Repo = "https://download.hanro50.net.za/7-zip";
+export async function download7zip(dir: dir, os: "linux" | "windows" | "osx", arch: "arm" | "arm64" | "x32" | "x64") {
     defDir = dir;
     let chk: { size: number, sha1: string }
     const files = get7zip(dir);
@@ -313,9 +319,9 @@ export async function download7zip(dir: dir, os: "linux" | "windows" | "osx", ar
         } catch { }
     }
     if (os == "osx" && !arch.endsWith("64")) throw "32 bit macOS is not currently supported!";
-    if (!repo.endsWith("/")) repo += "/";
-    console.log(`${repo}${os}${arch}`)
-    await files.file.download(`${repo}${os}/${arch}/${platform() == 'win32' ? "7za.exe" : "7za"}`, chk);
+    if (!z7Repo.endsWith("/")) z7Repo += "/";
+    console.log(`${z7Repo}${os}${arch}`)
+    await files.file.download(`${z7Repo}${os}/${arch}/${platform() == 'win32' ? "7za.exe" : "7za"}`, chk);
     files.info.write({ size: files.file.getSize(), sha1: files.file.getHash() })
     files.file.chmod();
     return files.file;

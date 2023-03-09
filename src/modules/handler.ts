@@ -1,10 +1,10 @@
 /**The internal java and version manifest handler for GMLL */
 
 import { emit, getInstances, getlibraries, getMeta, getRuntimes, getVersions, isInitialized, onUnsupportedArm } from "./config.js";
-import { runtime } from "./downloader.js";
+import { getForgiac, runtime } from "./downloader.js";
 import { fsSanitizer, getOS, throwErr } from "./internal/util.js";
 import { spawn } from "child_process";
-import { file } from "./objects/files.js";
+import { dir, file } from "./objects/files.js";
 import fetch from "node-fetch";
 import instance from "./objects/instance.js";
 import type { modpackApiInfo, versionManifest, mcRuntimeVal, versionJson } from "../types";
@@ -28,6 +28,17 @@ export function getManifests(): versionManifest[] {
     })
     return versionManifest;
 }
+
+const forgiacCodes = {
+    100: "Could not create virtual folder",
+    101: "Could not create junction link",
+    102: "Please use Windows Vista or later",
+    200: "User cancelled request",
+    201: "Invalid installation jar",
+    202: "Forge failed to install",
+    300: "Parameter error"
+}
+
 
 function findManifest(version: string, manifests: versionManifest[]) {
     const v = version.toLocaleLowerCase().trim();
@@ -100,27 +111,16 @@ export function getLatest(): { "release": string, "snapshot": string } {
     else return { "release": "1.17.1", "snapshot": "21w42a" };
 }
 
-/**Installs a provided version of forge from a provided installer. Only works with forge*/
-
-/**REWRITE */
-export async function installForge(forgeInstallerJar?: file | string): Promise<void> {
-    const forgiacURL = "https://github.com/Hanro50/Forgiac/releases/download/1.8-SNAPSHOT/basic-1.8-SNAPSHOT.jar";
-    const forgiacSHA = "https://github.com/Hanro50/Forgiac/releases/download/1.8-SNAPSHOT/basic-1.8-SNAPSHOT.jar.sha1";
-    const forgiacPath = ["za", "net", "hanro50", "forgiac", "basic"];
+export async function installForge(forgeInstallerJar?: string | file, forgiacArgs: string[] = ["--virtual", getVersions().sysPath()]) {
+    const path = getInstances().getDir(".forgiac");
+    let manifest = path.getDir(".manifest_" + Date.now()).mkdir();
     if (typeof forgeInstallerJar == "string") forgeInstallerJar = new file(forgeInstallerJar);
-
-    var libsFolder = getlibraries().getDir(...forgiacPath).mkdir();
-    var rURL2 = await fetch(forgiacSHA);
-    if (rURL2.status == 200) {
-        await libsFolder.getFile("forgiac.jar").download(forgiacURL, { sha1: await rURL2.text() })
-    }
     const fRun: mcRuntimeVal = onUnsupportedArm ? "java-runtime-arm" : "java-runtime-gamma";
     await runtime(fRun);
 
     const javaPath = getJavaPath(fRun);
-    const path = getInstances().getDir(".forgiac");
     const logFile = path.getFile("log.txt")
-    const args: string[] = ["-jar", getlibraries().getFile("za", "net", "hanro50", "forgiac", "basic", "forgiac.jar").sysPath(), " --log", logFile.sysPath(), "--virtual", getVersions().sysPath(), getlibraries().sysPath(), "--mk_manifest", getMeta().manifests.sysPath()];
+    const args: string[] = ["-jar", (await getForgiac()).sysPath(), " --log", logFile.sysPath(), ...forgiacArgs, getlibraries().sysPath(), "--mk_manifest", manifest.sysPath()];
     if (forgeInstallerJar) {
         args.push("--installer", forgeInstallerJar.sysPath());
     }
@@ -129,11 +129,26 @@ export async function installForge(forgeInstallerJar?: file | string): Promise<v
     const s = spawn(javaPath.sysPath(), args, { "cwd": path.sysPath() })
     s.stdout.on('data', (chunk) => emit("jvm.stdout", "Forgiac", chunk));
     s.stderr.on('data', (chunk) => emit("jvm.stderr", "Forgiac", chunk));
-    const err = await new Promise(e => s.on('exit', e));
+    const err = await new Promise(e => s.on('exit', e)) as number;
     if (err != 0) {
-        throwErr("Forge failed to install. Forgiac exited with an error code of " + err)
+        throw { "Error": "forge.install.failure", code: err, message: forgiacCodes[err] || "unknown error" }
     }
+
+    const forgeManifest = manifest.ls()
+    if (forgeManifest.length < 1) {
+        throw { "Error": "manifest.not.found", code: 400, message: "Manifest file not found?" }
+    }
+    const manifestFile = forgeManifest[0]
+    if (!(manifestFile instanceof file)) {
+        throw { "Error": "manifest.is.folder", code: 401, message: "Manifest file is a directory?" }
+    }
+    const result = manifestFile.toJSON<versionManifest>();
+    manifestFile.moveTo(getMeta().manifests.getFile(manifestFile.getName()));
+    manifest.rm();
+    return result;
+
 }
+
 /**
  * Imports a modpack off the internet compatible with GMLL via a link.
  * See the {@link instance.wrap()  wrapper function} to generate the files to upload to your web server to make this work  

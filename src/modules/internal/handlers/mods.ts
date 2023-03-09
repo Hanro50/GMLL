@@ -1,7 +1,7 @@
 import { spawn } from "child_process";
 import { getAssets, getlibraries, onUnsupportedArm, getInstances, getVersions, getMeta, emit } from "../../config.js";
 import { runtime } from "../../downloader.js";
-import { getJavaPath } from "../../handler.js";
+import { getJavaPath, installForge as _installForge } from "../../handler.js";
 import { dir, file, packAsync } from "../../objects/files.js";
 import instance from "../../objects/instance.js";
 import version from "../../objects/version.js";
@@ -130,31 +130,10 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
         if (forge instanceof file) _forge = forge;
         else if (typeof forge.jar == "string") _forge = new file(forge.jar);
         else _forge = forge.jar;
-
-        await runtime("java-runtime-beta");
-
-        const javaPath = getJavaPath("java-runtime-beta");
         const path = save.getDir(".forgiac").rm().mkdir();
-        const manifest = path.getDir("manifest").mkdir();
-        const args: string[] = ["-jar", getlibraries().getFile("za", "net", "hanro50", "forgiac", "basic", "forgiac.jar").sysPath(), "--.minecraft", path.sysPath(), "--mk_manifest", manifest.sysPath(), "--installer", _forge.sysPath()];
-
-        path.mkdir();
-        emit("jvm.start", "Forgiac", path.sysPath());
-        const s = spawn(javaPath.sysPath(), args, { "cwd": path.sysPath() })
-        s.stdout.on('data', (chunk) => emit("jvm.stdout", "Forgiac", chunk));
-        s.stderr.on('data', (chunk) => emit("jvm.stderr", "Forgiac", chunk));
-        await new Promise(e => s.on('exit', e));
-
-        const forgiman = manifest.ls()
-        if (forgiman.length < 1) {
-            throw "Manifest file not found?"
-        }
-        const forgi = forgiman[0]
-        if (!(forgi instanceof file)) {
-            throw "Manifest file is a directory?"
-        }
+        const _manifest = await _installForge(_forge, ["--.minecraft", path.sysPath()])
         const forgePath = save.getDir("forge").mkdir();
-        Fversion = forgi.toJSON<versionManifest>().id;
+        Fversion = _manifest.id;
         _forge.copyTo(forgePath.getFile(_forge.getName()));
         ver.instance.files.push({ key: _forge.getName(), name: _forge.getName(), path: ["forge"], url: [baseUrl, "forge", _forge.getName()].join("/"), chk: { sha1: _forge.getHash(), size: _forge.getSize() } })
         ver.instance.forge = { installer: ["forge", _forge.getName()] };
@@ -178,7 +157,7 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
             if (e.getName() == "index.html" || e.getName() == `manifest_${fsSanitizer(name)}.json`) return;
             if (e instanceof file) {
                 const entry = ([...directory, e.getName()].join("/"));
-                index += `<br><div class="element button" onclick="document.location.href='./${entry}'">${entry}</div>`
+                index += `&nbsp;<br><div class="element button" onclick="document.location.href='./${entry}'">${entry}</div>`
             }
             else read(e, [...directory, e.getName()])
         })
@@ -198,47 +177,8 @@ export function pack(this: instance, config: instancePackConfig) {
 }
 /**Install forge in this instance. */
 export async function installForge(this: instance, forge?: file | string) {
-    const forgiacURL = "https://github.com/Hanro50/Forgiac/releases/download/1.8-SNAPSHOT/basic-1.8-SNAPSHOT.jar";
-    const forgiacSHA = "https://github.com/Hanro50/Forgiac/releases/download/1.8-SNAPSHOT/basic-1.8-SNAPSHOT.jar.sha1";
-    const forgiacPath = ["za", "net", "hanro50", "forgiac", "basic"];
-    if (typeof forge == "string") forge = new file(forge);
-    let manifest = this.getDir().getDir(".manifest").mkdir();
-    var libsFolder = getlibraries().getDir(...forgiacPath).mkdir();
-    var rURL2 = await fetch(forgiacSHA);
-    if (rURL2.status == 200) {
-        await libsFolder.getFile("forgiac.jar").download(forgiacURL, { sha1: await rURL2.text() })
-    }
-    const fRun: mcRuntimeVal = onUnsupportedArm ? "java-runtime-arm" : "java-runtime-gamma";
-    await runtime(fRun);
-
-    const javaPath = getJavaPath(fRun);
-    const path = getInstances().getDir(".forgiac");
-    const logFile = path.getFile("log.txt")
-    const args: string[] = ["-jar", getlibraries().getFile("za", "net", "hanro50", "forgiac", "basic", "forgiac.jar").sysPath(), " --log", logFile.sysPath(), "--virtual", getVersions().sysPath(), getlibraries().sysPath(), "--mk_manifest", manifest.sysPath()];
-    if (forge) {
-        args.push("--installer", forge.sysPath());
-    }
-    path.mkdir();
-    emit("jvm.start", "Forgiac", path.sysPath());
-    const s = spawn(javaPath.sysPath(), args, { "cwd": path.sysPath() })
-    s.stdout.on('data', (chunk) => emit("jvm.stdout", "Forgiac", chunk));
-    s.stderr.on('data', (chunk) => emit("jvm.stderr", "Forgiac", chunk));
-    const err = await new Promise(e => s.on('exit', e));
-    if (err != 0) {
-        throwErr("Forge failed to install. Forgiac exited with an error code of " + err)
-    }
-
-    const forgiman = manifest.ls()
-    if (forgiman.length < 1) {
-        throw "Manifest file not found?"
-    }
-    const forgi = forgiman[0]
-    if (!(forgi instanceof file)) {
-        throw "Manifest file is a directory?"
-    }
-
-    this.version = forgi.toJSON<versionManifest>().id;
-    forgi.moveTo(getMeta().manifests.getFile(forgi.getName()));
+    const manifest = await _installForge(forge);
+    this.version = manifest.id;
     return this.version;
 }
 /**

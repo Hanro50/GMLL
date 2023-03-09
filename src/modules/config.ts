@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import { manifests } from "./downloader.js";
-import { dir, file } from "./objects/files.js";
+import { dir, file, set7zipRepo as _set7zipRepo } from "./objects/files.js";
 import { getCpuArch, getErr, throwErr } from "./internal/util.js";
 import { type } from "os";
 import type instance from "./objects/instance.js";
@@ -12,7 +12,33 @@ if (!__get.endsWith("get.js")) {
 }
 export type update = "fabric" | "vanilla" | "runtime" | "agent";
 export const onUnsupportedArm = (getCpuArch() == "arm64" || getCpuArch() == "arm") && type() != "Darwin";
+const repositories = {
+    maven: "https://download.hanro50.net.za/maven",
+    forge: "https://download.hanro50.net.za/fmllibs",
+    armFix: "https://download.hanro50.net.za/java",
+    //z7: "https://download.hanro50.net.za/7-zip"
+}
+export function getRepositories() {
+    Object.keys(repositories).forEach(key => { if (!repositories[key].endsWith("/")) repositories[key] += "/" });
+    return JSON.parse(JSON.stringify(repositories))
+}
+/**The maven repo GMLL should pull Agenta and forgiac from */
+export function setMavenRepo(maven: string) {
+    repositories.maven = maven;
+}
+/**The forge archive GMLL should redirect requests to https://files.minecraftforge.net/fmllibs towards*/
+export function setForgeRepo(forge: string) {
+    repositories.forge = forge;
+}
+/**The location serving the resources needed for the arm fix to function*/
+export function setArmfixRepo(armFix: string) {
+    repositories.armFix = armFix;
+}
 
+/**The location serving 7zip binaries*/
+export function set7zipRepo(z7: string) {
+    _set7zipRepo(z7);
+}
 if (onUnsupportedArm) {
     console.warn("[GMLL]: Running on an non M1 Arm platform! We are desperate for dedicated testers!")
 }

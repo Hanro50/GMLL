@@ -1,6 +1,6 @@
 import { lawyer, getOS, assetTag, throwErr, classPathResolver, getErr, processAssets, getCpuArch, combine } from "./internal/util.js";
 import { resolve } from "path";
-import { emit, getAssets, getlibraries, getMeta, getNatives, getRuntimes, getUpdateConfig, onUnsupportedArm, __get } from "./config.js";
+import { emit, getAssets, getlibraries, getMeta, getNatives, getRepositories, getRuntimes, getUpdateConfig, onUnsupportedArm, __get } from "./config.js";
 import { cpus } from 'os';
 import Fetch from 'node-fetch';
 import { dir, download7zip, file, packAsync } from "./objects/files.js";
@@ -309,22 +309,32 @@ export async function getRuntimeIndexes(manifest: runtimeManifest) {
     }
 }
 
+export async function getForgiac() {
+    const forgiacURL = getRepositories().maven + "za/net/hanro50/forgiac/basic/1.9/basic-1.9.jar";
+    const forgiacSHA = forgiacURL + ".sha1";
+    const libsFolder = getlibraries().getDir("za", "net", "hanro50", "forgiac", "basic", "1.9").mkdir().getFile("basic-1.9.jar");
+    let rURL2 = await fetch(forgiacSHA);
+    if (rURL2.status == 200) {
+        await libsFolder.download(forgiacURL, { sha1: await rURL2.text() })
+    }
+
+    return libsFolder;
+}
 /**
  * Updates GMLL's manifest files. Used internally
  */
 export async function manifests() {
-
-
+    const repositories = getRepositories();
     const fabricLoader = "https://meta.fabricmc.net/v2/versions/loader/";
     const fabricVersions = "https://meta.fabricmc.net/v2/versions/game/";
 
     const mcRuntimes = "https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json";
     const mcVersionManifest = "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json";
 
-    const armRuntimes = "https://download.hanro50.net.za/java/index.json"
-    const armPatch = "https://download.hanro50.net.za/java/arm-patch.json"
+    const armRuntimes = repositories.armFix + "index.json"
+    const armPatch = repositories.armFix + "/arm-patch.json"
 
-    const agentaURL = "https://download.hanro50.net.za/maven/za/net/hanro50/agenta/1.6.1/agenta-1.6.1.jar"
+    const agentaURL = repositories.maven + "za/net/hanro50/agenta/1.6.1/agenta-1.6.1.jar"
 
     const update = getUpdateConfig();
     const meta = getMeta();
