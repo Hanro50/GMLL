@@ -41,16 +41,16 @@ export async function install(this: instance) {
 
         let security = false;
         //patch download files 
-        const insta = version.json.instance;
-        for (var i = 0; i < insta.files.length; i++) {
-            insta.files[i].path = [this.getDir().sysPath(), ...insta.files[i].path]
-            insta.files[i].path.forEach(e => {
+        const instance = version.json.instance;
+        for (var i = 0; i < instance.files.length; i++) {
+            instance.files[i].path = [this.getDir().sysPath(), ...instance.files[i].path]
+            instance.files[i].path.forEach(e => {
                 if (e.includes(".."))
                     security = true;
             })
-            new dir(...insta.files[i].path).mkdir()
-            if (insta.files[i].unzip) {
-                insta.files[i].unzip.file = [this.getDir().sysPath(), ...insta.files[i].unzip.file]
+            new dir(...instance.files[i].path).mkdir()
+            if (instance.files[i].unzip) {
+                instance.files[i].unzip.file = [this.getDir().sysPath(), ...instance.files[i].unzip.file]
             }
         }
         if (security) {
@@ -62,14 +62,14 @@ export async function install(this: instance) {
             throw "Security exception!\nFound '..' in file path which is not allowed as it allows one to escape the instance folder"
         }
 
-        await download(insta.files)
+        await download(instance.files)
         if (!chk.exists()) {
-            if (insta.meta)
-                this.meta = combine(this.meta, insta.meta);
-            if (insta.assets)
-                this.assets = combine(insta.assets, this.assets);
-            if (insta.forge) {
-                const fFile = this.getDir().getFile(...insta.forge.installer)
+            if (instance.meta)
+                this.meta = combine(this.meta, instance.meta);
+            if (instance.assets)
+                this.assets = combine(instance.assets, this.assets);
+            if (instance.forge) {
+                const fFile = this.getDir().getFile(...instance.forge.installer)
                 if (!fFile.exists()) {
                     throw "Cannot find forge installer"
                 }
@@ -167,15 +167,15 @@ export async function launch(this: instance, token: player, resolution?: { width
         port: 0
     }
     const javaPath = this.javaPath == "default" ? version.getJavaPath() : new file(this.javaPath);
-    const rawJVMargs: launchArguments = instance.defaultGameArguments;
-    rawJVMargs.push(...(versionJson.arguments?.jvm || instance.defJVM));
+    const rawJvmArgs: launchArguments = instance.defaultGameArguments;
+    rawJvmArgs.push(...(versionJson.arguments?.jvm || instance.defJVM));
 
     const agentFile = getAgentFile();
     if (!this.noLegacyFix && (version.manifest.releaseTime && Date.parse(version.manifest.releaseTime) < Date.parse("2014-04-14T17:29:23+00:00"))) {
-        if (agentFile.exists()) rawJVMargs.push(`-javaagent:${agentFile.sysPath()}`);
-        rawJVMargs.push(...instance.oldJVM);
+        if (agentFile.exists()) rawJvmArgs.push(`-javaagent:${agentFile.sysPath()}`);
+        rawJvmArgs.push(...instance.oldJVM);
     }
-    var jvmArgs = parseArguments(args, rawJVMargs);
+    var jvmArgs = parseArguments(args, rawJvmArgs);
 
     let gameArgs = versionJson.arguments ? parseArguments(args, versionJson.arguments.game) : "";
     gameArgs += versionJson.minecraftArguments ? "\x00" + versionJson.minecraftArguments.replace(/\s/g, "\x00") : "";
@@ -187,7 +187,7 @@ export async function launch(this: instance, token: player, resolution?: { width
     emit("jvm.start", "Minecraft", this.getDir().sysPath());
     const launchArgs = launchCom.trim().split("\x00");
     if (launchArgs[0] == '') launchArgs.shift();
-    const s = spawn(javaPath.sysPath(), launchArgs, { "cwd": join(this.getDir().sysPath()), "env": combine(process.env, this.env) })
+    const s = spawn(javaPath.sysPath(), launchArgs, { "cwd": join(this.getDir().sysPath()), "env": combine(process.env, this.env),"detached":this.detach })
     s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
     s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
 }

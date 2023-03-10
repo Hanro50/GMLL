@@ -10,7 +10,7 @@ await init();
 import {auth } from "msmc";
 import { getLauncherVersion } from "gmll/config";
 const token =(await (await new auth("select_account").launch("raw")).getMinecraft()).gmll() //(new auth("select_account"));
-const i = new instance({version:"1.19.3-forge-44.1.22"});
+const i = new instance({version:"b1.7.3"});
 i.setIcon("icon_32x32.png", "icon_16x16.png");
 //await i.installForge()
 //await installForge();

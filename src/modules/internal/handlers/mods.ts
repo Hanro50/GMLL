@@ -1,14 +1,12 @@
-import { spawn } from "child_process";
-import { getAssets, getlibraries, onUnsupportedArm, getInstances, getVersions, getMeta, emit } from "../../config.js";
-import { runtime } from "../../downloader.js";
-import { getJavaPath, installForge as _installForge } from "../../handler.js";
+import { getAssets } from "../../config.js";
+import { installForge as _installForge } from "../../handler.js";
 import { dir, file, packAsync } from "../../objects/files.js";
 import instance from "../../objects/instance.js";
 import version from "../../objects/version.js";
 import { platform } from "os";
-import { downloadableFile, versionJson, versionManifest, instancePackConfig, mcRuntimeVal, instanceMetaPaths } from "types.js";
+import { downloadableFile, versionJson, versionManifest, instancePackConfig, instanceMetaPaths } from "types.js";
 
-import { assetTag, fsSanitizer, throwErr } from "../util.js";
+import { assetTag, fsSanitizer } from "../util.js";
 /**Gets the load order of minecraft jars in jar mod loader. */
 export async function getJarModPriority(this: instance) {
     return (await this.getMetaPaths()).jarmods.getFile("priority.json").load<{ [key: string]: number }>({})
@@ -25,9 +23,9 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
     if (typeof save == "string") save = new dir(save);
     await this.install();
     const blacklist = ["usercache.json", "realms_persistence.json", "logs", "profilekeys", "usernamecache.json"]
-    const seperate = ["resourcepacks", "texturepacks", "mods", "coremods", "jarmods", "shaderpacks"]
+    const separate = ["resourcepacks", "texturepacks", "mods", "coremods", "jarmods", "shaderpacks"]
     const dynamic = ["saves", "config"]
-    const bunlde = ["saves"]
+    const bundle = ["saves"]
     const pack = ["config"]
 
     const me = this.getDir();
@@ -48,12 +46,12 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
             })
         }
     }
-    seperate.forEach(e => {
+    separate.forEach(e => {
         cp(me.getDir(e), [e]);
     })
     const data = save.getDir(".data").mkdir();
-    for (var i = 0; i < bunlde.length; i++) {
-        const e = bunlde[i]
+    for (var i = 0; i < bundle.length; i++) {
+        const e = bundle[i]
         const ls = me.getDir(e).ls();
         for (var k = 0; k < ls.length; k++) {
             const e2 = ls[k]
@@ -81,25 +79,25 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
 
     const ls2 = me.ls()
     const zip = "misc.zip";
-    const mzip = data.getFile(zip).mkdir();
-    const avoid = [...seperate, ...bunlde, ...blacklist, ...pack]
+    const miscZip = data.getFile(zip).mkdir();
+    const avoid = [...separate, ...bundle, ...blacklist, ...pack]
     if (this.assets && this.assets.objects) {
-        const assetz = save.getDir("assets").mkdir();
+        const assetDir = save.getDir("assets").mkdir();
         Object.values(this.assets.objects).forEach((e) => {
-            assetTag(getAssets().getDir("objects"), e.hash).getFile(e.hash).copyTo(assetTag(assetz.getDir("objects"), e.hash).mkdir().getFile(e.hash))
+            assetTag(getAssets().getDir("objects"), e.hash).getFile(e.hash).copyTo(assetTag(assetDir.getDir("objects"), e.hash).mkdir().getFile(e.hash))
         })
-        await packAsync(assetz.sysPath(), mzip.sysPath());
+        await packAsync(assetDir.sysPath(), miscZip.sysPath());
 
-        assetz.rm();
+        assetDir.rm();
     }
     if (!trimMisc)
         for (var k = 0; k < ls2.length; k++) {
             const e = ls2[k];
             if (!e.islink() && !avoid.includes(e.getName()) && !e.getName().startsWith("."))
-                await packAsync(e.sysPath(), mzip.sysPath());
+                await packAsync(e.sysPath(), miscZip.sysPath());
 
         }
-    if (mzip.exists()) {
+    if (miscZip.exists()) {
         resources.push(
             {
                 unzip: { file: [] },
@@ -107,7 +105,7 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
                 name: "misc.zip",
                 path: [".data"],
                 url: [baseUrl, ".data", zip].join("/"),
-                chk: { sha1: mzip.getHash(), size: mzip.getSize() }
+                chk: { sha1: miscZip.getHash(), size: miscZip.getSize() }
             }
         );
     } else {
@@ -123,8 +121,8 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
 
         id: name
     }
-    const verfile = save.getDir(".meta").mkdir().getFile("version.json");
-    let Fversion = this.version;
+    const versionFile = save.getDir(".meta").mkdir().getFile("version.json");
+    let finalVersion = this.version;
     if (forge) {
         let _forge: file;
         if (forge instanceof file) _forge = forge;
@@ -133,17 +131,17 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
         const path = save.getDir(".forgiac").rm().mkdir();
         const _manifest = await _installForge(_forge, ["--.minecraft", path.sysPath()])
         const forgePath = save.getDir("forge").mkdir();
-        Fversion = _manifest.id;
+        finalVersion = _manifest.id;
         _forge.copyTo(forgePath.getFile(_forge.getName()));
         ver.instance.files.push({ key: _forge.getName(), name: _forge.getName(), path: ["forge"], url: [baseUrl, "forge", _forge.getName()].join("/"), chk: { sha1: _forge.getHash(), size: _forge.getSize() } })
         ver.instance.forge = { installer: ["forge", _forge.getName()] };
 
         path.rm();
     }
-    ver.inheritsFrom = Fversion;
-    verfile.write(ver);
+    ver.inheritsFrom = finalVersion;
+    versionFile.write(ver);
     const manifest: versionManifest = {
-        id: name, type: "custom", sha1: verfile.getHash(), base: Fversion, url: baseUrl + "/" + ".meta/version.json", "_comment": "Drop this into gmll's manifest folder",
+        id: name, type: "custom", sha1: versionFile.getHash(), base: finalVersion, url: baseUrl + "/" + ".meta/version.json", "_comment": "Drop this into gmll's manifest folder",
     }
     delete manifest._comment;
     save.getFile(".meta", "manifest.json").write(manifest);

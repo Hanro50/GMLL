@@ -241,6 +241,32 @@ export class file extends dir {
         }
         return d;
     }
+    /**
+     * 0 Full redownload
+     * 1 unzip only 
+     * 2 fine
+     * 
+     */
+    static check(json: Partial<downloadableFile>) {
+        let f = new this(...json.path, json.name);
+        let i = 2;
+        if (json.dynamic && f.exists()) return 2;
+        if (json.executable || json.unzip) i = 1;
+        if (!json.chk || !json.path || !json.name) return 0;
+        return f.chkSelf(json.chk) ? 0 : i;
+    }
+    async expand(json: Partial<downloadableFile>, zipDir: dir) {
+        if (json.unzip) {
+            await this.unzip(new dir(...json.unzip.file), json.unzip.exclude, zipDir);
+        }
+        if (json.executable) {
+            if (typeof json.executable == "boolean")
+                this.chmod();
+            else
+                new file(json.executable).chmod();
+
+        }
+    }
 
     static async process(json: downloadableFile, zipDir: dir) {
         let f = new this(...json.path, json.name);
@@ -248,17 +274,8 @@ export class file extends dir {
             return;
         }
         await f.download(json.url, json.chk);
+        await f.expand(json, zipDir);
 
-        if (json.unzip) {
-            await f.unzip(new dir(...json.unzip.file), json.unzip.exclude, zipDir);
-        }
-        if (json.executable) {
-            if (typeof json.executable == "boolean")
-                f.chmod();
-            else
-                new file(json.executable).chmod();
-
-        }
     }
     /**Similar to {@link extract}, but uses a blacklist approach */
     unzip(path: dir, exclude?: string[], zipDir?: dir) {
@@ -320,8 +337,9 @@ export async function download7zip(dir: dir, os: "linux" | "windows" | "osx", ar
     }
     if (os == "osx" && !arch.endsWith("64")) throw "32 bit macOS is not currently supported!";
     if (!z7Repo.endsWith("/")) z7Repo += "/";
-    console.log(`${z7Repo}${os}${arch}`)
-    await files.file.download(`${z7Repo}${os}/${arch}/${platform() == 'win32' ? "7za.exe" : "7za"}`, chk);
+    const link = `${z7Repo}${os}/${arch}/${platform() == 'win32' ? "7za.exe" : "7za"}`;
+    console.log(link)
+    await files.file.download(link, chk);
     files.info.write({ size: files.file.getSize(), sha1: files.file.getHash() })
     files.file.chmod();
     return files.file;

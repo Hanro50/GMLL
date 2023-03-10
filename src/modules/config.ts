@@ -4,7 +4,7 @@ import { dir, file, set7zipRepo as _set7zipRepo } from "./objects/files.js";
 import { getCpuArch, getErr, throwErr } from "./internal/util.js";
 import { type } from "os";
 import type instance from "./objects/instance.js";
-import { getPath } from "./internal/root.js"
+import { getPath } from "./internal/root.cjs"
 export let __get = getPath();
 if (!__get.endsWith("get.js")) {
     console.warn("[GMLL]: The internal downloader script may not be within it's own file. GMLL will use the much slower fallback downloader!");
@@ -50,10 +50,7 @@ let _packageJSON: { version?: string, name?: string } = _packageFile.exists() ? 
 let version = _packageJSON.version || "0.0.0";
 let launcherName = _packageJSON.name || "GMLL";
 
-
 const startUpCalls: Array<() => void | Promise<void>> = [];
-
-
 
 export function isInitialized() {
     if (!initialized) {
@@ -61,7 +58,6 @@ export function isInitialized() {
     }
 }
 export interface Events {
-
     /**
      * start=>Used when the downloader starts up
      * restart=>Used when the downloader has detected a timeout and decides to reset so it can try again
@@ -140,15 +136,11 @@ defEvents.on('download.fail', (key, type, err) => {
         case ("system"): console.log(getErr("Failed to download " + key + " due to an error \n" + err)); break;
     }
 });
-defEvents.on('jvm.start', (app, cwd) => {
-    console.log((`[${app}]: Starting in directory <${cwd}>`).trim());
-});
-defEvents.on('jvm.stdout', (app, out) => {
-    console.log((`[${app}]: ${out}`).trim());
-});
-defEvents.on('jvm.stderr', (app, out) => {
-    console.log(`\x1b[31m\x1b[1m[${app}]: ${out}`.trim() + "\x1b[0m");
-});
+//JVM events
+defEvents.on('jvm.start', (app, cwd) => console.log((`[${app}]: Starting in directory <${cwd}>`).trim()));
+defEvents.on('jvm.stdout', (app, out) => console.log((`[${app}]: ${out}`).trim()));
+defEvents.on('jvm.stderr', (app, out) => console.log(`\x1b[31m\x1b[1m[${app}]: ${out}`.trim() + "\x1b[0m"));
+
 var updateConf: update[] = ["fabric", "vanilla", "runtime", "agent"];
 
 var files: { assets: dir, libraries: dir, instances: dir, versions: dir, runtimes: dir, launcher: dir, natives: dir }

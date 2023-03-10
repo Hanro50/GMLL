@@ -59,11 +59,9 @@ export default class version {
     }
     /**
      * @returns Gets the version json file. 
-     * @see {@link json} for synchronious way to access this. The {@link get} method already calls this function and saves it accordingly. 
+     * @see {@link json} for synchronous way to access this. The {@link get} method already calls this function and saves it accordingly. 
      */
     async getJSON(): Promise<versionJson> {
-
-
         const folder_old = getVersions().getDir(this.manifest.id);
         const file_old = folder_old.getFile(this.manifest.id + ".json");
         if (this.json && !this._mergeFailure)

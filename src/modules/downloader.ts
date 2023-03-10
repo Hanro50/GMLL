@@ -20,21 +20,31 @@ const postCMD = "download.post";
  * @param obj The objects that will be downloaded
  */
 export function download(obj: Partial<downloadableFile>[]): Promise<void> {
-
-
-    if (obj.length <= 0) {
-        emit('download.done');
-        return;
-    }
     emit("download.started");
     obj.sort((a, b) => { return (b.chk.size || Number.MAX_VALUE) - (a.chk.size || Number.MAX_VALUE) });
     let temp = {};
-    obj.forEach((e) => temp[e.key] = e);
+    let unzip: { [key: string]: Partial<downloadableFile> } = {};
+    obj.forEach((e) => {
+        switch (file.check(e)) {
+            case (0): temp[e.key] = e; break;
+            case (1): unzip[e.key] = e; break;
+        }
+    });
     const totalItems = Object.values(temp).length;
+    let _zips: Promise<void>[] = [];
+    Object.values(unzip).forEach(json => {
+        _zips.push(new file(...json.path, json.name).expand(json, getMeta().bin));
+    });
 
+    if (totalItems <= 0) {
+        emit('download.done');
+        //@ts-ignore
+        return Promise.all(_zips);
+    }
+    console.log(totalItems)
     return new Promise<void>(async res => {
+        await Promise.all(_zips);
         const numCPUs = Math.max(cpus().length, 2);
-
         if (new file(__get).exists()) {
             emit("download.setup", numCPUs);
             var done = 0;
@@ -224,7 +234,7 @@ export async function libraries(version: versionJson) {
     const OS = getOS();
     const libraries = version.libraries;
     for (var key = 0; key < libraries.length; key++) {
-        var dload: file;
+        var finalDownload: file;
         const e = libraries[key]
         if (e.rules) {
             if (!lawyer(e.rules)) continue;
@@ -232,8 +242,8 @@ export async function libraries(version: versionJson) {
         if (e.downloads) {
             if (e.downloads.classifiers && e.natives && e.natives[OS] && e.downloads.classifiers[e.natives[OS]]) {
                 const art = e.downloads.classifiers[e.natives[OS]];
-                var dload2 = getlibraries().getFile(art.path);
-                arr.push(dload2.toDownloadable(art.url, art.path, { sha1: art.sha1, size: art.size }, { unzip: { file: natives, exclude: e.extract ? e.extract.exclude : undefined } }));
+                var subDownload = getlibraries().getFile(art.path);
+                arr.push(subDownload.toDownloadable(art.url, art.path, { sha1: art.sha1, size: art.size }, { unzip: { file: natives, exclude: e.extract ? e.extract.exclude : undefined } }));
             }
 
             if (e.downloads.artifact) {
@@ -242,9 +252,9 @@ export async function libraries(version: versionJson) {
                     const path = namespec[0].replace(/\./g, "/") + "/" + namespec[1] + "/" + namespec[2] + "/" + namespec[1] + "-" + namespec[2] + ".jar";
                     e.downloads.artifact.path = path;
                 }
-                dload = getlibraries().getFile(e.downloads.artifact.path);
-                dload.mkdir()
-                arr.push(dload.toDownloadable(e.downloads.artifact.url, e.downloads.artifact.path, { sha1: e.downloads.artifact.sha1, size: e.downloads.artifact.size }));
+                finalDownload = getlibraries().getFile(e.downloads.artifact.path);
+                finalDownload.mkdir()
+                arr.push(finalDownload.toDownloadable(e.downloads.artifact.url, e.downloads.artifact.path, { sha1: e.downloads.artifact.sha1, size: e.downloads.artifact.size }));
             }
         } else {
             if (!e.url) e.url = "https://libraries.minecraft.net/";
@@ -279,7 +289,7 @@ export async function getRuntimeIndexes(manifest: runtimeManifest) {
         case ("windows"):
             if (onUnsupportedArm && "windows-arm64" in manifest) {
                 platform = "windows-arm64";
-                console.warn("[GMLL]: Loading intel fallback for Windows on arm. Please contact devs if this bugs out.")
+                console.warn("[GMLL]: Loading intel fallback for Windows on arm. Please contact GMLL's developer if this bugs out.")
                 for (const key of Object.keys(manifest[platform]))
                     if (manifest[platform][key].length < 1) manifest[platform][key] = manifest["windows-x86"][key];
                 break;
@@ -293,7 +303,7 @@ export async function getRuntimeIndexes(manifest: runtimeManifest) {
             if (getCpuArch() == "arm64") {
                 platform = "mac-os-arm64";
                 //Intel fallback for m1
-                console.warn("[GMLL]: Loading intel fallback for M1. Please contact devs if this bugs out.")
+                console.warn("[GMLL]: Loading intel fallback for M1. Please contact GMLL's developer if this bugs out.")
                 for (const key of Object.keys(manifest[platform]))
                     if (manifest[platform][key].length < 1) manifest[platform][key] = manifest["mac-os"][key];
             } else {
@@ -361,12 +371,12 @@ export async function manifests() {
     }
     if (update.includes("fabric")) {
         try {
-            const jsgame = (await meta.index.getFile("fabric_game.json").download(fabricVersions)).toJSON<[jsgameInf]>();
-            const jsloader = (await meta.index.getFile("fabric_loader.json").download(fabricLoader)).toJSON<[jsLoaderInf]>();
+            const jsGame = (await meta.index.getFile("fabric_game.json").download(fabricVersions)).toJSON<[jsgameInf]>();
+            const jsLoader = (await meta.index.getFile("fabric_loader.json").download(fabricLoader)).toJSON<[jsLoaderInf]>();
             const result = [];
-            jsgame.forEach(game => {
+            jsGame.forEach(game => {
                 const version = game.version;
-                jsloader.forEach(l => {
+                jsLoader.forEach(l => {
                     result.push({
                         id: "fabric-loader-" + l.version + "-" + version,
                         base: version,

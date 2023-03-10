@@ -13,19 +13,20 @@ import * as launchHandler from "../internal/handlers/launch.js";
  * This information on where the game is stored and the like. The mods installed and what not. 
  */
 export default class instance {
-    [x: string]: any;
-
-    /**@param opt This parameter contains information vital to constructing the instance. That being said, GMLL will never the less pull in default values if it is emited*/
-    protected path: string;
-    protected version: string;
-    protected name: string;
-    protected env: any;
-
-    protected ram: number;
-    protected meta: any;
     protected assets: Partial<assetIndex>;
-    protected javaPath: "default" | string;
-    protected noLegacyFix: boolean;
+    
+    path: string;
+    version: string;
+    name: string;
+    env: any;
+
+    ram: number;
+    meta: any;
+   
+    javaPath: "default" | string;
+    noLegacyFix: boolean;
+
+    detach: boolean;
 
     /**Additional arguments added for legacy versions */
     public static oldJVM = [
@@ -67,6 +68,7 @@ export default class instance {
         this.javaPath = opt.javaPath || "default";
         this.env = opt.env || {};
         this.noLegacyFix = opt.noLegacyFix || false;
+        this.detach = opt.detach || false;
         this.getDir().mkdir();
         const MESA = "MESA_GL_VERSION_OVERRIDE"
         if (!["x64", "arm64", "ppc64"].includes(getCpuArch()) && this.ram > 1.4) {

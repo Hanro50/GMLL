@@ -1,8 +1,9 @@
 /*
  * This is the core of the download manager. No code from the main thread should interact with it!
- * DO NOT WRAP THIS FUNCTION UP WITH WEBPACK IF YOU DO NOT WANT THINGS TO BREAK BADLY. 
+ * If GMLL is unable to reach this library then it will use a slower fallback.
  * 
  * Redefine the property __get in the config module to change where GMLL looks for this file.
+ * ^ If you want to reinable the faster downloader.
  */
 
 import { dir, file } from "../objects/files";

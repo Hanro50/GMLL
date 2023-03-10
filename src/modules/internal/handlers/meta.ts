@@ -26,10 +26,10 @@ export async function getMetaPaths(this:instance): Promise<instanceMetaPaths> {
 async function getIcon(file:file,d:dir ,jarPath: string) {
     if (!jarPath || jarPath.length < 1) return null
     file.extract(d, [jarPath]);
-    const fjar = jarPath.split("/");
-    console.log(fjar)
-    const flogo = d.getFile(...fjar)
-    if (flogo.exists()) return `data:image/png;base64,${flogo.toBase64()}`
+    const jarFile = jarPath.split("/");
+    console.log(jarFile)
+    const logoFile = d.getFile(...jarFile)
+    if (logoFile.exists()) return `data:image/png;base64,${logoFile.toBase64()}`
     return null
 }
 /**
@@ -51,73 +51,73 @@ export async function getMods(this:instance): Promise<modInfo[]> {
             const fname = prefix ? join(prefix, name) : name;
             const d = tmp.getDir(fname).mkdir();
             await file.extract(d, ["mcmod.info", "fabric.mod.json", "litemod.json", "riftmod.json", "META-INF/mods.toml", "META-INF/MANIFEST.MF"]);
-            let rfile: file;
+            let metaFile: file;
             
             //Legacy forge
-            if ((rfile = d.getFile("mcmod.info")).exists()) {
-                type minfo = [{ "modid": string, "name": string, "mcversion": string, "description": string, "version": string, "credits": string, "authorsList"?: string[], "authors"?: string[], "logoFile": string, "url": string, "updateUrl": string, "parent": string, "screenshots": string[], "dependencies": string[] }]
-                let minfos = rfile.toJSON<minfo>();
-                for (let minfo of minfos) {
-                    let icon = await getIcon(file,d,minfo.logoFile);
+            if ((metaFile = d.getFile("mcmod.info")).exists()) {
+                type mcInfo = [{ "modid": string, "name": string, "mcversion": string, "description": string, "version": string, "credits": string, "authorsList"?: string[], "authors"?: string[], "logoFile": string, "url": string, "updateUrl": string, "parent": string, "screenshots": string[], "dependencies": string[] }]
+                let mcInfoJson = metaFile.toJSON<mcInfo>();
+                for (let mcInfoVal of mcInfoJson) {
+                    let icon = await getIcon(file,d,mcInfoVal.logoFile);
                     mods.push({
-                        id: minfo.modid,
-                        authors: minfo.authorsList ? minfo.authorsList : minfo.authors,
+                        id: mcInfoVal.modid,
+                        authors: mcInfoVal.authorsList ? mcInfoVal.authorsList : mcInfoVal.authors,
                         loader: "forge",
-                        name: minfo.name ? (prefix ? join(prefix, minfo.name) : minfo.name) : name,
-                        version: minfo.version,
+                        name: mcInfoVal.name ? (prefix ? join(prefix, mcInfoVal.name) : mcInfoVal.name) : name,
+                        version: mcInfoVal.version,
                         path: file,
-                        depends: minfo.dependencies,
-                        screenshots: minfo.screenshots,
-                        parent: minfo.parent,
-                        updateUrl: minfo.updateUrl,
-                        url: minfo.url,
-                        description: minfo.description,
-                        credits: minfo.credits,
-                        mcversion: minfo.mcversion,
+                        depends: mcInfoVal.dependencies,
+                        screenshots: mcInfoVal.screenshots,
+                        parent: mcInfoVal.parent,
+                        updateUrl: mcInfoVal.updateUrl,
+                        url: mcInfoVal.url,
+                        description: mcInfoVal.description,
+                        credits: mcInfoVal.credits,
+                        mcversion: mcInfoVal.mcversion,
                         icon, type
                     })
                 }
                 return
             }
             //Fabric and rift
-            if ((rfile = d.getFile("fabric.mod.json")).exists() || (rfile = d.getFile("riftmod.json")).exists()) {
-                type finfo = { "schemaVersion": number, "id": string, "version": string, "name": string, "description": string, "authors": string[], "contact": { "homepage": string, "sources": string }, "license": string, "icon": string, "environment": string, "entrypoints": { "main": string[], "client": string[] }, "mixins": string[], "depends": { [key: string]: string }, "suggests": { [key: string]: string } }
-                let minfo = rfile.toJSON<finfo>();
-                let icon = await  getIcon(file,d,minfo.icon);
+            if ((metaFile = d.getFile("fabric.mod.json")).exists() || (metaFile = d.getFile("riftmod.json")).exists()) {
+                type fabricMod = { "schemaVersion": number, "id": string, "version": string, "name": string, "description": string, "authors": string[], "contact": { "homepage": string, "sources": string }, "license": string, "icon": string, "environment": string, "entrypoints": { "main": string[], "client": string[] }, "mixins": string[], "depends": { [key: string]: string }, "suggests": { [key: string]: string } }
+                let metaInfo = metaFile.toJSON<fabricMod>();
+                let icon = await  getIcon(file,d,metaInfo.icon);
                 mods.push({
-                    id: minfo.id,
-                    authors: minfo.authors,
-                    loader: rfile.getName().endsWith("fabric.mod.json") ? "fabric" : "riftMod",
-                    name: minfo.name ? (prefix ? join(prefix, minfo.name) : minfo.name) : name,
-                    version: minfo.version,
+                    id: metaInfo.id,
+                    authors: metaInfo.authors,
+                    loader: metaFile.getName().endsWith("fabric.mod.json") ? "fabric" : "riftMod",
+                    name: metaInfo.name ? (prefix ? join(prefix, metaInfo.name) : metaInfo.name) : name,
+                    version: metaInfo.version,
                     path: file,
-                    depends: minfo.depends,
-                    description: minfo.description,
-                    url: minfo.contact?.homepage,
-                    source: minfo.contact?.sources,
-                    licence: minfo.license,
+                    depends: metaInfo.depends,
+                    description: metaInfo.description,
+                    url: metaInfo.contact?.homepage,
+                    source: metaInfo.contact?.sources,
+                    licence: metaInfo.license,
                     icon, type
                 })
                 return
             }
             //LiteLoader
-            if ((rfile = d.getFile("litemod.json")).exists()) {
+            if ((metaFile = d.getFile("litemod.json")).exists()) {
                 type liteInf = { name: string, displayName: string, version: string, author: string, mcversion: string, revision: string, description: string, url: string }
-                let minfo = rfile.toJSON<liteInf>();
+                let lintInfJson = metaFile.toJSON<liteInf>();
                 mods.push({
-                    id: minfo.name,
-                    name: minfo.name ? (prefix ? join(prefix, minfo.name) : minfo.name) : name,
-                    authors: [minfo.author],
-                    version: minfo.version || minfo.revision || "unknown",
+                    id: lintInfJson.name,
+                    name: lintInfJson.name ? (prefix ? join(prefix, lintInfJson.name) : lintInfJson.name) : name,
+                    authors: [lintInfJson.author],
+                    version: lintInfJson.version || lintInfJson.revision || "unknown",
                     loader: "liteLoader",
-                    description: minfo.description,
+                    description: lintInfJson.description,
                     type, path: file
                 })
                 return
             }
             //Modern forge
-            if ((rfile = d.getFile("META-INF", "mods.toml")).exists()) {
-                let mfinal: modInfo = {
+            if ((metaFile = d.getFile("META-INF", "mods.toml")).exists()) {
+                let modInfoJson: modInfo = {
                     type,
                     id: "unknown",
                     authors: [],
@@ -134,23 +134,23 @@ export async function getMods(this:instance): Promise<modInfo[]> {
                     ordering: "",
                     side: ""
                 };
-                let lines = rfile.read().split("\n");
+                let lines = metaFile.read().split("\n");
 
-                let inmodHeader = false
+                let inModHeader = false
                 let independency = false
 
                 let state1Map = new Map();
-                state1Map.set("license", (val: string) => mfinal.licence = val)
-                state1Map.set("credits", (val: string) => mfinal.credits = val)
-                state1Map.set("logoFile", async (val: string) => mfinal.icon = await  getIcon(file,d,val))
+                state1Map.set("license", (val: string) => modInfoJson.licence = val)
+                state1Map.set("credits", (val: string) => modInfoJson.credits = val)
+                state1Map.set("logoFile", async (val: string) => modInfoJson.icon = await  getIcon(file,d,val))
                 let state2Map = new Map();
-                state2Map.set("modId", (val: string) => mfinal.id = val)
-                state2Map.set("version", (val: string) => mfinal.version = val)
-                state2Map.set("displayURL", (val: string) => mfinal.url = val)
-                state2Map.set("updateJSONURL", (val: string) => mfinal.updateUrl = val)
-                state2Map.set("credits", (val: string) => mfinal.credits = val)
-                state2Map.set("authors", (val: string) => { try { mfinal.authors = val.startsWith("[") ? JSON.parse(val) : [val]; } catch { mfinal.authors = [val] } })
-                state2Map.set("description", (val: string) => mfinal.description = val)
+                state2Map.set("modId", (val: string) => modInfoJson.id = val)
+                state2Map.set("version", (val: string) => modInfoJson.version = val)
+                state2Map.set("displayURL", (val: string) => modInfoJson.url = val)
+                state2Map.set("updateJSONURL", (val: string) => modInfoJson.updateUrl = val)
+                state2Map.set("credits", (val: string) => modInfoJson.credits = val)
+                state2Map.set("authors", (val: string) => { try { modInfoJson.authors = val.startsWith("[") ? JSON.parse(val) : [val]; } catch { modInfoJson.authors = [val] } })
+                state2Map.set("description", (val: string) => modInfoJson.description = val)
 
                 let state3Map = new Map();
                 state3Map.set("modId", (val: string) => dep.modId = val)
@@ -176,31 +176,31 @@ export async function getMods(this:instance): Promise<modInfo[]> {
                         raw[0] = raw[0].trim();
                         if (state1Map.has(raw[0])) { await state1Map.get(raw[0])(raw[1]); continue; }
                         if (independency && state3Map.has(raw[0])) { await state3Map.get(raw[0])(raw[1]); continue; }
-                        if (inmodHeader && state2Map.has(raw[0])) { await state2Map.get(raw[0])(raw[1]); continue; }
+                        if (inModHeader && state2Map.has(raw[0])) { await state2Map.get(raw[0])(raw[1]); continue; }
 
                     } else if (line.startsWith("[[mods")) {
-                        inmodHeader = true;
+                        inModHeader = true;
                     } else if (line.startsWith("[[dependencies")) {
-                        inmodHeader = false;
+                        inModHeader = false;
                         if (independency) {
-                            if (!(mfinal.depends instanceof Array)) mfinal.depends = [];
-                            mfinal.depends.push(dep)
+                            if (!(modInfoJson.depends instanceof Array)) modInfoJson.depends = [];
+                            modInfoJson.depends.push(dep)
                             dep = { modId: "", mandatory: false, versionRange: "", ordering: "", side: "" };
                         } else {
-                            mfinal.depends = [];
+                            modInfoJson.depends = [];
                         }
                         independency = true;
                     }
                 }
-                if (mfinal.depends instanceof Array) {
-                    mfinal.depends.push(dep)
+                if (modInfoJson.depends instanceof Array) {
+                    modInfoJson.depends.push(dep)
                 }
-                mods.push(mfinal);
+                mods.push(modInfoJson);
                 return
             }
             //Unknown modloader
-            if ((rfile = d.getFile("META-INF", "MANIFEST.MF")).exists()) {
-                let mfinal: modInfo = {
+            if ((metaFile = d.getFile("META-INF", "MANIFEST.MF")).exists()) {
+                let metaInfFinal: modInfo = {
                     type,
                     id: "unknown",
                     authors: [],
@@ -211,22 +211,22 @@ export async function getMods(this:instance): Promise<modInfo[]> {
                     depends: [] as forgeDep[]
                 };
 
-                let lines = rfile.read().split("\n");
+                let lines = metaFile.read().split("\n");
                 let state1Map = new Map();
-                state1Map.set("Manifest-Version", (val: string) => mfinal.version = val)
+                state1Map.set("Manifest-Version", (val: string) => metaInfFinal.version = val)
 
-                state1Map.set("Specification-Title", (val: string) => mfinal.name = val)
-                state1Map.set("Specification-Vendor", (val: string) => { if (!mfinal.authors.includes(val)) mfinal.authors.push(val) })
-                state1Map.set("Specification-Version", (val: string) => mfinal.version = val)
+                state1Map.set("Specification-Title", (val: string) => metaInfFinal.name = val)
+                state1Map.set("Specification-Vendor", (val: string) => { if (!metaInfFinal.authors.includes(val)) metaInfFinal.authors.push(val) })
+                state1Map.set("Specification-Version", (val: string) => metaInfFinal.version = val)
 
-                state1Map.set("Implementation-Title", (val: string) => mfinal.name = val)
-                state1Map.set("Implementation-Version", (val: string) => mfinal.version = val)
-                state1Map.set("Implementation-Vendor", (val: string) => { if (!mfinal.authors.includes(val)) mfinal.authors.push(val) })
+                state1Map.set("Implementation-Title", (val: string) => metaInfFinal.name = val)
+                state1Map.set("Implementation-Version", (val: string) => metaInfFinal.version = val)
+                state1Map.set("Implementation-Vendor", (val: string) => { if (!metaInfFinal.authors.includes(val)) metaInfFinal.authors.push(val) })
 
-                state1Map.set("Automatic-Module-Name", (val: string) => mfinal.id = val)
+                state1Map.set("Automatic-Module-Name", (val: string) => metaInfFinal.id = val)
 
-                state1Map.set("Fabric-Minecraft-Version", (val: string) => mfinal.mcversion = val)
-                state1Map.set("Fabric-Loom-Version", () => mfinal.loader = "fabric")
+                state1Map.set("Fabric-Minecraft-Version", (val: string) => metaInfFinal.mcversion = val)
+                state1Map.set("Fabric-Loom-Version", () => metaInfFinal.loader = "fabric")
 
                 for (let i = 0; i < lines.length; i++) {
                     let line = lines[i];
@@ -240,7 +240,7 @@ export async function getMods(this:instance): Promise<modInfo[]> {
                     raw[0] = raw[0].trim();
                     if (state1Map.has(raw[0])) { await state1Map.get(raw[0])(raw[1]); continue; }
                 }
-                mods.push(mfinal);
+                mods.push(metaInfFinal);
                 return
             }
             emit('parser.fail', 'mod', "Possibly missing mod data!", file);
@@ -305,21 +305,21 @@ export async function getWorlds(this:instance): Promise<metaSave[]> {
             if (e instanceof file) return;
             const DAT = e.getFile("level.dat");
             const IMG = e.getFile("icon.png");
-            const PDAT = e.getDir("playerdata");
-            const PSTAT = e.getDir("stats");
+            const PLAYERDATA = e.getDir("playerdata");
+            const PLAYERSTATS = e.getDir("stats");
             let icon = undefined;
             if (!DAT.exists()) return;
             if (IMG.exists()) icon = IMG.sysPath();
             const level = await readDat<levelDat>(DAT);
             let players: metaSave["players"] = {};
-            if (PDAT.exists()) {
-                for (const plr of PDAT.ls()) {
+            if (PLAYERDATA.exists()) {
+                for (const plr of PLAYERDATA.ls()) {
                     if (plr instanceof file && plr.name.endsWith(".dat")) {
                         try {
                             const nm = plr.name.substring(0, plr.name.length - 4);
                             const PD = await readDat<playerDat>(plr);
                             let stats = undefined;
-                            const statefile = PSTAT.getFile(`${nm}.json`);
+                            const statefile = PLAYERSTATS.getFile(`${nm}.json`);
                             if (statefile.exists())
                                 stats = statefile.toJSON<playerStats>();
                             players[nm] = { "data": PD, stats };
@@ -376,12 +376,12 @@ export async function getResourcePacks(this:instance): Promise<metaResourcePack[
                 description = r[randomInt(0, Math.min(r.length, 200))]
             }
         }
-        let lfile = d.getFile("licence.txt");
-        if (!lfile.exists()) lfile = d.getFile("license.txt");
-        if (!lfile.exists()) lfile = d.getFile("terms of use.txt");
-        let license = lfile.exists() ? lfile.read() : null
-        const lcred = d.getFile("credits.txt");
-        let credits = lcred.exists() ? lcred.read() : null
+        let licenseFile = d.getFile("licence.txt");
+        if (!licenseFile.exists()) licenseFile = d.getFile("license.txt");
+        if (!licenseFile.exists()) licenseFile = d.getFile("terms of use.txt");
+        let license = licenseFile.exists() ? licenseFile.read() : null
+        const creditsFile = d.getFile("credits.txt");
+        let credits = creditsFile.exists() ? creditsFile.read() : null
 
         return { credits, license, name, description, format, icon, path: source }
     }

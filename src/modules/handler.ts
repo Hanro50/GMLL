@@ -177,5 +177,10 @@ export async function importLink(url: string, name?: string): Promise<instance |
  * @returns The location of the have executable. 
  */
 export function getJavaPath(java: mcRuntimeVal = "jre-legacy") {
-    return getRuntimes().getFile(java, "bin", getOS() == "windows" ? "java.exe" : "java");
+    if (getOS() == "windows") {
+        const f = getRuntimes().getFile(java, "bin", "javaw.exe");
+        if (f.exists()) return f;
+        else getRuntimes().getFile(java, "bin", "java.exe");
+    } else
+        return getRuntimes().getFile(java, "bin", "java");
 }

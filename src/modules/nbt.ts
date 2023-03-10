@@ -73,7 +73,7 @@ export function readNBT<T>(raw: Buffer, typed?: true): T | typedNBT {
             case 11: return arrType(3); //int array
             case 12: return arrType(4); //long int array
             case 10:
-                //Compount tag flag
+                //Compound tag flag
                 let t = {};
                 while ((c = raw[i++]) != 0) { t[getString()] = typed ? { tag: tagTypes[c], value: decode(c) } : decode(c); }
                 return t;

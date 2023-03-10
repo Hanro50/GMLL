@@ -45,7 +45,6 @@ export interface downloadableFile {
     name: string,
     path: string[],
     url: string,
-
     key: string,
     chk: {
         sha1?: string | string[],
@@ -53,7 +52,6 @@ export interface downloadableFile {
     },
     unzip?: {
         file: string[],
-
         exclude?: string[]
     },
     executable?: boolean | string,
@@ -276,7 +274,7 @@ export interface versionJson {
  */
 /**
  * Launch arguments for an instance. 
- * These are configurable with a rule check to avoid using a set argument in an enviroment that argument is incompatible with
+ * These are configurable with a rule check to avoid using a set argument in an environment that argument is incompatible with
  */
 export type launchArguments = Array<string | { rules: versionJsonRules, value?: string | string[] }>
 /**
@@ -310,6 +308,8 @@ export interface player {
 }
 
 export interface launchOptions {
+    /**If true then minecraft will not close if you close your launcher!*/
+    detach?: boolean;
     /**The name of the instance */
     name?: string,
     /**The version of the game to load */
@@ -331,7 +331,7 @@ export interface launchOptions {
      */
     javaPath?: "default" | string;
     /**By default GMLL spins up a proxy server when launching Minecraft 1.5.2 and older to reroute some requests that no longer work*/
-    noLegacyFix?:boolean;
+    noLegacyFix?: boolean;
 }
 
 export interface instancePackConfig {
@@ -595,6 +595,7 @@ export type forgeDep = {
     side: string
 }
 export type loader = "forge" | "fabric" | "liteLoader" | "riftMod" | "unknown";
+
 export interface modInfo extends metaObj {
     id: string,
     authors: string[],
@@ -620,5 +621,5 @@ export interface modInfo extends metaObj {
 }
 
 export interface installDat {
-    legacy:boolean;
+    legacy: boolean;
 }
