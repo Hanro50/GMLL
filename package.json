@@ -128,6 +128,7 @@
         "mc",
         "minecraft",
         "launcher",
+        "java",
         "java edition",
         "es6",
         "commonjs",
@@ -148,6 +149,7 @@
         "backend",
         "extendable",
         "nbt",
-        "jarmods"
+        "jarmods",
+        "skin fix"
     ]
 }

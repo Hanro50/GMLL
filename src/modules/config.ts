@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import { manifests } from "./downloader.js";
 import { dir, file, set7zipRepo as _set7zipRepo } from "./objects/files.js";
-import { getCpuArch, getErr, throwErr } from "./internal/util.js";
+import { getCpuArch, getErr, getOS, throwErr } from "./internal/util.js";
 import { type } from "os";
 import type instance from "./objects/instance.js";
 import { getPath } from "./internal/root.cjs"
@@ -143,7 +143,7 @@ defEvents.on('jvm.stderr', (app, out) => console.log(`\x1b[31m\x1b[1m[${app}]: $
 
 var updateConf: update[] = ["fabric", "vanilla", "runtime", "agent"];
 
-var files: { assets: dir, libraries: dir, instances: dir, versions: dir, runtimes: dir, launcher: dir, natives: dir }
+var files: { _platform: dir, assets: dir, libraries: dir, instances: dir, versions: dir, runtimes: dir, launcher: dir, natives: dir }
 /**
  * Resets the root folder path and all of it's sub folders
  * @param {String} _root Essentially where you want to create a new .minecraft folder
@@ -154,14 +154,16 @@ export function setRoot(_root: dir | string) {
         console.error("Path should not contain a NULL character!")
     }
     initialized = false;
+    let platform = _root.getDir("platform", getOS(), getCpuArch())
     files = {
         assets: _root.getDir("assets"),
         libraries: _root.getDir("libraries"),
         instances: _root.getDir("instances"),
         versions: _root.getDir("versions"),
-        runtimes: _root.getDir("runtimes"),
         launcher: _root.getDir("launcher"),
-        natives: _root.getDir("natives")
+        _platform: platform,
+        runtimes: platform.getDir("runtimes"),
+        natives: platform.getDir("natives")
     }
 }
 
@@ -268,20 +270,21 @@ export function getVersions() {
  * @see the {@link setRuntimes set} method for more info 
  */
 export function getRuntimes() {
-    return files.runtimes;
+    return files.runtimes.mkdir();
 }
 /**
  * Returns a set of directories GMLL uses to store meta data. 
  * Mostly used for version manifests and runtime manifests that act as pointers to help GMLL to locate other files stored on Mojang's servers.
  * It also stores miscellaneous files GMLL uses to optimize the retrieval of certian pieces of information needed for GMLL to function properly 
  */
-export function getMeta() {
+export function getMeta() {//.getDir(getOS(), getCpuArch())
     const meta = {
+        bin: files._platform.getDir("bin"),
+        runtimes: files._platform.getDir("runtimes", "meta"),
+        lzma: files.launcher.getDir("lzma"),
         manifests: files.launcher.getDir("manifests"),
-        runtimes: files.launcher.getDir("runtimes"),
         index: files.launcher.getDir("index"),
-        profiles: files.launcher.getDir("profiles"),
-        bin: files.launcher.getDir("bin")
+        profiles: files.launcher.getDir("profiles")
     }
     return meta;
 }

@@ -133,7 +133,7 @@ export function runtime(runtime: mcRuntimeVal) {
     if (!cFile.exists()) {
         throwErr("Cannot find runtime");
     }
-    return mojangRFDownloader(cFile.toJSON<mojangResourceManifest>(), getRuntimes().getDir(runtime), getRuntimes().getDir("lzma"))
+    return mojangRFDownloader(cFile.toJSON<mojangResourceManifest>(), getRuntimes().getDir(runtime))
 }
 /**
  * Did you know you can use this file to download dungeons?
@@ -141,7 +141,7 @@ export function runtime(runtime: mcRuntimeVal) {
  */
 export function mojangRFDownloader(file: mojangResourceManifest, baseFile: dir, lzma?: dir) {
     if (!lzma)
-        lzma = baseFile.getDir("lzma")
+        lzma = getMeta().lzma
 
     lzma.mkdir();
     const json = file.files;

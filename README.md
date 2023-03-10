@@ -26,10 +26,10 @@ Linux and Mac users should not encounter this issue as on these systems, symlink
 
 If your launcher is installed onto a drive which in of itself is not formated as NTFS, but your launcher tells GMLL to generate it's files on a partition that is formated as NTFS. It _should_ work. A shortcut to the user's AppData folder is "%appdata%\\\<name of your launcher\>". Just incase...
 
-The reason why GMLL only works on NTFS on windows is due to it making use of junctions, whereas on Linux and Mac GMLL will use symlinks instead. While they behave funtionally the same for our purposes, junctions are a filesystem specific feature that only works on NTFS. While Windows also supports symlinks, you require administrator privilidges to create them.  
+The reason why GMLL only works on NTFS on windows is due to it making use of junctions, whereas on Linux and Mac GMLL will use symlinks instead. While they behave functionally the same for our purposes, junctions are a filesystem specific feature that only works on NTFS. While Windows also supports symlinks, you require administrator privileges to create them.  
 
 ## a word on the docs
-GMLL is to big to maintain an up to date dev doc with the current amount of resources awarded to the project. Instead, please see the included JSDocs in the comments in the type files. Since those will be exponetially easier to maintain and will likely provide the information specific to what you require a function to do. 
+GMLL is to big to maintain an up to date dev doc with the current amount of resources awarded to the project. Instead, please see the included JSDocs in the comments in the type files. Since those will be exponentially easier to maintain and will likely provide the information specific to what you require a function to do. 
 
 ## Quick start 
 This quick start will use MSMC for authentication. Full disclosure, GMLL endorses MSMC by virtue of the two projects sharing an author. 
@@ -50,7 +50,7 @@ await init();
 installForge();
 //Gets the login token for use in launching the game
 const token = wrapper.msmc2token(await fastLaunch("raw", console.log));
-//GMLL uses the concept of instances. Essentially containerised minecraft installations 
+//GMLL uses the concept of instances. Essentially containerized minecraft installations 
 const i = new instance({ version: "1.18.1" });
 //Save the instance for use later, will go into more detail in later parts of the docs
 i.save();
@@ -171,7 +171,7 @@ i777.install();
 From the point forward. It will be assumed that you have a basic understanding of how JavaScript works. Not every element will be showed like it was with the previous documentation!
 
 # Basic file handling in GMLL
-GMLL uses an object based system to handle files. This abstraction simplifies handling the small differences between Windows, Linux and MacOS interms of how files, folders and directories are specified. It also replaces the old buggy and unstable function based system completely that GMLL used in the past.  
+GMLL uses an object based system to handle files. This abstraction simplifies handling the small differences between Windows, Linux and MacOS in terms of how files, folders and directories are specified.
 
 ## Specifying a folder 
 ```js
@@ -313,7 +313,7 @@ export function initializationListener(func: () => void | Promise<void>):void;
 export async function initialize();
 ```
 # Legacy version fixes
-By default GMLL (versions 1.6.0 and newer) will download Agenta to fix issues with legacy versions. 
+By default GMLL (versions 1.6.0 and newer) will download [Agenta](https://www.curseforge.com/minecraft/mc-mods/agenta) to fix issues with legacy versions (pre release 1.7.10). 
 
 ## Fixes include:
 Further sound fixes (Really early Alpha builds)
@@ -326,10 +326,10 @@ Minecraft cape fixes (From Minecraft Beta)
 > Results on beta 1.0 and 1.2 may very 
 
 Minecraft Authentication server fixes
-> Please note this only fixes the client side checks. However, the proxy module can be ran independently from the rest of GMLL to a degree. Meaning it can be used as a proxy to fix the server side checks as well. 
+> Please note this only fixes the client side checks. Please install Agenta as a bukkit plugin or use it a as a java agent to fix the server side checks!
 
-Minecraft forge for 1.5.2, 1.5.1, 1.5 and 1.4.7
-> I redirect the download requests from these older versions of forge to an archive. This allows these versions to get the files they require to function. 
+Minecraft forge for 1.3.2 to 1.5.2 fixes
+> I redirected the download requests from these older versions of forge to an archive. This allows these versions to get the files they require to function. 
 
 # NBT Shenanigans
 GMLL has a sub module capable of reading NBT Data. 
@@ -406,4 +406,3 @@ atm GMLL handles jar mods by extracting the vanilla jar of a set version, it wil
 
 Bar you take the necessary precautions to ensure your old mods are formatted correctly or abide by Mojang's EULA before inserting your mcp client jar, this system will create a custom jar with the required files overwritten for those mods to work. Atm it will use a json (priority.json) file to modify the order in which it loads mods. Failing that it will go off alphabetical order. 
 
-The download servers for 1.4.7 and 1.5 versions of forge are borked, I have tested this with version 1.2.5 to test if the system works and it did. atm patching methods like xdelta are recommended to be done manually by you the launcher dev. If there is a significant push to include xdelta patching (or something similar) then I will include it. Although at this moment it is outside the scope of this project. 
