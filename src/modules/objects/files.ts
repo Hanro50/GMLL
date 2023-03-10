@@ -34,7 +34,7 @@ export function stringify(json: object) {
 export function packAsync(pathToDirOrFile: string, pathToArchive: string, zipDir?: dir) {
     let com = ["a", "-r", pathToArchive, pathToDirOrFile]
     return new Promise<void>(e => {
-        const s = spawn(get7zip(zipDir).file.sysPath(), com, { "env": process.env });
+        const s = spawn(get7zip(zipDir).sysPath(), com, { "env": process.env });
         s.on("exit", e);
     });
 
@@ -245,7 +245,6 @@ export class file extends dir {
      * 0 Full redownload
      * 1 unzip only 
      * 2 fine
-     * 
      */
     static check(json: Partial<downloadableFile>) {
         let f = new this(...json.path, json.name);
@@ -260,11 +259,8 @@ export class file extends dir {
             await this.unzip(new dir(...json.unzip.file), json.unzip.exclude, zipDir);
         }
         if (json.executable) {
-            if (typeof json.executable == "boolean")
-                this.chmod();
-            else
-                new file(json.executable).chmod();
-
+            if (typeof json.executable == "boolean") this.chmod();
+            else new file(json.executable).chmod();
         }
     }
 
@@ -288,7 +284,7 @@ export class file extends dir {
             })
         }
         return new Promise<void>(e => {
-            const s = spawn(get7zip(zipDir).file.sysPath(), com, { "cwd": join(this.getDir().sysPath()), "env": process.env });
+            const s = spawn(get7zip(zipDir).sysPath(), com, { "cwd": join(this.getDir().sysPath()), "env": process.env });
             s.on("exit", e);
         });
     }
@@ -303,7 +299,7 @@ export class file extends dir {
         })
         com.push("-r");
         return new Promise<void>(e => {
-            const s = spawn(get7zip(zipDir).file.sysPath(), com, { "cwd": join(this.getDir().sysPath()), "env": process.env });
+            const s = spawn(get7zip(zipDir).sysPath(), com, { "cwd": join(this.getDir().sysPath()), "env": process.env });
             s.on("exit", e);
         });
 
@@ -313,34 +309,46 @@ export class file extends dir {
         return new Promise((res) => access(this.sysPath(), constants.F_OK, (err) => res(err ? false : true)));
     }
 }
-let defDir = dir.tmpdir().getDir("gmll", "z7");
+let defDir = dir.tmpdir().getDir("gmll");
 
 function get7zip(dir: dir = defDir) {
-    dir.mkdir();
-    const f = platform() == 'win32' ? "7za.exe" : "7za";
-    return { file: dir.getFile(f), info: dir.getFile(f + ".info") };
+    const loc = dir.getDir("7z");
+    const d = loc.getFile("index.json");
+    if (!d.exists()) throw "Not initialized"
+    const m = d.toJSON<{ _main: string, [key: string]: string }>()
+    return loc.getFile(m._main);
 }
 
-/**The location serving 7zip binaries*/
+/**The location serving 7zip binary*/
 export function set7zipRepo(z7: string) {
     z7Repo = z7;
 }
 let z7Repo = "https://download.hanro50.net.za/7-zip";
 export async function download7zip(dir: dir, os: "linux" | "windows" | "osx", arch: "arm" | "arm64" | "x32" | "x64") {
     defDir = dir;
-    let chk: { size: number, sha1: string }
-    const files = get7zip(dir);
-    if (files.info.exists()) {
-        try {
-            chk = files.info.toJSON();
-        } catch { }
+    console.log("[GMLL]: Checking 7zip")
+    const loc = dir.getDir("7z");
+    loc.mkdir();
+    let chk: { [key: string]: { size: number, sha1: string } } = {};
+    const chkFile = loc.getFile("hash.json")
+    if (chkFile.exists()) {
+        try { chk = chkFile.toJSON(); } catch { }
     }
-    if (os == "osx" && !arch.endsWith("64")) throw "32 bit macOS is not currently supported!";
+    const manifest = loc.getFile("index.json");
     if (!z7Repo.endsWith("/")) z7Repo += "/";
-    const link = `${z7Repo}${os}/${arch}/${platform() == 'win32' ? "7za.exe" : "7za"}`;
-    console.log(link)
-    await files.file.download(link, chk);
-    files.info.write({ size: files.file.getSize(), sha1: files.file.getHash() })
-    files.file.chmod();
-    return files.file;
+    const link = `${z7Repo}${os}/${arch}/`
+
+    const f = await manifest.download(link + "index.json", chk["index"])
+    chk["index"] = { size: f.getSize(), sha1: f.getHash() }
+    const m = f.toJSON<{ _main: string, [key: string]: string }>()
+    const _main = m._main;
+    for (const key of Object.keys(m)) {
+        console.log(key)
+        if (key == "_main") continue;
+        const obj = m[key]
+        const f = await loc.getFile(key).download(link + obj, chk[key])
+        chk[key] = { size: f.getSize(), sha1: f.getHash() }
+        if (key == _main) f.chmod();
+    }
+    chkFile.write(chk);
 }
