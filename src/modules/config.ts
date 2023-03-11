@@ -280,7 +280,7 @@ export function getRuntimes() {
 export function getMeta() {//.getDir(getOS(), getCpuArch())
     const meta = {
         bin: files._platform.getDir("bin"),
-        runtimes: files._platform.getDir("runtimes", "meta"),
+        runtimes: files.runtimes.getDir("runtimes", "meta"),
         lzma: files.launcher.getDir("lzma"),
         manifests: files.launcher.getDir("manifests"),
         index: files.launcher.getDir("index"),
