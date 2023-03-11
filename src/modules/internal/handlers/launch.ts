@@ -1,13 +1,13 @@
 import { spawn } from "child_process";
 import { randomUUID } from "crypto";
-import { instance } from "gmll";
-import { getMeta, getAssets, getNatives, getLauncherName, getLauncherVersion, getlibraries, emit } from "gmll/config";
-import { dir, file } from "gmll/objects/files";
-import { player, assetIndex, launchArguments } from "gmll/types";
+import { instance } from "../../../index.js";
+import { getMeta, getAssets, getNatives, getLauncherName, getLauncherVersion, getlibraries, emit } from "../../config.js";
+import { dir, file } from "../../objects/files.js";
+import type { player, assetIndex, launchArguments } from "../../../types";
 import { type, cpus } from "os";
 import { join } from "path";
 import { combine, fsSanitizer, processAssets, getClientID, lawyer } from "../util.js";
-import { download, getAgentFile } from "gmll/downloader";
+import { download, getAgentFile } from "../../downloader.js";
 
 /**
  * For internal use only

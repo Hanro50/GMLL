@@ -4,79 +4,54 @@
     "description": "A generic launcher core for building custom launchers",
     "license": "MIT",
     "types": "./types/index.d.ts",
+
     "homepage": "https://www.hanro50.net.za/gmll",
-    "typesVersions": {
-        "*": {
-            "types": [
-                "./types/modules/types.d.ts"
-            ],
-            "config": [
-                "./types/modules/config.d.ts"
-            ],
-            "downloader": [
-                "./types/modules/downloader.d.ts"
-            ],
-            "handler": [
-                "./types/modules/handler.d.ts"
-            ],
-            "wrapper": [
-                "./types/modules/wrapper.d.ts"
-            ],
-            "nbt": [
-                "./types/modules/nbt.d.ts"
-            ],
-            "proxy": [
-                "./types/modules/proxy.d.ts"
-            ],
-            "objects/instance": [
-                "./types/modules/objects/instance.d.ts"
-            ],
-            "objects/version": [
-                "./types/modules/objects/version.d.ts"
-            ],
-            "objects/files": [
-                "./types/modules/objects/files.d.ts"
-            ]
-        }
-    },
     "exports": {
         ".": {
+            "types": "./types/index.d.ts",
             "import": "./dist/index.js",
             "require": "./dist/index.js"
         },
+        "./types": {
+            "types": "./types/modules/types.d.ts"
+        },
         "./config": {
+            "types":"./types/modules/config.d.ts",
             "import": "./dist/modules/config.js",
             "require": "./dist/modules/config.js"
         },
         "./downloader": {
+            "types": "./types/modules/downloader.d.ts",
             "import": "./dist/modules/downloader.js",
             "require": "./dist/modules/downloader.js"
         },
         "./handler": {
+            "types": "./types/modules/handler.d.ts",
             "import": "./dist/modules/handler.js",
             "require": "./dist/modules/handler.js"
         },
         "./wrapper": {
+            "types": "./types/modules/wrapper.d.ts",
             "import": "./dist/modules/wrapper.js",
             "require": "./dist/modules/wrapper.js"
         },
         "./nbt": {
+            "types":"./types/modules/nbt.d.ts",
             "import": "./dist/modules/nbt.js",
             "require": "./dist/modules/nbt.js"
         },
-        "./proxy": {
-            "import": "./dist/modules/proxy.js",
-            "require": "./dist/modules/proxy.js"
-        },
         "./objects/instance": {
+            "types":  "./types/modules/objects/instance.d.ts",
             "import": "./dist/modules/objects/instance.js",
             "require": "./dist/modules/objects/instance.js"
         },
         "./objects/version": {
+            "types":"./types/modules/objects/instance.d.ts",
             "import": "./dist/modules/objects/version.js",
             "require": "./dist/modules/objects/version.js"
         },
         "./objects/files": {
+            "types":"./types/modules/objects/files.d.ts",
             "import": "./dist/modules/objects/files.js",
             "require": "./dist/modules/objects/files.js"
         }

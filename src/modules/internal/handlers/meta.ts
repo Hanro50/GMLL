@@ -1,7 +1,7 @@
 import { createHash, randomInt } from "crypto";
 import  instance from "../../objects/instance.js";
 
-import { modInfo, forgeDep, playerDat, playerStats, levelDat, metaSave, instanceMetaPaths, metaResourcePack } from "../../../types.js";
+import type { modInfo, forgeDep, playerDat, playerStats, levelDat, metaSave, instanceMetaPaths, metaResourcePack } from "../../../types";
 import { join } from "path";
 import { readDat } from "../../nbt.js";
 import { dir, file } from "../../objects/files.js";

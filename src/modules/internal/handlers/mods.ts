@@ -4,7 +4,7 @@ import { dir, file, packAsync } from "../../objects/files.js";
 import instance from "../../objects/instance.js";
 import version from "../../objects/version.js";
 import { platform } from "os";
-import { downloadableFile, versionJson, versionManifest, instancePackConfig, instanceMetaPaths } from "types.js";
+import type { downloadableFile, versionJson, versionManifest, instancePackConfig, instanceMetaPaths } from "../../../types";
 
 import { assetTag, fsSanitizer } from "../util.js";
 /**Gets the load order of minecraft jars in jar mod loader. */

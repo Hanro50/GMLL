@@ -4,7 +4,8 @@ import { dir, file, set7zipRepo as _set7zipRepo } from "./objects/files.js";
 import { getCpuArch, getErr, getOS, throwErr } from "./internal/util.js";
 import { type } from "os";
 import type instance from "./objects/instance.js";
-import { getPath } from "./internal/root.cjs"
+//@ts-ignore
+import {getPath} from "./internal/get.js"
 export let __get = getPath();
 if (!__get.endsWith("get.js")) {
     console.warn("[GMLL]: The internal downloader script may not be within it's own file. GMLL will use the much slower fallback downloader!");

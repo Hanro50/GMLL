@@ -2,7 +2,7 @@ import { resolvePath, getMeta, getAssets } from "../config.js";
 import { getLatest } from "../handler.js";
 import { fsSanitizer, getCpuArch, throwErr, assetTag } from "../internal/util.js";
 import { join } from "path";
-import { assetIndex, launchArguments, launchOptions } from "types";
+import type { assetIndex, launchArguments, launchOptions } from "../../types";
 import { dir, file } from "./files.js";
 import version from "./version.js";
 import * as metaHandler from "../internal/handlers/meta.js";

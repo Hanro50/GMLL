@@ -1,7 +1,7 @@
 /**Accessed by get.js, imports allowed from other GMLL modules */
 import { join } from "path";
 import fetch from "node-fetch";
-import { existsSync, mkdirSync, unlinkSync, symlinkSync, readFileSync, createWriteStream, statSync, writeFileSync, rmSync, readdirSync, copyFileSync, lstatSync, renameSync, access, constants, } from 'fs';
+import { existsSync, mkdirSync, unlinkSync, symlinkSync, readFileSync, createWriteStream, statSync, writeFileSync, rmSync, readdirSync, copyFileSync, lstatSync, renameSync, access, constants} from 'fs';
 import { createHash } from "crypto";
 import { platform, tmpdir, type } from "os";
 import { execSync, spawn } from "child_process";

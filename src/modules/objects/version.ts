@@ -5,8 +5,8 @@ import { getManifest, getJavaPath } from "../handler.js";
 import { combine, throwErr, lawyer, classPathResolver, getOS } from "../internal/util.js";
 import { platform } from "os";
 import { join } from "path";
-import { versionJson, versionManifest, artifact, mcJarTypeVal } from "types";
-import { dir, file } from "./files";
+import { versionJson, versionManifest, artifact, mcJarTypeVal } from "../../types";
+import { dir, file } from "./files.js";
 
 /**
  * Version data is unique. Each version of the game will generate an unique version object. 

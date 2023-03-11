@@ -37,46 +37,48 @@ This quick start will use MSMC for authentication. Full disclosure, GMLL endorse
 ES6:
 ```js
 //All modules can be accessed from the main GMLL index file
-import { wrapper, init, instance } from "gmll";
+import { init, instance } from "gmll";
 //GMLL supports sub modules 
 import { setRoot } from "gmll/config";
-import { installForge } from "gmll/handler";
-import { fastLaunch } from "msmc";
+//Import the auth class from msmc
+import { auth } from "msmc";
 //Changes where GMLL puts the ".minecraft" gmll creates (will default to a folder called .minecraft in the same folder in your root process directory)
-setRoot(".MC")
+setRoot(".MC");
 //Gets GMLL to fetch some critical files it needs to function 
 await init();
-//Prompts GMLL to ask the user to install forge. This command can be fed the path to a forge installer as well 
-installForge();
-//Gets the login token for use in launching the game
-const token = wrapper.msmc2token(await fastLaunch("raw", console.log));
+//Create a new auth manager
+const authManager = new auth("select_account");
+//Launch using the 'raw' gui framework (can be 'electron' or 'nwjs')
+const xboxManager = await authManager.launch("raw")
+//Generate the minecraft login token
+const token = await xboxManager.getMinecraft()
 //GMLL uses the concept of instances. Essentially containerized minecraft installations 
-const i = new instance({ version: "1.18.1" });
-//Save the instance for use later, will go into more detail in later parts of the docs
-i.save();
-//Launches the game with the token we got earlier. GMLL will download and install any library it needs 
-i.launch(token);
+var int = new instance({ version: "1.19.3" })
+//Launch with a token retrieved by msmc
+int.launch(token.gmll());
 
 ```
 CommonJS:
 ```js
-//Like in ES6 we can use sub-modules 
+//All modules can be accessed from the main GMLL index file
 const gmll = require("gmll");
-const config = require("gmll/config");
-const { fastLaunch } = require("msmc");
+//GMLL supports sub modules 
+const { setRoot }= require("gmll/config");
+//Import the auth class
+const { auth } = require("msmc");
 //Changes where GMLL puts the ".minecraft" gmll creates (will default to a folder called .minecraft in the same folder in your root process directory)
-config.setRoot(".MC")
-//The init call does some fetch operations internally. Thus it needs to be async 
+setRoot(".MC");
 gmll.init().then(async () => {
-    const e = await fastLaunch("raw", console.log);
-    //Converts the login token to something GMLL understands 
-    const token = gmll.wrapper.msmc2token(e);
-    //GMLL uses the concept of instances. Essentially containerised minecraft installations 
-    let int = new gmll.instance({ version: "1.18.1" })
-    //This method is a high level override for setting custom icons for the game. May not work with older versions of Minecraft
-    int.setIcon("icon_32x32.png","icon_16x16.png")
-    //Launches the game with the token we got earlier. GMLL will download and install any library it needs 
-    int.launch(token);
+  //Create a new auth manager
+  const authManager = new auth("select_account");
+  //Launch using the 'raw' gui framework (can be 'electron' or 'nwjs')
+  const xboxManager = await authManager.launch("raw")
+  //Generate the minecraft login token
+  const token = await xboxManager.getMinecraft()
+  //GMLL uses the concept of instances. Essentially containerized minecraft installations 
+  var int = new gmll.instance()
+  //Launch with a token retrieved by msmc
+  int.launch(token.gmll());
 })
 ```
 # Initialization

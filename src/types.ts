@@ -78,9 +78,9 @@ export interface assetIndex {
 
 
 
-type mojangResourceFile = { type: "file", downloads?: { lzma?: urlFile, raw: urlFile }, executable?: boolean }
-type mojangResourceLink = { type: "link", target: string; }
-type mojangResourceDir = { type: "directory" }
+export type mojangResourceFile = { type: "file", downloads?: { lzma?: urlFile, raw: urlFile }, executable?: boolean }
+export type mojangResourceLink = { type: "link", target: string; }
+export type mojangResourceDir = { type: "directory" }
 /**
  * The generic resource file format mojang uses. 
  * The two downloadables in this formate are the java edition runtimes and Minecraft Dungeons
