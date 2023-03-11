@@ -163,7 +163,7 @@ export function setRoot(_root: dir | string) {
         launcher: _root.getDir("launcher"),
         _platform: platform,
         runtimes: platform.getDir("runtimes"),
-        natives: platform.getDir("natives")
+        natives: dir.tmpdir().getDir("gmll", "natives", getOS(), getCpuArch())
     }
 }
 

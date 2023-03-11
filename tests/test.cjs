@@ -15,7 +15,7 @@ gmll.init().then(async () => {
 //const token = (await (await new auth().launch("raw")).getMinecraft()).gmll()
  // const token = gmll.wrapper.msmc2token(e);
  
-  var int = new gmll.instance({ version: "1.5"})
+  var int = new gmll.instance({ version: "1.19.2"})
   //await int.installForge();
   int.launch();
   // console.log(await int.getMetaPaths())

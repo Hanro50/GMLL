@@ -1,5 +1,4 @@
 import { arch, networkInterfaces, platform, userInfo, version } from "os";
-import { cmd as _cmd } from '7zip-min';
 import { dir, stringify } from "../objects/files.js";
 import { getAssets, getMeta, isInitialized } from "../config.js";
 import { createHash, randomUUID } from "crypto";
@@ -46,7 +45,7 @@ export function lawyer(rules: versionJsonRules, properties: any = {}): boolean {
             end = false;
         }
         else if (rules[i].action == "allow" && os) {
-           // end = true && end;
+            // end = true && end;
             end2 = true;
         }
     }
@@ -74,9 +73,9 @@ export function throwErr(message: any) {
     throw getErr(message);
 }
 /**Used to get maven class paths */
-export function classPathResolver(name: string) {
+export function classPathResolver(name: string, sub: string = "") {
     const namespec = name.split(":", 4);
-    return `${namespec[0].replace(/\./g, "/")}/${namespec[1]}/${namespec[2]}/${namespec[1]}-${namespec[2]}${(namespec[3] ? '-' + namespec[3].replace(/\:/g, "-") : "")}.jar`;
+    return `${namespec[0].replace(/\./g, "/")}/${namespec[1]}/${namespec[2]}/${namespec[1]}-${namespec[2]}${(namespec[3] ? '-' + namespec[3].replace(/\:/g, "-") : "")}${sub.length > 0 ? "-" + sub : ""}.jar`;
 }
 
 /**Takes two different version.json files and combines them */

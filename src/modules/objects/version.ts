@@ -2,7 +2,7 @@ import { copyFileSync } from "fs";
 import { isInitialized, onUnsupportedArm, getVersions, getMeta, getlibraries } from "../config.js";
 import { assets, runtime, libraries } from "../downloader.js";
 import { getManifest, getJavaPath } from "../handler.js";
-import { combine, throwErr, lawyer, classPathResolver } from "../internal/util.js";
+import { combine, throwErr, lawyer, classPathResolver, getOS } from "../internal/util.js";
 import { platform } from "os";
 import { join } from "path";
 import { versionJson, versionManifest, artifact, mcJarTypeVal } from "types";
@@ -164,11 +164,11 @@ export default class version {
             if (mode == "client" && lib.hasOwnProperty("clientreq") && !lib.clientreq) return;
             else if (mode == "server" && !lib.serverreq && lib.hasOwnProperty("clientreq")) return
             if (lib.rules && !lawyer(lib.rules)) { return }
-
-            const p = join("libraries", ...classPathResolver(lib.name).split("/"));
+            
+            const p = lib.natives? join("libraries", ...classPathResolver(lib.name,lib.natives[getOS()]).split("/"))  : join("libraries", ...classPathResolver(lib.name).split("/"));
             const p2 = getlibraries().getDir("..").getFile(p);
             if (!p2.exists()) {
-                console.error(`[GMLL]: ${p} does not exist. Removing to avoid possible error`);
+                console.error(`[GMLL]: ${p} does not exist. Removing to avoid possible error (${p2.sysPath()})`);
             }
             else if (!cp.includes(p)) cp.push(p);
         });
