@@ -326,28 +326,37 @@ export function set7zipRepo(z7: string) {
 let z7Repo = "https://download.hanro50.net.za/7-zip";
 export async function download7zip(dir: dir, os: "linux" | "windows" | "osx", arch: "arm" | "arm64" | "x32" | "x64") {
     defDir = dir;
+    const chkDef = { _ver: "22.01", data: {} };
     console.log("[GMLL]: Checking 7zip")
     const loc = dir.getDir("7z");
-    loc.mkdir();
-    let chk: { [key: string]: { size: number, sha1: string } } = {};
+
+    let chk: { "_ver": string, data: { [key: string]: { size: number, sha1: string } } } = chkDef;
     const chkFile = loc.getFile("hash.json")
     if (chkFile.exists()) {
         try { chk = chkFile.toJSON(); } catch { }
-    }
+
+        try {
+            if (chk?._ver != chkDef._ver) {
+                loc.rm().mkdir()
+                chkFile.rm();
+                chk = chkDef;
+            }
+        } catch { }
+    } else loc.mkdir();
     const manifest = loc.getFile("index.json");
     if (!z7Repo.endsWith("/")) z7Repo += "/";
     const link = `${z7Repo}${os}/${arch}/`
 
     const f = await manifest.download(link + "index.json", chk["index"])
-    chk["index"] = { size: f.getSize(), sha1: f.getHash() }
+    chk.data["index"] = { size: f.getSize(), sha1: f.getHash() }
     const m = f.toJSON<{ _main: string, [key: string]: string }>()
     const _main = m._main;
     for (const key of Object.keys(m)) {
         console.log(key)
         if (key == "_main") continue;
         const obj = m[key]
-        const f = await loc.getFile(key).download(link + obj, chk[key])
-        chk[key] = { size: f.getSize(), sha1: f.getHash() }
+        const f = await loc.getFile(key).download(link + obj, chk.data[key])
+        chk.data[key] = { size: f.getSize(), sha1: f.getHash() }
         if (key == _main) f.chmod();
     }
     chkFile.write(chk);
