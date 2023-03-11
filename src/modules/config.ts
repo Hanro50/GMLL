@@ -5,19 +5,23 @@ import { getCpuArch, getErr, getOS, throwErr } from "./internal/util.js";
 import { type } from "os";
 import type instance from "./objects/instance.js";
 //@ts-ignore
-import {getPath} from "./internal/get.js"
-export let __get = getPath();
-if (!__get.endsWith("get.js")) {
+import { getPath } from "./internal/root.cjs"
+let __get__;
+try {
+    __get__ = getPath()
+} catch { }
+if (!__get__?.endsWith("get.js")) {
     console.warn("[GMLL]: The internal downloader script may not be within it's own file. GMLL will use the much slower fallback downloader!");
     console.warn("[GMLL]: Please update the '__get' property in the config module to point to the correct standalone js file.");
 }
+
+export let __get = __get__ || "ERROR";
 export type update = "fabric" | "vanilla" | "runtime" | "agent";
 export const onUnsupportedArm = (getCpuArch() == "arm64" || getCpuArch() == "arm") && type() != "Darwin";
 const repositories = {
     maven: "https://download.hanro50.net.za/maven",
     forge: "https://download.hanro50.net.za/fmllibs",
     armFix: "https://download.hanro50.net.za/java",
-    //z7: "https://download.hanro50.net.za/7-zip"
 }
 export function getRepositories() {
     Object.keys(repositories).forEach(key => { if (!repositories[key].endsWith("/")) repositories[key] += "/" });
