@@ -16,7 +16,7 @@ if (!__get__?.endsWith("get.js")) {
 }
 
 export let __get = __get__ || "ERROR";
-export type update = "fabric" | "vanilla" | "runtime" | "agent";
+export type update = "fabric" | "vanilla" | "runtime" | "agent"|"quilt";
 export const onUnsupportedArm = (getCpuArch() == "arm64" || getCpuArch() == "arm") && type() != "Darwin";
 const repositories = {
     maven: "https://download.hanro50.net.za/maven",
@@ -146,7 +146,7 @@ defEvents.on('jvm.start', (app, cwd) => console.log((`[${app}]: Starting in dire
 defEvents.on('jvm.stdout', (app, out) => console.log((`[${app}]: ${out}`).trim()));
 defEvents.on('jvm.stderr', (app, out) => console.log(`\x1b[31m\x1b[1m[${app}]: ${out}`.trim() + "\x1b[0m"));
 
-var updateConf: update[] = ["fabric", "vanilla", "runtime", "agent"];
+var updateConf: update[] = ["fabric", "vanilla", "runtime", "agent","quilt"];
 
 var files: { _platform: dir, assets: dir, libraries: dir, instances: dir, versions: dir, runtimes: dir, launcher: dir, natives: dir }
 /**

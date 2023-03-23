@@ -7,7 +7,7 @@ import { init, instance } from "gmll";
 import { auth } from "msmc";
 
 await init()
-var int = new instance({"version":"b1.7.3"})
+var int = new instance({"version":"quilt-loader-0.18.6-1.14.4"})
 await int.install()
 //Create a new auth manager
 const authManager = new auth("select_account");

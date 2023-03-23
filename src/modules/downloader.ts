@@ -338,6 +338,11 @@ export async function manifests() {
     const fabricLoader = "https://meta.fabricmc.net/v2/versions/loader/";
     const fabricVersions = "https://meta.fabricmc.net/v2/versions/game/";
 
+    const quiltLoader = "https://meta.quiltmc.org/v3/versions/loader";
+    const quiltVersions = "https://meta.quiltmc.org/v3/versions/game";
+
+
+
     const mcRuntimes = "https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json";
     const mcVersionManifest = "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json";
 
@@ -369,6 +374,7 @@ export async function manifests() {
             meta.manifests.getFile("vanilla.json").write(json.versions);
         }
     }
+
     if (update.includes("fabric")) {
         try {
             const jsGame = (await meta.index.getFile("fabric_game.json").download(fabricVersions)).toJSON<[jsgameInf]>();
@@ -387,6 +393,28 @@ export async function manifests() {
                 });
             });
             meta.manifests.getFile("fabric.json").write(result);
+        } catch (e) {
+            console.error(getErr(e));
+        }
+    }
+    if (update.includes("quilt")) {
+        try {
+            const jsGame = (await meta.index.getFile("quilt_game.json").download(quiltVersions)).toJSON<[jsgameInf]>();
+            const jsLoader = (await meta.index.getFile("quilt_loader.json").download(quiltLoader)).toJSON<[jsLoaderInf]>();
+            const result = [];
+            jsGame.forEach(game => {
+                const version = game.version;
+                jsLoader.forEach(l => {
+                    result.push({
+                        id: "quilt-loader-" + l.version + "-" + version,
+                        base: version,
+                        stable: l.stable,
+                        type: "quilt",
+                        url: quiltLoader+ "/" + version + "/" + l.version + "/profile/json"
+                    });
+                });
+            });
+            meta.manifests.getFile("quilt.json").write(result);
         } catch (e) {
             console.error(getErr(e));
         }
