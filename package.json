@@ -1,6 +1,6 @@
 {
     "name": "gmll",
-    "version": "2.0.4",
+    "version": "2.0.6",
     "description": "A generic launcher core for building custom launchers",
     "license": "MIT",
     "types": "./types/index.d.ts",
@@ -13,7 +13,9 @@
             "require": "./dist/index.js"
         },
         "./types": {
-            "types": "./types/modules/types.d.ts"
+            "types": "./types/types.d.ts",
+            "import": "./dist/types.js",
+            "require": "./dist/types.js"
         },
         "./config": {
             "types":"./types/modules/config.d.ts",
