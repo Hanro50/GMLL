@@ -2,16 +2,21 @@
 <a href="https://github.com/Hanro50/GMLL/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/msmc" alt="MIT license"/></a>
 <a href="https://www.npmjs.com/package/gmll"><img src="https://img.shields.io/npm/v/gmll" alt="Version Number"/></a>
 <a href="https://github.com/Hanro50/gmll/"><img src="https://img.shields.io/github/stars/hanro50/gmll" alt="Github Stars"/></a><br/>
-A generic Minecraft Launcher Library 
+A generic batteries included Minecraft Launcher Library.
+Features include forge, fabric and quilt support. An instance manager, a metadata reader for mods, worlds, resource packs and texturepacks. Various fixes for legacy versions of the game. 
 
-# Module type
-GMLL is a hybrid module. However as such, you should best avoid trying to use GMLL as both a ES6 and a CommonJS module in the same project. 
+A simple modpack api capable of partial updates. The capability to easily create modpacks and wrap them in the required format the modpack API expects. An installer for 3rd party instances of forge and a robust version.json parser that should be able to handle anything the vanilla launcher can handle. The ability to change out some game sounds and assets easily is also provided. 
+
+Limited support for unsupported windows and linux arm devices (1.19+). A built in runtime manager meaning you do not even need to have java installed to run GMLL. Limited support for M1 macs. Support for Windows (Vista and newer), MacOS and Linux.  
+
+See [MSMC](https://github.com/Hanro50/MSMC) if you need an authentication library
+
 
 # Support
 No support will be given to launchers that seek to grant access to Minecraft to individuals whom do not posses a valid Minecraft License. Infact, doing this voids your licence to use this library and you will be asked to stop using this here library if you're found to be in violation of the licence. In other words, don't launch Minecraft if a user has not logged in with a valid account that owns the game at least once. I'm not in the mood to get sued by Mojang or Microsoft. -Hanro
 
 
-Other then that. There's a channel dedicated to GMLL on the MSMC support Discord server. Click the following badge to join.
+Other then that. Join the mcjs café Discord for support (Link below)
 <div>
    <a href="https://discord.gg/3hM8H7nQMA">
    <img src="https://img.shields.io/discord/861839919655944213?logo=discord"
@@ -24,9 +29,9 @@ When running under Windows. GMLL only supports NTFS. GMLL will not work under FA
 
 Linux and Mac users should not encounter this issue as on these systems, symlinks can be made by users whom are not system administrators. 
 
-If your launcher is installed onto a drive which in of itself is not formated as NTFS, but your launcher tells GMLL to generate it's files on a partition that is formated as NTFS. It _should_ work. A shortcut to the user's AppData folder is "%appdata%\\\<name of your launcher\>". Just incase...
+If your launcher is installed onto a drive which in of itself is not formated as NTFS, but your launcher tells GMLL to generate its files on a partition that is formated as NTFS. It _should_ work. A shortcut to the user's AppData folder is "%appdata%\\\<name of your launcher\>". Just incase...
 
-The reason why GMLL only works on NTFS on windows is due to it making use of junctions, whereas on Linux and Mac GMLL will use symlinks instead. While they behave functionally the same for our purposes, junctions are a filesystem specific feature that only works on NTFS. While Windows also supports symlinks, you require administrator privileges to create them.  
+The reason why GMLL only works on a drive formated as NTFS on Windows is due to it making use of junctions, whereas on Linux and Mac GMLL will use symlinks instead. While they behave functionally the same for our purposes, junctions are a filesystem specific feature that only works on NTFS. While Windows also supports symlinks, you require administrator privileges to create them.   
 
 ## a word on the docs
 GMLL is to big to maintain an up to date dev doc with the current amount of resources awarded to the project. Instead, please see the included JSDocs in the comments in the type files. Since those will be exponentially easier to maintain and will likely provide the information specific to what you require a function to do. 
@@ -41,13 +46,13 @@ import { init, instance } from "gmll";
 //GMLL supports sub modules 
 import { setRoot } from "gmll/config";
 //Import the auth class from msmc
-import { auth } from "msmc";
+import { Auth } from "msmc";
 //Changes where GMLL puts the ".minecraft" gmll creates (will default to a folder called .minecraft in the same folder in your root process directory)
 setRoot(".MC");
 //Gets GMLL to fetch some critical files it needs to function 
 await init();
 //Create a new auth manager
-const authManager = new auth("select_account");
+const authManager = new Auth("select_account");
 //Launch using the 'raw' gui framework (can be 'electron' or 'nwjs')
 const xboxManager = await authManager.launch("raw")
 //Generate the minecraft login token
@@ -65,12 +70,12 @@ const gmll = require("gmll");
 //GMLL supports sub modules 
 const { setRoot }= require("gmll/config");
 //Import the auth class
-const { auth } = require("msmc");
+const { Auth } = require("msmc");
 //Changes where GMLL puts the ".minecraft" gmll creates (will default to a folder called .minecraft in the same folder in your root process directory)
 setRoot(".MC");
 gmll.init().then(async () => {
   //Create a new auth manager
-  const authManager = new auth("select_account");
+  const authManager = new Auth("select_account");
   //Launch using the 'raw' gui framework (can be 'electron' or 'nwjs')
   const xboxManager = await authManager.launch("raw")
   //Generate the minecraft login token
@@ -144,7 +149,7 @@ i777.launch(token);
 ```
 
 ## Custom icons and assets
-Warning: borked in general on Mac and Linux for releases between 1.13 and 1.18.1 (<a href="https://bugs.mojang.com/browse/MCL-15163">MCL-15163?</a>)
+Warning: borked in general on Mac and Linux for releases between 1.13 and 1.18.1 (<a href="https://bugs.mojang.com/browse/MCL-15163">MCL-15163?</a>). Also for some legacy releases it doesn't function 100% correctly either. Still looking into that.
 
 Can be used to insert a matching launcher icon or replace a random song with Rick Astley's <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Never going to give you up</a>. This will copy the files provided into Minecraft's asset index and create a custom asset index file matching the modifications. GMLL does take care to emulate vanilla here in how assets are added to the index to avoid collisions. 
 
