@@ -42,7 +42,7 @@ This quick start will use MSMC for authentication. Full disclosure, GMLL endorse
 ES6:
 ```js
 //All modules can be accessed from the main GMLL index file
-import { init, instance } from "gmll";
+import { init, Instance } from "gmll";
 //GMLL supports sub modules 
 import { setRoot } from "gmll/config";
 //Import the auth class from msmc
@@ -58,7 +58,7 @@ const xboxManager = await authManager.launch("raw")
 //Generate the minecraft login token
 const token = await xboxManager.getMinecraft()
 //GMLL uses the concept of instances. Essentially containerized minecraft installations 
-var int = new instance({ version: "1.19.3" })
+var int = new Instance({ version: "1.19.3" })
 //Launch with a token retrieved by msmc
 int.launch(token.gmll());
 
@@ -81,7 +81,7 @@ gmll.init().then(async () => {
   //Generate the minecraft login token
   const token = await xboxManager.getMinecraft()
   //GMLL uses the concept of instances. Essentially containerized minecraft installations 
-  var int = new gmll.instance()
+  var int = new gmll.Instance()
   //Launch with a token retrieved by msmc
   int.launch(token.gmll());
 })
@@ -133,18 +133,18 @@ export interface Options {
 ## loading and saving
 ```js
 //CommonJS
-const {instance} = require("gmll/objects/instance");
+const {Instance} = require("gmll/objects/instance");
 //ES6
-import {instance} from "gmll/objects/instance";
+import {Instance} from "gmll/objects/instance";
 ...
-const i = new instance({ version: "1.18.1",name:"MY INSTANCE" });
+const i = new Instance({ version: "1.18.1",name:"MY INSTANCE" });
 //GMLL won't save instances automatically. Could hurt SSD users
 i.save();
 ...
 //some random code
 ...
 //We have loaded the instance we created earlier back and can now launch it
-const i777 = instance.get("MY INSTANCE"); 
+const i777 = Instance.get("MY INSTANCE"); 
 i777.launch(token);
 ```
 
@@ -156,9 +156,9 @@ Can be used to insert a matching launcher icon or replace a random song with Ric
 Should be a predefined asset in Minecraft's asset index for the version the set instance launches. 
 ```js
 //CommonJS
-const {instance} = require("gmll/objects/instance");
+const {Instance} = require("gmll/objects/instance");
 //ES6
-import {instance} from "gmll/objects/instance";
+import {Instance} from "gmll/objects/instance";
 const i777 = instance.get("MY INSTANCE"); 
 i777.injectAsset("minecraft/sounds/ambient/cave/cave1.ogg", "path/to/rick/roll.ogg");
 i777.setIcon("path/to/32x32.png","path/to/16x16.png","path/to/mac.icns")
@@ -168,10 +168,10 @@ i777.setIcon("path/to/32x32.png","path/to/16x16.png","path/to/mac.icns")
 The install command on the instance does a range of preflight checks. From making sure the instance has the java version it currently needs already installed to downloading the version json, assets, libraries and what not the instance needs to launch. It does not compile the asset index for the index beforehand if there are custom assets. This function is called by the launch function as well. 
 ```js
 //CommonJS
-const {instance} = require("gmll/objects/instance");
+const {Instance} = require("gmll/objects/instance");
 //ES6
-import {instance} from "gmll/objects/instance";
-const i777 = instance.get("MY INSTANCE"); 
+import {Instance} from "gmll/objects/instance";
+const i777 = Instance.get("MY INSTANCE"); 
 i777.install();
 ```
 # Warning!
@@ -350,8 +350,8 @@ async function wrap(baseUrl: string, save: dir | string, name?: string , forge?:
 ...
 //part of gmll/handler
 async function importLink(url: string): Promise<manifest>;
-async function importLink(url: string, name: string): Promise<instance>;
-async function importLink(url: string, name?: string): Promise<instance | manifest> 
+async function importLink(url: string, name: string): Promise<Instance>;
+async function importLink(url: string, name?: string): Promise<Instance | manifest> 
 ```
 GMLL has a built in modpack API it can use to obtain and install modpacks. It also has a function to manually wrap up instances into the required format you need to upload said modpack to a webserver somewhere. Modpacks can still be manually built by hand since the installer can do more then the wrapper will give you access to. 
 
@@ -359,7 +359,7 @@ GMLL has a built in modpack API it can use to obtain and install modpacks. It al
 ### Creation:
 ```js
 //Create an instance with the settings you want
-var int = new gmll.instance({ version: "1.19" })
+var int = new gmll.Instance({ version: "1.19" })
 //Customise the asset index for that version like so
 int.setIcon("icon_32x32.png", "icon_16x16.png");
 //Finally create your modpack - this example is what to do for fabric and vanilla packs
@@ -401,7 +401,7 @@ const token = gmll.wrapper.msmc2token(e);
     "launcherTest")).launch(token);
 ```
 
-## A tale of two modloaders...
+## A tale of two mod loaders...
 
 While GMLL's modpack api supports both forge (via <a href="https://github.com/Hanro50/Forgiac/">forgiac</a>) and fabric. Fabric is recommended over forge due to a lesser chance of breaking due to changes made to forge by the forge developers. 
 

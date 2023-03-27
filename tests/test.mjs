@@ -1,7 +1,4 @@
 #!/bin/node
-
-
-
 import { init, Instance } from "gmll";
 //Import the auth class
 import { Auth } from "msmc";
@@ -20,10 +17,7 @@ const token = await xboxManager.getMinecraft()
 //Launch with the gmll token
 int.launch(token.gmll());
 
-try {
-} catch (e) {
-    console.trace(e)
-}
+
 
 
 
