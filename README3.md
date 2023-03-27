@@ -5,7 +5,7 @@
 A generic batteries included Minecraft Launcher Library.
 Features include forge, fabric and quilt support. An instance manager, a metadata reader for mods, worlds, resource packs and texturepacks. Various fixes for legacy versions of the game. 
 
-A simple modpack api capable of partial updates. The capability to easily create modPacks and wrap them in the required format the modpack API expects. An installer for 3rd party instances of forge and a robust version.json parser that should be able to handle anything the vanilla launcher can handle. The ability to change out some game sounds and assets easily is also provided. 
+A simple modpack api capable of partial updates. The capability to easily create modpacks and wrap them in the required format the modpack API expects. An installer for 3rd party instances of forge and a robust version.json parser that should be able to handle anything the vanilla launcher can handle. The ability to change out some game sounds and assets easily is also provided. 
 
 Limited support for unsupported windows and linux arm devices (1.19+). A built in runtime manager meaning you do not even need to have java installed to run GMLL. Limited support for M1 macs. Support for Windows (Vista and newer), MacOS and Linux.  
 
@@ -13,7 +13,7 @@ See [MSMC](https://github.com/Hanro50/MSMC) if you need an authentication librar
 
 
 # Support
-No support will be given to launchers that seek to grant access to Minecraft to individuals whom do not posses a valid Minecraft License. In fact, doing this voids your licence to use this library and you will be asked to stop using this here library if you're found to be in violation of the licence. In other words, don't launch Minecraft if a user has not logged in with a valid account that owns the game at least once. I'm not in the mood to get sued by Mojang or Microsoft. -Hanro
+No support will be given to launchers that seek to grant access to Minecraft to individuals whom do not posses a valid Minecraft License. Infact, doing this voids your licence to use this library and you will be asked to stop using this here library if you're found to be in violation of the licence. In other words, don't launch Minecraft if a user has not logged in with a valid account that owns the game at least once. I'm not in the mood to get sued by Mojang or Microsoft. -Hanro
 
 
 Other then that. Join the mcjs café Discord for support (Link below)
@@ -29,9 +29,9 @@ When running under Windows. GMLL only supports NTFS. GMLL will not work under FA
 
 Linux and Mac users should not encounter this issue as on these systems, symlinks can be made by users whom are not system administrators. 
 
-If your launcher is installed onto a drive which in of itself is not formatted as NTFS, but your launcher tells GMLL to generate its files on a partition that is formatted as NTFS. It _should_ work. A shortcut to the user's AppData folder is "%appdata%\\\<name of your launcher\>". Just incase...
+If your launcher is installed onto a drive which in of itself is not formated as NTFS, but your launcher tells GMLL to generate its files on a partition that is formated as NTFS. It _should_ work. A shortcut to the user's AppData folder is "%appdata%\\\<name of your launcher\>". Just incase...
 
-The reason why GMLL only works on a drive formatted as NTFS on Windows is due to it making use of junctions, whereas on Linux and Mac GMLL will use symlinks instead. While they behave functionally the same for our purposes, junctions are a filesystem specific feature that only works on NTFS. While Windows also supports symlinks, you require administrator privileges to create them.   
+The reason why GMLL only works on a drive formated as NTFS on Windows is due to it making use of junctions, whereas on Linux and Mac GMLL will use symlinks instead. While they behave functionally the same for our purposes, junctions are a filesystem specific feature that only works on NTFS. While Windows also supports symlinks, you require administrator privileges to create them.   
 
 ## a word on the docs
 GMLL is to big to maintain an up to date dev doc with the current amount of resources awarded to the project. Instead, please see the included JSDocs in the comments in the type files. Since those will be exponentially easier to maintain and will likely provide the information specific to what you require a function to do. 
@@ -324,7 +324,7 @@ By default GMLL (versions 1.6.0 and newer) will download [Agenta](https://www.cu
 
 ## Fixes include:
 Further sound fixes (Really early Alpha builds)
-> They want a certain resource file that no longer exists. 
+> They want a certian resource file that no longer exists. 
 
 Minecraft skin fixes (From Minecraft Alpha)
 > All alpha builds that pinged the skin servers worked! ...or appeared to work. Need more testing.
@@ -374,7 +374,7 @@ await int.wrap(
 ...
 //Alternatively. Here's what to do for Forge based packs
 await int.wrap(
-    /**The URL link to the base folder of this modPacks final resting spot*/
+    /**The URL link to the base folder of this modpacks final resting spot*/
     "https://www.hanro50.net.za/test", 
     /**The output directory where you want GMLL to compile the files to.*/ 
     new dir(".wrap"),
