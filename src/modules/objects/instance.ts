@@ -2,27 +2,30 @@ import { resolvePath, getMeta, getAssets } from "../config.js";
 import { getLatest } from "../handler.js";
 import { fsSanitizer, getCpuArch, throwErr, assetTag } from "../internal/util.js";
 import { join } from "path";
-import type { assetIndex, launchArguments, launchOptions } from "../../types";
-import { dir, file } from "./files.js";
-import version from "./version.js";
+import type { AssetIndex, LaunchArguments, LaunchOptions } from "../../types";
+import { Dir, File } from "./files.js";
+import Version from "./version.js";
 import * as metaHandler from "../internal/handlers/meta.js";
 import * as modsHandler from "../internal/handlers/mods.js";
 import * as launchHandler from "../internal/handlers/launch.js";
+import { randomUUID } from "crypto";
 /**
  * An instance is what the name intails. An instance of the game Minecraft containing Minecraft specific data.
  * This information on where the game is stored and the like. The mods installed and what not. 
  */
-export default class instance {
-    protected assets: Partial<assetIndex>;
-    
+export default class Instance {
+    protected assets: Partial<AssetIndex>;
+    protected id: string;
     path: string;
     version: string;
     name: string;
-    env: any;
+    env: {[key:string]:string};
 
     ram: number;
+    /**This is a custom field for launcher authors. It can safely be ignored*/
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     meta: any;
-   
+
     javaPath: "default" | string;
     noLegacyFix: boolean;
 
@@ -47,7 +50,7 @@ export default class instance {
         "-Dlog4j2.formatMsgNoLookups=true",
     ]
     /**Do not mess with unless you know what you're doing. Some older versions may not launch if information from this file is missing. */
-    public static defJVM: launchArguments = [
+    public static defJVM: LaunchArguments = [
         { "rules": [{ "action": "allow", "os": { "name": "osx" } }], "value": ["-XstartOnFirstThread"] },
         { "rules": [{ "action": "allow", "os": { "name": "windows" } }], "value": "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump" },
         { "rules": [{ "action": "allow", "os": { "name": "windows", "version": "^10\\." } }], "value": ["-Dos.name=Windows 10", "-Dos.version=10.0"] },
@@ -58,7 +61,9 @@ export default class instance {
         "-cp",
         "${classpath}"
     ]
-    constructor(opt: launchOptions = {}) {
+
+    constructor(opt: LaunchOptions = {}) {
+        this.id = opt.id || randomUUID();
         this.version = opt.version || getLatest().release;
         this.name = opt.name || this.version;
         this.path = opt.path || join("<instance>", fsSanitizer(this.name));
@@ -79,17 +84,20 @@ export default class instance {
             this.env[MESA] = "4.6"
         }
     }
+    getID() {
+        return this.id;
+    }
     /**Gets the load order of minecraft jars in jar mod loader. */
     public getJarModPriority = modsHandler.getJarModPriority;
     /**Install forge in this instance. */
     public installForge = modsHandler.installForge;
     /**
      * Used to modify minecraft's jar file (Low level)
-     * @param metapaths 
+     * @param metaPaths 
      * @param version 
      * @returns 
      */
-    public static jarmod = modsHandler.jarmod;
+    public static jarMod = modsHandler.jarMod;
     /**An version of the wrap function that takes an object as a variable instead of the mess the base function takes. */
     public pack = modsHandler.pack;
     /**Wraps up an instance in a prepackaged format that can be easily uploaded to a server for distribution 
@@ -142,19 +150,19 @@ export default class instance {
      * @see {@link install} if you want to initiate that version object first!
      */
     async getVersion() {
-        return await version.get(this.version)
+        return await Version.get(this.version)
     }
 
     getDir() {
-        return new dir(resolvePath(this.path));
+        return new Dir(resolvePath(this.path));
     }
 
     /**Gets a list of profiles that where saved previously */
     static getProfiles() {
-        const profiles: Map<string, (launchOptions & { get: () => instance })> = new Map();
+        const profiles: Map<string, (LaunchOptions & { get: () => Instance })> = new Map();
         getMeta().profiles.ls().forEach(e => {
-            if (e instanceof file && e.getName().endsWith(".json")) {
-                const profile = e.toJSON<launchOptions>()
+            if (e instanceof File && e.getName().endsWith(".json")) {
+                const profile = e.toJSON<LaunchOptions>()
                 profiles.set(profile.name, { ...profile, get: () => this.get(e.getName()) })
             }
         })
@@ -162,20 +170,38 @@ export default class instance {
     }
 
     /**Gets a set profile based on the name of that profile */
-    static get(profile: string) {
-        if (!profile.endsWith(".json")) profile += ".json"
-        const _file = getMeta().profiles.getFile(fsSanitizer(profile));
-        const json = _file.exists() ? _file.toJSON<launchOptions>() : {};
-        return new instance(json);
+    public static get(profileID: string) {
+        if (!profileID.endsWith(".json")) profileID += ".json"
+        const _file = getMeta().profiles.getFile(fsSanitizer(profileID));
+        const json = _file.exists() ? _file.toJSON<LaunchOptions>() : {};
+        /**Here for some old fashioned backwards compatibility */
+        json.id = profileID;
+        return new Instance(json);
+    }
+    /**
+     * Deletes a profile based on the profileID
+     * @param profileID 
+     * @returns 
+     */
+    public static rm(profileID: string) {
+        if (!profileID.endsWith(".json")) profileID += ".json"
+        const _file = getMeta().profiles.getFile(fsSanitizer(profileID));
+        return _file.rm();
+    }
+    /**
+     * Delete the saved information for this instance.
+     * @returns 
+     */
+    rmSelf() {
+        return Instance.rm(this.getID());
     }
 
-
     /**
- * Saves the instance data. Can be used to automatically get the instance again by using it's name
- * @see {@link get} for more info
- */
+     * Saves the instance data. Can be used to automatically get the instance again by using it's name
+     * @see {@link get} for more info
+     */
     save() {
-        getMeta().profiles.getFile(fsSanitizer(this.name + ".json")).write(this);
+        getMeta().profiles.getFile(fsSanitizer(this.id || this.name + ".json")).write(this);
         return this;
     }
     /**
@@ -186,7 +212,7 @@ export default class instance {
         this.getDir().getFile(".installed.txt").rm();
     }
     /**Injects a set selection of images into the asset files and sets them as the icon for this instance */
-    setIcon(x32?: string | file, x16?: string | file, mac?: string | file) {
+    setIcon(x32?: string | File, x16?: string | File, mac?: string | File) {
         if (x32) {
             const x32Icon = this.injectAsset("icons/icon_32x32.png", x32);
             this.assets.objects["minecraft/icons/icon_32x32.png"] = x32Icon;
@@ -205,8 +231,8 @@ export default class instance {
      * @param key The asset key
      * @param path The path to the asset file in questions...it must exist!
      */
-    injectAsset(key: string, path: string | file) {
-        if (typeof path == "string") path = new file(path);
+    injectAsset(key: string, path: string | File) {
+        if (typeof path == "string") path = new File(path);
         if (!path.exists()) throwErr("Cannot find file");
         const hash = path.getHash();
         path.copyTo(assetTag(getAssets().getDir("objects"), hash).getFile(hash));

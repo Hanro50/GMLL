@@ -1,15 +1,15 @@
 import { getAssets } from "../../config.js";
 import { installForge as _installForge } from "../../handler.js";
-import { dir, file, packAsync } from "../../objects/files.js";
-import instance from "../../objects/instance.js";
-import version from "../../objects/version.js";
+import { Dir, File, packAsync } from "../../objects/files.js";
+import Instance from "../../objects/instance.js";
+import Version from "../../objects/version.js";
 import { platform } from "os";
-import type { downloadableFile, versionJson, versionManifest, instancePackConfig, instanceMetaPaths } from "../../../types";
+import type { DownloadableFile, VersionJson, VersionManifest, InstancePackConfig, InstanceMetaPaths } from "../../../types";
 
 import { assetTag, fsSanitizer } from "../util.js";
 /**Gets the load order of minecraft jars in jar mod loader. */
-export async function getJarModPriority(this: instance) {
-    return (await this.getMetaPaths()).jarmods.getFile("priority.json").load<{ [key: string]: number }>({})
+export async function getJarModPriority(this: Instance) {
+    return (await this.getMetaPaths()).jarMods.getFile("priority.json").load<{ [key: string]: number }>({})
 }
 
 /**Wraps up an instance in a prepackaged format that can be easily uploaded to a server for distribution 
@@ -19,8 +19,8 @@ export async function getJarModPriority(this: instance) {
  * @param forge The path to a forge installation jar
  * @param trimMisc Gets rid of any unnecessary miscellaneous files
 */
-export async function wrap(this: instance, baseUrl: string, save: dir | string, name: string = ("custom_" + this.name), forge?: { jar: file | string } | file, trimMisc: boolean = false) {
-    if (typeof save == "string") save = new dir(save);
+export async function wrap(this: Instance, baseUrl: string, save: Dir | string, name: string = ("custom_" + this.name), forge?: { jar: File | string } | File, trimMisc = false) {
+    if (typeof save == "string") save = new Dir(save);
     await this.install();
     const blacklist = ["usercache.json", "realms_persistence.json", "logs", "profilekeys", "usernamecache.json"]
     const separate = ["resourcepacks", "texturepacks", "mods", "coremods", "jarmods", "shaderpacks"]
@@ -29,17 +29,17 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
     const pack = ["config"]
 
     const me = this.getDir();
-    const resources: downloadableFile[] = [];
+    const resources: DownloadableFile[] = [];
 
-    const cp = (d: dir, path: string[]) => {
+    const cp = (d: Dir, path: string[]) => {
         if (d.exists()) {
             d.ls().forEach(e => {
-                if (typeof save == "string") save = new dir(save);
-                if (e instanceof file) {
-                    const f = new file(save.javaPath(), ...path, e.name)
+                if (typeof save == "string") save = new Dir(save);
+                if (e instanceof File) {
+                    const f = new File(save.javaPath(), ...path, e.name)
                     e.copyTo(f.mkdir())
                     resources.push({ key: [...path, e.name].join("/"), name: e.name, path: path, url: [baseUrl, ...path, e.name].join("/"), chk: { sha1: f.getHash(), size: f.getSize() } });
-                } else if (!e.islink()) {
+                } else if (!e.isLink()) {
                     const path2 = [...path, e.path[e.path.length - 1]];
                     cp(e, path2);
                 }
@@ -50,12 +50,12 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
         cp(me.getDir(e), [e]);
     })
     const data = save.getDir(".data").mkdir();
-    for (var i = 0; i < bundle.length; i++) {
+    for (let i = 0; i < bundle.length; i++) {
         const e = bundle[i]
         const ls = me.getDir(e).ls();
-        for (var k = 0; k < ls.length; k++) {
+        for (let k = 0; k < ls.length; k++) {
             const e2 = ls[k]
-            if (!e2.islink() && e2 instanceof dir && e2.exists()) {
+            if (!e2.isLink() && e2 instanceof Dir && e2.exists()) {
                 const name = e2.getName()
                 const zip = e + "_" + k + ".zip";
                 const file = data.getFile(zip)
@@ -65,10 +65,10 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
             }
         }
     }
-    for (var i = 0; i < pack.length; i++) {
+    for (let i = 0; i < pack.length; i++) {
         const e = pack[i]
         const directory = me.getDir(e);
-        if (directory.exists() && !directory.islink()) {
+        if (directory.exists() && !directory.isLink()) {
             const zip = e + ".zip";
             const file = data.getFile(zip)
             await packAsync(directory.sysPath(), file.sysPath());
@@ -91,9 +91,9 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
         assetDir.rm();
     }
     if (!trimMisc)
-        for (var k = 0; k < ls2.length; k++) {
+        for (let k = 0; k < ls2.length; k++) {
             const e = ls2[k];
-            if (!e.islink() && !avoid.includes(e.getName()) && !e.getName().startsWith("."))
+            if (!e.isLink() && !avoid.includes(e.getName()) && !e.getName().startsWith("."))
                 await packAsync(e.sysPath(), miscZip.sysPath());
 
         }
@@ -111,7 +111,7 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
     } else {
         console.warn("[GMLL]: No misc zip detected! If this is intended then please ignore");
     }
-    const ver: Partial<versionJson> = {
+    const ver: Partial<VersionJson> = {
         instance: {
             //      restart_Multiplier: 1,
             files: resources,
@@ -124,9 +124,9 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
     const versionFile = save.getDir(".meta").mkdir().getFile("version.json");
     let finalVersion = this.version;
     if (forge) {
-        let _forge: file;
-        if (forge instanceof file) _forge = forge;
-        else if (typeof forge.jar == "string") _forge = new file(forge.jar);
+        let _forge: File;
+        if (forge instanceof File) _forge = forge;
+        else if (typeof forge.jar == "string") _forge = new File(forge.jar);
         else _forge = forge.jar;
         const path = save.getDir(".forgiac").rm().mkdir();
         const _manifest = await _installForge(_forge, ["--.minecraft", path.sysPath()])
@@ -140,7 +140,7 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
     }
     ver.inheritsFrom = finalVersion;
     versionFile.write(ver);
-    const manifest: versionManifest = {
+    const manifest: VersionManifest = {
         id: name, type: "custom", sha1: versionFile.getHash(), base: finalVersion, url: baseUrl + "/" + ".meta/version.json", "_comment": "Drop this into gmll's manifest folder",
     }
     delete manifest._comment;
@@ -149,11 +149,11 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
 
     let index = `<!DOCTYPE html><html><!--This is just a place holder! GMLL doesn't check this. It is merely here to look nice and serve as a directory listing-->`
     index += `<head><link rel="stylesheet" href="https://styles.hanro50.net.za/v1/main"><title>${name}</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="A GMLL minecraft modpack"></head><body><h1>${name}</h1><h2>Copy the link to this page into gmll to import this modpack!</h2><h2>File list</h2>`
-    function read(f: dir, directory = []) {
+    function read(f: Dir, directory = []) {
 
         f.ls().forEach(e => {
             if (e.getName() == "index.html" || e.getName() == `manifest_${fsSanitizer(name)}.json`) return;
-            if (e instanceof file) {
+            if (e instanceof File) {
                 const entry = ([...directory, e.getName()].join("/"));
                 index += `&nbsp;<br><div class="element button" onclick="document.location.href='./${entry}'">${entry}</div>`
             }
@@ -168,40 +168,40 @@ export async function wrap(this: instance, baseUrl: string, save: dir | string, 
     return ver;
 }
 /**An version of the wrap function that takes an object as a variable instead of the mess the base function takes. */
-export function pack(this: instance, config: instancePackConfig) {
-    if (typeof config.forgeInstallerPath == "string") config.forgeInstallerPath = new file(config.forgeInstallerPath);
+export function pack(this: Instance, config: InstancePackConfig) {
+    if (typeof config.forgeInstallerPath == "string") config.forgeInstallerPath = new File(config.forgeInstallerPath);
 
     return this.wrap(config.baseDownloadLink, config.outputDir, config.modpackName, config.forgeInstallerPath, config.trimMisc)
 }
 /**Install forge in this instance. */
-export async function installForge(this: instance, forge?: file | string) {
+export async function installForge(this: Instance, forge?: File | string) {
     const manifest = await _installForge(forge);
     this.version = manifest.id;
     return this.version;
 }
 /**
  * Used to modify minecraft's jar file (Low level)
- * @param metapaths 
+ * @param metaPaths 
  * @param version 
  * @returns 
  */
-export async function jarmod(metapaths: instanceMetaPaths, version: version): Promise<file> {
-    const jarmods = metapaths.jarmods;
-    const bin = dir.tmpdir().getDir("gmll", "bin").rm().mkdir();
+export async function jarMod(metaPaths: InstanceMetaPaths, version: Version): Promise<File> {
+    const jarMods = metaPaths.jarMods;
+    const bin = Dir.tmpdir().getDir("gmll", "bin").rm().mkdir();
     const custom = bin.getFile(`${version.name}.jar`);
 
-    if (!jarmods || !jarmods.exists()) return;
-    const lst = jarmods.ls();
+    if (!jarMods || !jarMods.exists()) return;
+    const lst = jarMods.ls();
     if (lst.length < 1) return;
     console.warn("[GMLL]: Jar modding is experimental atm.\nWe still don't have a way to order jars\nRecommended for modding legacy versions or mcp...");
     console.log("[GMLL]: Packing custom jar");
-    const tmp = dir.tmpdir().getDir("gmll", "tmp").rm().mkdir();
+    const tmp = Dir.tmpdir().getDir("gmll", "tmp").rm().mkdir();
     const jar = version.folder.getFile(version.name + ".jar");
     if (!jar.exists()) return;
     await jar.unzip(tmp, ["META-INF/*"]);
 
     let priority = { "_comment": "0 is the default, the lower the priority. The sooner a mod will be loaded. Deleting this file resets it" };
-    const pFile = jarmods.getFile("priority.json");
+    const pFile = jarMods.getFile("priority.json");
     let fReset = false;
     if (pFile.exists())
         try { priority = pFile.toJSON(); } catch (e) { console.warn("[GMLL]: Failed to parse priorities file!"); }
@@ -220,7 +220,7 @@ export async function jarmod(metapaths: instanceMetaPaths, version: version): Pr
 
     console.log("[GMLL]: Running through files");
     for (const e of lst) {
-        if (e instanceof file) {
+        if (e instanceof File) {
             const n = e.getName();
             console.log(n);
             if (n.endsWith(".zip") || n.endsWith(".jar")) {

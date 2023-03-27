@@ -1,21 +1,22 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /*
  * This is the core of the download manager. No code from the main thread should interact with it!
  * If GMLL is unable to reach this library then it will use a slower fallback.
  * 
  * Redefine the property __get in the config module to change where GMLL looks for this file.
- * ^ If you want to reinable the faster downloader.
+ * ^ If you want to reenable the faster downloader.
  */
 
-import { dir, file } from "../objects/files.js";
+import { Dir, File } from "../objects/files.js";
 import { parentPort, workerData } from "worker_threads";
 
 export type getWorkerDate = { processCMD: string, failCMD: string, getCMD: string, postCMD: string, zipDir: string[] };
 
 const { processCMD, failCMD, getCMD, postCMD, zipDir }: getWorkerDate = workerData;
-async function load(a: any, retry: number = 0) {
+async function load(a: any, retry = 0) {
     const o = a.data;
     try {
-        await file.process(o, new dir(...zipDir));
+        await File.process(o, new Dir(...zipDir));
         parentPort.postMessage({ cmd: processCMD, key: o.key });
         return;
     } catch (e) {
@@ -25,7 +26,7 @@ async function load(a: any, retry: number = 0) {
             await load(a, retry);
             return;
         }
-        console.error("[GMLL]: procedural failure : " + new dir(...o.path));
+        console.error("[GMLL]: procedural failure : " + new Dir(...o.path));
         parentPort.postMessage({ cmd: failCMD, type: "system", key: o.path, err: e });
         parentPort.postMessage({ cmd: processCMD, key: o.key });
     }

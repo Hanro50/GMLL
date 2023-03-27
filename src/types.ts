@@ -4,35 +4,35 @@
  * ---------------------------------------------------------------------------------------------
  */
 
-import type { dir, file } from "./modules/objects/files";
+import type { Dir, File } from "./modules/objects/files";
 
 /**
  * The release type of a set version. Can be used to add filters to a version select field within a launcher so 
  * that a user isn't overwhelmed by the 7 billion different versions of fabric.
  */
-export type mcVersionType = "generated" | "old_alpha" | "old_beta" | "release" | "snapshot" | "fabric" | "forge" | "custom" | "unknown";
+export type MCVersionType = "generated" | "old_alpha" | "old_beta" | "release" | "snapshot"| "custom" | "unknown" | Loader;
 /**
  * The type of user profiles. Can be used to keep older versions of forge from trying to dynamically refresh your user object. 
  * Which if you logged in without a mojang account could cause tha game to crash
  */
-export type mcUserTypeVal = "msa" | "mojang" | "legacy";
+export type MCUserTypeVal = "msa" | "mojang" | "legacy";
 /**
  * The versions of the minecraft jar a set release's version json may have. Can be used to potentially download the server version
  * of a set release. 
  */
-export type mcJarTypeVal = "client" | "client_mappings" | "server" | "server_mappings" | "windows_server";
+export type MCJarTypeVal = "client" | "client_mappings" | "server" | "server_mappings" | "windows_server";
 /**
  * The version of the java runtime a set release uses internally. The 'java-runtime-arm' can be ignored unless you have GMLL
  * booted up on something like the raspberry pi. Otherwise gamma and beta are different versions of java 17, alpha is java 16 
  * and legacy is a version of java 8 
  */
-export type mcRuntimeVal = "java-runtime-arm" | "java-runtime-gamma" | "java-runtime-alpha" | "java-runtime-beta" | "jre-legacy" | "minecraft-java-exe";
+export type MCRuntimeVal = "java-runtime-arm" | "java-runtime-gamma" | "java-runtime-alpha" | "java-runtime-beta" | "jre-legacy" | "minecraft-java-exe";
 /**
  * Potential architectures. Only x86, x64 and arm64 are fixed values at this stage and are technically supported.
  * Use the others for stuff at your own risk since GMLL might be forced to change this if mojang suddenly chooses 
  * to support one of the other architectures 
  */
-export type cpuArchRuleVal = "x86" | "x64" | "arm" | "arm64" | "mips" | "mipsel" | "ppc" | "ppc64" | "s390" | 's390x'
+export type CpuArchRuleVal = "x86" | "x64" | "arm" | "arm64" | "mips" | "mipsel" | "ppc" | "ppc64" | "s390" | 's390x'
 /**
  * ---------------------------------------------------------------------------------------------
  * Downloader 
@@ -41,7 +41,7 @@ export type cpuArchRuleVal = "x86" | "x64" | "arm" | "arm64" | "mips" | "mipsel"
 /**
  * The internal format of the file that is passed to GMLL's multithread downloader function. 
  */
-export interface downloadableFile {
+export interface DownloadableFile {
     name: string,
     path: string[],
     url: string,
@@ -61,7 +61,7 @@ export interface downloadableFile {
  * The base format some of mojang's internal download files. 
  * All files from mojang should have these fields
  */
-export interface urlFile {
+export interface UrlFile {
     size: number,
     sha1: string,
     url: string,
@@ -70,7 +70,7 @@ export interface urlFile {
 /**
  * The format of the asset index file minecraft uses 
  */
-export interface assetIndex {
+export interface AssetIndex {
     "objects": { [key: string]: { "hash": string, "size": number, "ignore"?: boolean } },
     map_to_resources?: boolean,
     virtual?: boolean
@@ -78,22 +78,22 @@ export interface assetIndex {
 
 
 
-export type mojangResourceFile = { type: "file", downloads?: { lzma?: urlFile, raw: urlFile }, executable?: boolean }
-export type mojangResourceLink = { type: "link", target: string; }
-export type mojangResourceDir = { type: "directory" }
+export type MojangResourceFile = { type: "file", downloads?: { lzma?: UrlFile, raw: UrlFile }, executable?: boolean }
+export type MojangResourceLink = { type: "link", target: string; }
+export type MojangResourceDir = { type: "directory" }
 /**
  * The generic resource file format mojang uses. 
  * The two downloadables in this formate are the java edition runtimes and Minecraft Dungeons
  */
-export interface mojangResourceManifest {
+export interface MojangResourceManifest {
     files: {
-        [key: string]: mojangResourceDir | mojangResourceLink | mojangResourceFile
+        [key: string]: MojangResourceDir | MojangResourceLink | MojangResourceFile
     }
 }
 /**
  * An entry in a given runtime manifest. 
  */
-export type runtimeManifestEntry = {
+export type RuntimeManifestEntry = {
     "availability": {
         "group": number,
         "progress": number
@@ -108,9 +108,9 @@ export type runtimeManifestEntry = {
         "released": string
     }
 }
-export type runtimeManifest = {
+export type RuntimeManifest = {
     [key in "gamecore" | "linux" | "linux-i386" | "mac-os" | "windows-x64" | "windows-x86" | "linux-arm64" | "linux-arm32" | "windows-arm64"]: {
-        [key in "java-runtime-beta" | "java-runtime-alpha" | "jre-legacy" | "minecraft-java-exe" | "java-runtime-arm"]: Array<runtimeManifestEntry>
+        [key in "java-runtime-beta" | "java-runtime-alpha" | "jre-legacy" | "minecraft-java-exe" | "java-runtime-arm"]: Array<RuntimeManifestEntry>
     }
 }
 
@@ -119,12 +119,18 @@ export type runtimeManifest = {
  * Index manifest 
  * ---------------------------------------------------------------------------------------------
  */
-
-export interface versionManifest {
+export interface VanillaManifestJson {
+    latest: {
+        "release": string,
+        "snapshot": string
+    },
+    versions?: [VersionManifest]
+}
+export interface VersionManifest {
     //The ID of the version, must be unique
     id: string,
     //version type,
-    type: mcVersionType,
+    type: MCVersionType,
     //the URL to get the version.json. Assumes version.json already exists if missing
     url?: string,
     /**Vanilla version file includes this*/
@@ -147,18 +153,18 @@ export interface versionManifest {
  * Version json
  * ---------------------------------------------------------------------------------------------
  */
-export interface versionJsonRule {
+export interface VersionJsonRule {
     "action": "allow" | "disallow",
     os?: {
         name?: "osx" | "windows" | "linux",
-        arch?: cpuArchRuleVal,
+        arch?: CpuArchRuleVal,
         version?: string
     },
-    features?: launchOptions
+    features?: LaunchOptions
 }
-export type versionJsonRules = Array<versionJsonRule>;
+export type VersionJsonRules = Array<VersionJsonRule>;
 
-export interface artifact {
+export interface Artifact {
     sha1: string,
     url: string,
     size: number,
@@ -170,17 +176,17 @@ export interface artifact {
 /**
  * The internal format for the dependencies a set version of Minecraft uses. 
  */
-export interface library {
+export interface Library {
     checksums: string[];
     name: string,
     downloads?: {
-        artifact: artifact,
+        artifact: Artifact,
         classifiers?: {
-            [key: string]: artifact
+            [key: string]: Artifact
         }
     },
     url?: string,
-    rules?: versionJsonRules,
+    rules?: VersionJsonRules,
     extract?: {
         exclude: [
             "META-INF/"
@@ -196,42 +202,42 @@ export interface library {
 }
 /**
  * The general format of a version.json file.
- * Do note that GMLL adds extentions to this interface to allow some of GMLL's more complex features to function. 
+ * Do note that GMLL adds extensions to this interface to allow some of GMLL's more complex features to function. 
  */
-export interface versionJson {
+export interface VersionJson {
     arguments?: {
-        "game": launchArguments
-        "jvm": launchArguments
+        "game": LaunchArguments
+        "jvm": LaunchArguments
     },
-    assetIndex: artifact,
+    assetIndex: Artifact,
     assets: string,
     downloads: {
-        client: artifact,
-        client_mappings?: artifact,
-        server?: artifact,
-        server_mappings?: artifact,
-        windows_server?: artifact
+        client: Artifact,
+        client_mappings?: Artifact,
+        server?: Artifact,
+        server_mappings?: Artifact,
+        windows_server?: Artifact
     },
     logging?: {
         client: {
             argument: string,
-            file: artifact,
+            file: Artifact,
             type: "log4j2-xml"
         }
     },
     javaVersion?: {
-        component: mcRuntimeVal,
-        majorVersion: Number
+        component: MCRuntimeVal,
+        majorVersion: number
     },
     complianceLevel: string
     id: string,
-    libraries: [library],
+    libraries: [Library],
     mainClass: string,
     minecraftArguments?: string,
-    minimumLauncherVersion: Number,
+    minimumLauncherVersion: number,
     releaseTime: string,
     time: string,
-    type: mcVersionType,
+    type: MCVersionType,
     synced?: boolean,
     inheritsFrom?: string,
     /**
@@ -250,15 +256,16 @@ export interface versionJson {
         /**
          * The files that need to be download for a set instance
          */
-        files: downloadableFile[];
+        files: DownloadableFile[];
         /**
          * Assets to inject into any instance made with this version file.
          */
-        assets: Partial<assetIndex>;
+        assets: Partial<AssetIndex>;
         /**
          * Custom meta data. Here to be used by launcher developers, GMLL won't interact with this!
          * Usefull for providing more info about a modpack
          */
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         meta: any;
         /**
          * Used to locate the forge installer
@@ -276,13 +283,13 @@ export interface versionJson {
  * Launch arguments for an instance. 
  * These are configurable with a rule check to avoid using a set argument in an environment that argument is incompatible with
  */
-export type launchArguments = Array<string | { rules: versionJsonRules, value?: string | string[] }>
+export type LaunchArguments = Array<string | { rules: VersionJsonRules, value?: string | string[] }>
 /**
- * Used in the Modpack API.
- * This is mainly used to insure a set modpack is compatible with this version of GMLL. 
+ * Used in the ModPack API.
+ * This is mainly used to insure a set modPack is compatible with this version of GMLL. 
  * It will also be used in the future to provide backwards compatibility. 
  */
-export interface modpackApiInfo {
+export interface ModPackApiInfo {
     name: string,
     version: number,
     sha: string,
@@ -291,12 +298,12 @@ export interface modpackApiInfo {
 
 
 
-export interface player {
+export interface Player {
     profile: {
         id: string,
         name: string,
         xuid?: string,
-        type?: mcUserTypeVal,
+        type?: MCUserTypeVal,
         demo?: boolean,
         properties?: {
             //We're still reverse engineering what this property is used for...
@@ -307,7 +314,9 @@ export interface player {
     access_token?: string
 }
 
-export interface launchOptions {
+export interface LaunchOptions {
+    /**Internal ID string. */
+    id?: string;
     /**If true then minecraft will not close if you close your launcher!*/
     detach?: boolean;
     /**The name of the instance */
@@ -319,13 +328,14 @@ export interface launchOptions {
     /**Ram in GB */
     ram?: number,
     /**Custom data your launcher can use */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     meta?: any,
     /**Asset index injection */
-    assets?: assetIndex,
+    assets?: AssetIndex,
     /**environment variables */
-    env?: any
+    env?: {[key:string]:string}
     /**Define a custom java path. 
-     * @warning It is recommended to let GMLL handle this for you. It is solely changable to achieve parody with the vanilla launcher. 
+     * @warning It is recommended to let GMLL handle this for you. It is solely changeable to achieve parody with the vanilla launcher. 
      * Changing this can easily break older versions of forge, cause graphical corruption, crash legacy versions of minecraft, cause issues with arm Macs and a whole host of random BS.  
      * If brought up in the support channels for GMLL, you'll be asked to set this to it's default value if we see that you have changed it.
      */
@@ -334,33 +344,33 @@ export interface launchOptions {
     noLegacyFix?: boolean;
 }
 
-export interface instancePackConfig {
+export interface InstancePackConfig {
     /**The main domain and sub-domain you'll be hosting your files on*/
     baseDownloadLink: string,
     /**The directory the packed up instance should be located in*/
-    outputDir: dir | string,
+    outputDir: Dir | string,
     /**The name of your modpack */
     modpackName?: string,
     /**The path to your forge installer jar */
-    forgeInstallerPath?: file | string,
+    forgeInstallerPath?: File | string,
     /**Should the misc.zip archive be trimmed by avoiding normally unnecessary files */
     trimMisc?: true
 }
 /**
  * Used for world files and resource packs. 
  */
-export interface metaObj {
+export interface MetaObj {
     name: string,
-    path: dir | file
+    path: Dir | File
     icon?: string,
 }
-export interface metaResourcePack extends metaObj {
+export interface MetaResourcePack extends MetaObj {
     description: string,
     format?: number
     credits?: string,
     license?: string,
 }
-export interface playerStats {
+export interface PlayerStats {
     stats: {
         [key: string]: {
             [key: string]: number
@@ -368,16 +378,16 @@ export interface playerStats {
     },
     DataVersion: number
 }
-export interface metaSave extends metaObj {
-    level: levelDat,
-    players: { [playerID: string]: { data: playerDat, stats?: playerStats } },
+export interface MetaSave extends MetaObj {
+    level: LevelDat,
+    players: { [playerID: string]: { data: PlayerDat, stats?: PlayerStats } },
 }
 
 
 /**
  * Used when you ask for mods in a set a instance
  */
-export interface modObj extends metaObj {
+export interface ModObj extends MetaObj {
     enabled: () => boolean
     /**
      * Toggles a set mod on and off based on the "on" variable
@@ -386,19 +396,19 @@ export interface modObj extends metaObj {
     /**
      * Tells you if a set mod is a core mod. For older version of forge.
      */
-    coremod: boolean
+    coreMod: boolean
 
 }
 
-export interface instanceMetaPaths {
-    mods: dir,
-    saves: dir,
-    resourcePacks: dir,
-    coremods: dir,
-    configs: dir,
-    jarmods: dir,
+export interface InstanceMetaPaths {
+    mods: Dir,
+    saves: Dir,
+    resourcePacks: Dir,
+    coreMods: Dir,
+    configs: Dir,
+    jarMods: Dir,
 }
-export interface playerDat {
+export interface PlayerDat {
     abilities: {
         flying: number,
         flySpeed?: number
@@ -431,6 +441,7 @@ export interface playerDat {
     },
     AbsorptionAmount?: number,
     Air: number,
+    // eslint-disable-next-line @typescript-eslint/ban-types
     Brain?: { memories: {} },
     DataVersion?: number,
     DeathTime: number,
@@ -479,8 +490,9 @@ export interface playerDat {
  * 
  * Note: Saving back values is not currently supported!
  */
-export interface levelDat {
+export interface LevelDat {
     Data: {
+        // eslint-disable-next-line @typescript-eslint/ban-types
         CustomBossEvents?: {},
         DataPacks?: { Enabled: string[], Disabled: string[] }
         DragonFight?: Partial<{
@@ -527,7 +539,7 @@ export interface levelDat {
             spectatorsGenerateChunks: 'true' | 'false',
             universalAnger: 'true' | 'false',
         }>,
-        Player: playerDat,
+        Player: PlayerDat,
         Version?: number | { Snapshot: number, Series: string, Id: number, Name: string },
         version?: number,
         WorldGenSettings?: Partial<{
@@ -587,23 +599,23 @@ export interface levelDat {
         WasModded?: number,
     }
 }
-export type forgeDep = {
+export type ForgeDep = {
     modId: string
     mandatory: boolean
     versionRange: string
-    ordering: string
+    ordering?: string
     side: string
 }
-export type loader = "forge" | "fabric" | "liteLoader" | "riftMod" | "unknown";
+export type Loader = "forge" | "fabric" | "liteLoader" | "riftMod" | "unknown" | "quilt";
 
-export interface modInfo extends metaObj {
+export interface ModInfo extends MetaObj {
     id: string,
     authors: string[],
     version: string,
-    loader: loader
+    loader: Loader
     depends?: {
         [key: string]: string
-    } | Array<forgeDep | string>
+    } | Array<ForgeDep | string>
     bugReportURL?: string,
     description?: string,
     mcversion?: string,
@@ -620,6 +632,6 @@ export interface modInfo extends metaObj {
     error?: boolean,
 }
 
-export interface installDat {
+export interface InstallDat {
     legacy: boolean;
 }

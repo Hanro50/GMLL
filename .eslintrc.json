@@ -1,18 +1,27 @@
 {
     "env": {
-       "node": true,
-        "es2021": true,
-        "shared-node-browser": true
+        "browser": true,
+        "es2021": true
     },
     "parser": "@typescript-eslint/parser",
+    "plugins": [
+        "@typescript-eslint"
+    ],
     "root": true,
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/eslint-recommended",
+        "plugin:@typescript-eslint/recommended"
+    ],
+    "overrides": [],
     "parserOptions": {
-        "ecmaVersion": 12,
+        "ecmaVersion": "latest",
         "sourceType": "module"
     },
-    "plugins": [
-    "@typescript-eslint"
-  ],
     "rules": {
+        "no-async-promise-executor": "off",
+        "no-case-declarations": "off",
+        "no-fallthrough":"off",
+        "new-cap":"error"
     }
 }

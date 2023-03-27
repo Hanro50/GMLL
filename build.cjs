@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 const { execSync } = require("child_process")
-const { rmSync, copyFileSync } = require("fs");
-const { join } = require("path");
+const { rmSync } = require("fs");
 
 console.log("[build]: Removing old files!");
 rmSync("dist", { force: true, recursive: true });

@@ -2,24 +2,24 @@
 
 import { emit, getInstances, getlibraries, getMeta, getRuntimes, getVersions, isInitialized, onUnsupportedArm } from "./config.js";
 import { getForgiac, runtime } from "./downloader.js";
-import { fsSanitizer, getOS, throwErr } from "./internal/util.js";
+import { fsSanitizer, getOS } from "./internal/util.js";
 import { spawn } from "child_process";
-import { dir, file } from "./objects/files.js";
+import { File } from "./objects/files.js";
 import fetch from "node-fetch";
-import instance from "./objects/instance.js";
-import type { modpackApiInfo, versionManifest, mcRuntimeVal, versionJson } from "../types";
+import Instance from "./objects/instance.js";
+import type { ModPackApiInfo, VersionManifest, MCRuntimeVal, VersionJson } from "../types";
 /**
  * Compiles all manifest objects GMLL knows about into a giant array. This will include almost all fabric versions and any installed version of forge.
  * GMLL can still launch a version if it is not within this folder, although it is not recommended
  * @returns a list of Manifest files GMLL knows definitely exist. 
  */
-export function getManifests(): versionManifest[] {
+export function getManifests(): VersionManifest[] {
     isInitialized();
-    var versionManifest = [];
+    const versionManifest = [];
     const root = getMeta().manifests
     root.ls().forEach(e => {
-        if (e.sysPath().endsWith("json") && e instanceof file) {
-            var v = e.toJSON<versionManifest | versionManifest[]>();
+        if (e.sysPath().endsWith("json") && e instanceof File) {
+            const v = e.toJSON<VersionManifest | VersionManifest[]>();
             if (v instanceof Array)
                 versionManifest.push(...v);
             else
@@ -40,22 +40,22 @@ const forgiacCodes = {
 }
 
 
-function findManifest(version: string, manifests: versionManifest[]) {
+function findManifest(version: string, manifests: VersionManifest[]) {
     const v = version.toLocaleLowerCase().trim();
     let manifest = manifests.find(e => { try { return e.id.toLocaleLowerCase().trim() == v } catch { return false; } })  //|| { id: version, type: "unknown" };
     if (!manifest) {
         console.warn("[GMLL]: attempting to generate manifest files");
         const root = getMeta().manifests;
-        const versionjson = getVersions().getFile(version, `${version}.json`);
-        if (versionjson.exists()) {
+        const versionJson = getVersions().getFile(version, `${version}.json`);
+        if (versionJson.exists()) {
 
             let f = root.getFile(`${version}.json`);
             let i = 1;
             while (f.exists()) f = root.getFile(`${version}_${i++}.json`);
             try {
-                const vj = versionjson.toJSON<Partial<versionJson>>()
-                const mf: versionManifest = {
-                    id: vj.id || versionjson.name.split(".")[0],
+                const vj = versionJson.toJSON<Partial<VersionJson>>()
+                const mf: VersionManifest = {
+                    id: vj.id || versionJson.name.split(".")[0],
                     base: vj.inheritsFrom,
                     releaseTime: vj.releaseTime,
                     time: vj.time,
@@ -66,7 +66,7 @@ function findManifest(version: string, manifests: versionManifest[]) {
                 console.error("[GMLL]: failed to compile manifest from version json");
             }
         } else {
-            console.warn(`[GMLL]: no version json (at ${versionjson.sysPath()}) found, I hope you know what you are doing!`);
+            console.warn(`[GMLL]: no version json (at ${versionJson.sysPath()}) found, I hope you know what you are doing!`);
         }
         manifest = { id: version, type: "unknown" };
     }
@@ -111,11 +111,11 @@ export function getLatest(): { "release": string, "snapshot": string } {
     else return { "release": "1.17.1", "snapshot": "21w42a" };
 }
 
-export async function installForge(forgeInstallerJar?: string | file, forgiacArgs: string[] = ["--virtual", getVersions().sysPath()]) {
+export async function installForge(forgeInstallerJar?: string | File, forgiacArgs: string[] = ["--virtual", getVersions().sysPath()]) {
     const path = getInstances().getDir(".forgiac");
-    let manifest = path.getDir(".manifest_" + Date.now()).mkdir();
-    if (typeof forgeInstallerJar == "string") forgeInstallerJar = new file(forgeInstallerJar);
-    const fRun: mcRuntimeVal = onUnsupportedArm ? "java-runtime-arm" : "java-runtime-gamma";
+    const manifest = path.getDir(".manifest_" + Date.now()).mkdir();
+    if (typeof forgeInstallerJar == "string") forgeInstallerJar = new File(forgeInstallerJar);
+    const fRun: MCRuntimeVal = onUnsupportedArm ? "java-runtime-arm" : "java-runtime-gamma";
     await runtime(fRun);
 
     const javaPath = getJavaPath(fRun);
@@ -139,10 +139,10 @@ export async function installForge(forgeInstallerJar?: string | file, forgiacArg
         throw { "Error": "manifest.not.found", code: 400, message: "Manifest file not found?" }
     }
     const manifestFile = forgeManifest[0]
-    if (!(manifestFile instanceof file)) {
+    if (!(manifestFile instanceof File)) {
         throw { "Error": "manifest.is.folder", code: 401, message: "Manifest file is a directory?" }
     }
-    const result = manifestFile.toJSON<versionManifest>();
+    const result = manifestFile.toJSON<VersionManifest>();
     manifestFile.moveTo(getMeta().manifests.getFile(manifestFile.getName()));
     manifest.rm();
     return result;
@@ -151,24 +151,24 @@ export async function installForge(forgeInstallerJar?: string | file, forgiacArg
 
 /**
  * Imports a modpack off the internet compatible with GMLL via a link.
- * See the {@link instance.wrap()  wrapper function} to generate the files to upload to your web server to make this work  
+ * See the {@link Instance.wrap()  wrapper function} to generate the files to upload to your web server to make this work  
  * @param url the aforementioned link. 
  */
-export async function importLink(url: string): Promise<versionManifest>;
-export async function importLink(url: string, name: string): Promise<instance>;
-export async function importLink(url: string, name?: string): Promise<instance | versionManifest> {
+export async function importLink(url: string): Promise<VersionManifest>;
+export async function importLink(url: string, name: string): Promise<Instance>;
+export async function importLink(url: string, name?: string): Promise<Instance | VersionManifest> {
     const r = await fetch(url + "/.meta/api.json");
     if (!r.ok)
         throw "Could not find the api doc";
-    const v = await r.json() as modpackApiInfo;
+    const v = await r.json() as ModPackApiInfo;
     if (v.version != 1) {
         throw "Incompatible version ID detected";
     }
     const manfile = fsSanitizer(v.name) + ".json"
-    const manifest = (await getMeta().manifests.getFile(manfile).download(url + "/.meta/manifest.json", { sha1: v.sha })).toJSON<versionManifest>();
+    const manifest = (await getMeta().manifests.getFile(manfile).download(url + "/.meta/manifest.json", { sha1: v.sha })).toJSON<VersionManifest>();
     // console.log(manfile)
     if (!name) return manifest;
-    return new instance({ version: manifest.id, name: name }).save();
+    return new Instance({ version: manifest.id, name: name }).save();
 }
 
 /**
@@ -176,7 +176,7 @@ export async function importLink(url: string, name?: string): Promise<instance |
  * @param java the name of the Java runtime. Based on the names Mojang gave them.
  * @returns The location of the have executable. 
  */
-export function getJavaPath(java: mcRuntimeVal = "jre-legacy") {
+export function getJavaPath(java: MCRuntimeVal = "jre-legacy") {
     if (getOS() == "windows") {
         const f = getRuntimes().getFile(java, "bin", "javaw.exe");
         if (f.exists()) return f;

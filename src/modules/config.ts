@@ -1,22 +1,21 @@
 import { EventEmitter } from "events";
 import { manifests } from "./downloader.js";
-import { dir, file, set7zipRepo as _set7zipRepo } from "./objects/files.js";
+import { Dir, File, set7zipRepo as _set7zipRepo } from "./objects/files.js";
 import { getCpuArch, getErr, getOS, throwErr } from "./internal/util.js";
 import { type } from "os";
-import type instance from "./objects/instance.js";
-//@ts-ignore
+import type Instance from "./objects/instance.js";
 import { getPath } from "./internal/root.cjs"
 let __get__;
 try {
     __get__ = getPath()
-} catch { }
+} catch { /* empty */ }
 if (!__get__?.endsWith("get.js")) {
     console.warn("[GMLL]: The internal downloader script may not be within it's own file. GMLL will use the much slower fallback downloader!");
     console.warn("[GMLL]: Please update the '__get' property in the config module to point to the correct standalone js file.");
 }
 
-export let __get = __get__ || "ERROR";
-export type update = "fabric" | "vanilla" | "runtime" | "agent"|"quilt";
+export const __get = __get__ || "ERROR";
+export type update = "fabric" | "vanilla" | "runtime" | "agent" | "quilt";
 export const onUnsupportedArm = (getCpuArch() == "arm64" || getCpuArch() == "arm") && type() != "Darwin";
 const repositories = {
     maven: "https://download.hanro50.net.za/maven",
@@ -49,8 +48,8 @@ if (onUnsupportedArm) {
 }
 let initialized = false;
 
-let _packageFile = new file("package.json");
-let _packageJSON: { version?: string, name?: string } = _packageFile.exists() ? new file("package.json").toJSON<{ version: string }>() : {}
+const _packageFile = new File("package.json");
+const _packageJSON: { version?: string, name?: string } = _packageFile.exists() ? new File("package.json").toJSON<{ version: string }>() : {}
 
 let version = _packageJSON.version || "0.0.0";
 let launcherName = _packageJSON.name || "GMLL";
@@ -74,18 +73,18 @@ export interface Events {
      * err=>The thrown error
      * path=>The path to the file that caused the issue
     */
-    on(e: 'parser.fail', f: (type: string, err: Error, path: file | dir) => void): void
+    on(e: 'parser.fail', f: (type: string, err: Error, path: File | Dir) => void): void
     /**
      * type=>Type of resource being parsed
      * instance=>The instance of which the load event is applicable. 
     */
-    on(e: "parser.start" | "parser.done", f: (type: string, instance: instance) => void): void
+    on(e: "parser.start" | "parser.done", f: (type: string, instance: Instance) => void): void
     /**Used to give setup information. Useful for progress bars. */
     on(e: "download.setup", f: (cores: number) => void): void
     /**Fired when a file has been downloaded and saved to disk */
-    on(e: "download.progress" | "encode.progress" | "parser.progress", f: (key: string, index: Number, total: Number, left: Number) => void): void
+    on(e: "download.progress" | "encode.progress" | "parser.progress", f: (key: string, index: number, total: number, left: number) => void): void
     /**Fired when GMLL needs to restart a download */
-    on(e: "download.fail", f: (key: string, type: "retry" | "fail" | "system", err: any) => void): void
+    on(e: "download.fail", f: (key: string, type: "retry" | "fail" | "system", err: string) => void): void
     /**The events fired when GMLL has to spin up an instance of the JVM. 
      * @param app The name of the Java app currently running. (Forgiac|Minecraft)
      * @param cwd The directory the app is running within.
@@ -95,14 +94,15 @@ export interface Events {
     * @param app The name of the Java app currently running. (Forgiac|Minecraft)
     * @param chunk The aforementioned feedback
     */
-    on(e: "jvm.stdout" | "jvm.stderr", f: (app: string, chunk: any) => void): void
+    on(e: "jvm.stdout" | "jvm.stderr", f: (app: string, chunk: string) => void): void
 
     on(e: "proxy.start", f: (port: number) => void): void;
-    on(e: "proxy.fail", f: (reason: string, error?: any) => void): void;
+    on(e: "proxy.fail", f: (reason: string, error?: string) => void): void;
     on(e: "proxy.request", f: (url: string) => void): void;
     on(e: "proxy.skinURL", f: (username: string, uuid: string, clothing: "SKIN" | "CAPE") => void): void;
     on(e: "proxy.skinURL.fail", f: (username: string, clothing: "SKIN" | "CAPE") => void): void;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     emit(tag: string, ...args: any): void
 }
 let defEvents: Events = new EventEmitter();
@@ -146,20 +146,20 @@ defEvents.on('jvm.start', (app, cwd) => console.log((`[${app}]: Starting in dire
 defEvents.on('jvm.stdout', (app, out) => console.log((`[${app}]: ${out}`).trim()));
 defEvents.on('jvm.stderr', (app, out) => console.log(`\x1b[31m\x1b[1m[${app}]: ${out}`.trim() + "\x1b[0m"));
 
-var updateConf: update[] = ["fabric", "vanilla", "runtime", "agent","quilt"];
+let updateConf: update[] = ["fabric", "vanilla", "runtime", "agent", "quilt"];
 
-var files: { _platform: dir, assets: dir, libraries: dir, instances: dir, versions: dir, runtimes: dir, launcher: dir, natives: dir }
+let files: { _platform: Dir, assets: Dir, libraries: Dir, instances: Dir, versions: Dir, runtimes: Dir, launcher: Dir, natives: Dir }
 /**
  * Resets the root folder path and all of it's sub folders
  * @param {String} _root Essentially where you want to create a new .minecraft folder
  */
-export function setRoot(_root: dir | string) {
-    if (typeof _root == "string") _root = new dir(_root);
+export function setRoot(_root: Dir | string) {
+    if (typeof _root == "string") _root = new Dir(_root);
     if (_root.sysPath().includes("\x00")) {
         console.error("Path should not contain a NULL character!")
     }
     initialized = false;
-    let platform = _root.getDir("platform", getOS(), getCpuArch())
+    const platform = _root.getDir("platform", getOS(), getCpuArch())
     files = {
         assets: _root.getDir("assets"),
         libraries: _root.getDir("libraries"),
@@ -168,17 +168,17 @@ export function setRoot(_root: dir | string) {
         launcher: _root.getDir("launcher"),
         _platform: platform,
         runtimes: platform.getDir("runtimes"),
-        natives: dir.tmpdir().getDir("gmll", "natives", getOS(), getCpuArch())
+        natives: Dir.tmpdir().getDir("gmll", "natives", getOS(), getCpuArch())
     }
 }
 
-setRoot(new dir(".minecraft"));
+setRoot(new Dir(".minecraft"));
 /**
  * The location of the asset directory. Used to store textures, music and sounds. 
  * @param _assets The location you want the asset directory to be at
  */
-export function setAssets(_assets: dir | string) {
-    if (typeof _assets == "string") _assets = new dir(_assets);
+export function setAssets(_assets: Dir | string) {
+    if (typeof _assets == "string") _assets = new Dir(_assets);
     files.assets = _assets;
     files.assets.mkdir();
 }
@@ -186,8 +186,8 @@ export function setAssets(_assets: dir | string) {
  * Used to store dependencies various versions of Minecraft and modloaders need in order to function.  
  * @param _libraries The location you want the library directory to be at
  */
-export function setLibraries(_libraries: dir | string) {
-    if (typeof _libraries == "string") _libraries = new dir(_libraries);
+export function setLibraries(_libraries: Dir | string) {
+    if (typeof _libraries == "string") _libraries = new Dir(_libraries);
     files.libraries = _libraries;
     files.libraries.mkdir();
 }
@@ -195,8 +195,8 @@ export function setLibraries(_libraries: dir | string) {
  * The default location to store new instances at.  
  * @param _instances The location you want the instance directory to be at
  */
-export function setInstances(_instances: dir | string) {
-    if (typeof _instances == "string") _instances = new dir(_instances);
+export function setInstances(_instances: Dir | string) {
+    if (typeof _instances == "string") _instances = new Dir(_instances);
     files.instances = _instances;
     files.instances.mkdir();
 }
@@ -205,8 +205,8 @@ export function setInstances(_instances: dir | string) {
  * set version of minecraft or a set modeloader needs in order to function properly
  * @param _versions The location you want the version directory to be at
  */
-export function setVersions(_versions: dir | string) {
-    if (typeof _versions == "string") _versions = new dir(_versions);
+export function setVersions(_versions: Dir | string) {
+    if (typeof _versions == "string") _versions = new Dir(_versions);
     files.versions = _versions;
     files.versions.mkdir();
 }
@@ -217,8 +217,8 @@ export function setVersions(_versions: dir | string) {
  * Java 17 for 1.18+ 
  * @param _runtimes The location you want the runtime directory to be at
  */
-export function setRuntimes(_runtimes: dir | string) {
-    if (typeof _runtimes == "string") _runtimes = new dir(_runtimes);
+export function setRuntimes(_runtimes: Dir | string) {
+    if (typeof _runtimes == "string") _runtimes = new Dir(_runtimes);
     files.runtimes = _runtimes;
     files.runtimes.mkdir();
 }
@@ -226,8 +226,8 @@ export function setRuntimes(_runtimes: dir | string) {
  * GMLL uses this folder to store meta data GMLL uses to control and manage minecraft. 
  * @param _launcher   The location you want the meta directory to be at
  */
-export async function setLauncher(_launcher: dir | string) {
-    if (typeof _launcher == "string") _launcher = new dir(_launcher);
+export async function setLauncher(_launcher: Dir | string) {
+    if (typeof _launcher == "string") _launcher = new Dir(_launcher);
     initialized = false;
     files.launcher = _launcher;
     await initialize();
@@ -237,8 +237,8 @@ export async function setLauncher(_launcher: dir | string) {
  * Essentially used to access functionality outside the scope of what the Java JVM provides 
  * @param _natives The location you want the bin directory to be at
  */
-export function setNatives(_natives: dir | string) {
-    if (typeof _natives == "string") _natives = new dir(_natives);
+export function setNatives(_natives: Dir | string) {
+    if (typeof _natives == "string") _natives = new Dir(_natives);
     files.natives = _natives;
     _natives.mkdir();
 }
@@ -304,7 +304,7 @@ export function getNatives() {
 /**
  * For internal use only 
  */
-export function emit(tag: string, ...args: Array<Number | String | Object>) {
+export function emit(tag: string, ...args: Array<number | string|unknown>) {
     defEvents.emit(tag, ...args);
 }
 /**Replaces the current event Listener */
@@ -338,7 +338,7 @@ export async function initialize() {
     Object.values(getMeta()).forEach(e => { e.mkdir() });
     await manifests();
 
-    for (var i = 0; i < startUpCalls.length; i++) {
+    for (let i = 0; i < startUpCalls.length; i++) {
         await startUpCalls[i]();
     }
     initialized = true;
@@ -346,17 +346,17 @@ export async function initialize() {
 /**Used to resolve relative files in GMLL */
 export function resolvePath(file: string) {//
     return file.
-        replace(/\<assets\>/g, getAssets().sysPath()).
-        replace(/\<instance\>/g, getInstances().sysPath()).
-        replace(/\<libraries\>/g, getlibraries().sysPath()).
-        replace(/\<runtimes\>/g, getRuntimes().sysPath()).
-        replace(/\<versions\>/g, getVersions().sysPath());
+        replace(/<assets>/g, getAssets().sysPath()).
+        replace(/<instance>/g, getInstances().sysPath()).
+        replace(/<libraries>/g, getlibraries().sysPath()).
+        replace(/<runtimes>/g, getRuntimes().sysPath()).
+        replace(/<versions>/g, getVersions().sysPath());
 }
 /**
  * Used to set the reported launcher name reported by GMLL to Minecraft
  * @param _version Any version string
  */
-export function setLauncherName(_name: string = "GMLL") {
+export function setLauncherName(_name = "GMLL") {
     launcherName = _name;
 }
 /**
@@ -370,7 +370,7 @@ export function getLauncherName() {
  * Used to set the reported launcher version reported by GMLL to Minecraft
  * @param _version Any version string
  */
-export function setLauncherVersion(_version: string = "0.0.0") {
+export function setLauncherVersion(_version = "0.0.0") {
     version = _version;
 }
 /**

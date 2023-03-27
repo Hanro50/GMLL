@@ -1,7 +1,7 @@
 /**
  * An NBT reader implement in JS. 
  */
-import { dir, file } from "./objects/files.js";
+import { Dir, File } from "./objects/files.js";
 export enum tagTypes {
     "TAG_End" = 0,
     "TAG_Byte" = 1,
@@ -43,7 +43,7 @@ export function readNBT<T>(raw: Buffer, typed?: true): T | typedNBT {
     let i = 3
     //Parse a section of the raw buffer
     function parse(size: number) {
-        let buf = raw.slice(i, Math.min(i + size, raw.length))
+        const buf = raw.slice(i, Math.min(i + size, raw.length))
         i += size;
         return buf;
     }
@@ -51,7 +51,7 @@ export function readNBT<T>(raw: Buffer, typed?: true): T | typedNBT {
 
     function arrType(index: number) {
         const size = parse(4).readUInt32BE();
-        let arr = [];
+        const arr = [];
         for (let i3 = 0; i3 < size; i3++) {
             arr.push(decode(index))
         }
@@ -74,7 +74,7 @@ export function readNBT<T>(raw: Buffer, typed?: true): T | typedNBT {
             case 12: return arrType(4); //long int array
             case 10:
                 //Compound tag flag
-                let t = {};
+                const t = {};
                 while ((c = raw[i++]) != 0) { t[getString()] = typed ? { tag: tagTypes[c], value: decode(c) } : decode(c); }
                 return t;
             default:
@@ -85,21 +85,21 @@ export function readNBT<T>(raw: Buffer, typed?: true): T | typedNBT {
 
         }
     }
-    let c = raw[i];
+    const c = raw[i];
     return (typed ? { tag: tagTypes[c], value: decode(c) } : decode(c)) as T;
 }
 /**Reads a .DAT file and returns a json object representation of it */
-export async function readDat<T>(path: file): Promise<T>
+export async function readDat<T>(path: File): Promise<T>
 /**Reads a .DAT file and returns a  node based json representation of it */
-export async function readDat(path: file, typed: true): Promise<typedNBT>
-export async function readDat<T>(path: file, typed?: true): Promise<T | typedNBT> {
+export async function readDat(path: File, typed: true): Promise<typedNBT>
+export async function readDat<T>(path: File, typed?: true): Promise<T | typedNBT> {
     if (!path.sysPath().toLocaleLowerCase().endsWith(".dat")) console.warn("Potentially unsupported file extention detected!")
-    const p = dir.tmpdir().getDir("gmll", path.getHash()).mkdir();
-    //We need to deccompress the dat file
+    const p = Dir.tmpdir().getDir("gmll", path.getHash()).mkdir();
+    //We need to decompress the dat file
     await path.unzip(p);
-    const file = p.ls()[0] as file;
+    const file = p.ls()[0] as File;
     //We'll be working with a buffer here 
-    let raw = file.readRaw();
+    const raw = file.readRaw();
     p.rm();
     return readNBT(raw, typed)
 }

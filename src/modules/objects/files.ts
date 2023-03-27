@@ -1,12 +1,12 @@
 /**Accessed by get.js, imports allowed from other GMLL modules */
 import { join } from "path";
 import fetch from "node-fetch";
-import { existsSync, mkdirSync, unlinkSync, symlinkSync, readFileSync, createWriteStream, statSync, writeFileSync, rmSync, readdirSync, copyFileSync, lstatSync, renameSync, access, constants} from 'fs';
+import { existsSync, mkdirSync, unlinkSync, symlinkSync, readFileSync, createWriteStream, statSync, writeFileSync, rmSync, readdirSync, copyFileSync, lstatSync, renameSync, access, constants } from 'fs';
 import { createHash } from "crypto";
 import { platform, tmpdir, type } from "os";
 import { execSync, spawn } from "child_process";
-import type { downloadableFile } from "../../types";
-export interface wrappedObj { save: () => void, getFile: () => file }
+import type { DownloadableFile } from "../../types";
+export interface WrappedObj { save: () => void, getFile: () => File }
 
 /**
  * @param dest Path to create the link in
@@ -24,22 +24,23 @@ function mklink(dest: string, path: string) {
     }
 }
 
-function mkdir(path: string) { if (!existsSync(path)) mkdirSync(path, { recursive: true, }); };
+function mkdir(path: string) { if (!existsSync(path)) mkdirSync(path, { recursive: true, }); }
 const isWin = platform() == "win32";
 
 export function stringify(json: object) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     return JSON.stringify(json, "\n", "\t");
 }
-export function packAsync(pathToDirOrFile: string, pathToArchive: string, zipDir?: dir) {
-    let com = ["a", "-r", pathToArchive, pathToDirOrFile]
+export function packAsync(pathToDirOrFile: string, pathToArchive: string, zipDir?: Dir) {
+    const com = ["a", "-r", pathToArchive, pathToDirOrFile]
     return new Promise<void>(e => {
         const s = spawn(get7zip(zipDir).sysPath(), com, { "env": process.env });
         s.on("exit", e);
     });
 
-};
-export class dir {
+}
+export class Dir {
     path: string[];
     constructor(...path: string[]) {
         this.path = [];
@@ -75,10 +76,10 @@ export class dir {
     }
     /**Creates a system link to this file and puts the link at the destination file that was provided as input (similar to {@link linkFrom})*/
     linkTo(dest: string | string[] | this) {
-        if (this instanceof file && platform() == "win32") console.warn("[GMLL]: Symlinks in Windows need administrator privileges!\nThings are about to go wrong!")
-        if (dest instanceof file)
+        if (this instanceof File && platform() == "win32") console.warn("[GMLL]: Symlinks in Windows need administrator privileges!\nThings are about to go wrong!")
+        if (dest instanceof File)
             dest = [...dest.path, dest.name];
-        if (dest instanceof dir)
+        if (dest instanceof Dir)
             dest = dest.path;
         if (dest instanceof Array)
             dest = join(...dest);
@@ -86,27 +87,27 @@ export class dir {
     }
     /**Creates a system link to a set file or directory using this file or folder as the the placeholder for the link (similar to {@link linkTo})*/
     linkFrom(path: string | string[] | this) {
-        if (this instanceof file && platform() == "win32") console.warn("[GMLL]: Symlinks in Windows need administrator privileges!\nThings are about to go wrong!")
-        if (path instanceof file)
+        if (this instanceof File && platform() == "win32") console.warn("[GMLL]: Symlinks in Windows need administrator privileges!\nThings are about to go wrong!")
+        if (path instanceof File)
             path = [...path.path, path.name];
-        if (path instanceof dir)
+        if (path instanceof Dir)
             path = path.path;
         if (path instanceof Array)
             path = join(...path);
         mklink(this.sysPath(), path);
     }
     /**Returns the system temp directory */
-    static tmpdir() { return new dir(tmpdir()); }
+    static tmpdir() { return new Dir(tmpdir()); }
     /**Returns the amount of files in a directory*/
     getSize() { return readdirSync(this.sysPath()).length; }
     /**Checks if a directory is a symbolic link */
-    islink() { return lstatSync(this.sysPath()).isSymbolicLink(); }
+    isLink() { return lstatSync(this.sysPath()).isSymbolicLink(); }
     /**Does the same as the {@link sysPath} function */
     toString() { return this.sysPath(); }
     /**Gets a new directory relative to this directory */
-    getDir(..._file: string[]) { return new dir(...this.path, ..._file); }
+    getDir(..._file: string[]) { return new Dir(...this.path, ..._file); }
     /**Gets a new file relative to this directory */
-    getFile(..._file: string[]) { return new file(...this.path, ..._file); }
+    getFile(..._file: string[]) { return new File(...this.path, ..._file); }
     /**Removes this file or directory */
     rm() {
         rmSync(this.sysPath(), { recursive: true, force: true });
@@ -124,7 +125,7 @@ export class dir {
     getName() { return this.path[this.path.length - 1] }
     /**Lists a set directory's contents*/
     ls() {
-        let res: Array<dir | file> = [];
+        const res: Array<Dir | File> = [];
         if (this.exists()) {
             readdirSync(this.sysPath()).forEach(e => {
                 const stat = statSync(join(this.sysPath(), e));
@@ -135,7 +136,7 @@ export class dir {
     }
     /**Checks if the size value given matches with this object. (@see {@link getSize})*/
     size(expected: number) {
-        if (!this.exists()) return false
+        if (!this.exists()) return false;
         return this.getSize() == expected;
     }
     /**Checks if an expected hash matches with this object. (@see {@link getHash})*/
@@ -144,9 +145,10 @@ export class dir {
         const sha1 = this.getHash();
         let checksums: string[] = [];
         if (typeof expected == "string") checksums.push(expected); else checksums = expected;
-        for (var chk = 0; chk < checksums.length; chk++) {
+        for (let chk = 0; chk < checksums.length; chk++) {
             if (checksums[chk] == sha1) return true;
         }
+        console.log("got " + sha1 + "\nexpected:" + expected + "\n" + this.sysPath());
         return false;
     }
     /**Returns true if the file is in missmatch.*/
@@ -158,14 +160,14 @@ export class dir {
         return false;
     }
 }
-export class file extends dir {
+export class File extends Dir {
     name: string;
     constructor(...path: string[]) {
         super(...path);
         this.name = this.path.pop();
     }
     /**Gets the directory of a set file */
-    dir(): dir { return new dir(...this.path); }
+    dir(): Dir { return new Dir(...this.path); }
     /**Reads a file and returns the raw array buffer */
     readRaw() { return readFileSync(this.sysPath()); }
     /**Reads a file and returns it as a string */
@@ -179,7 +181,7 @@ export class file extends dir {
     /**@override */
     javaPath() { return [...this.path, this.name].join("/"); }
     /**@override gets the hash of this file*/
-    getHash(algorithm: string = "sha1") { return createHash(algorithm).update(readFileSync(this.sysPath())).digest("hex"); }
+    getHash(algorithm = "sha1") { return createHash(algorithm).update(readFileSync(this.sysPath())).digest("hex"); }
     /**@override gets the size of this file*/
     getSize() { return statSync(this.sysPath()).size; }
     /**Reads a set file and returns a json representation of that object*/
@@ -195,16 +197,18 @@ export class file extends dir {
      * @param chk The file check
      * @returns this object to allow for chaining
      */
-    async download(url: string, chk?: { sha1?: string | string[], size?: number }, signal?: AbortSignal) {
-        if (this.chkSelf(chk))
+    async download(url: string, chk?: { sha1?: string | string[], size?: number }, opt?: { signal?: AbortSignal, onReDownload: (file: File) => void }) {
+        if (this.chkSelf(chk)) {
             await new Promise((resolve, reject) => {
                 const file = createWriteStream(this.sysPath());
-                fetch(url, { signal }).then(res => {
+                fetch(url, { signal: opt?.signal }).then(res => {
                     if (!res.ok) reject(res.status);
                     res.body.pipe(file, { end: true });
                     file.on("close", resolve);
                 }).catch(reject)
             });
+            if (opt && "onReDownload" in opt) { opt.onReDownload(this); }
+        }
         return this;
     }
     /**Sets the execution bit on a set file, used on Linux and Mac systems */
@@ -216,19 +220,19 @@ export class file extends dir {
     }
     /**Loads a json object from the file system and adds some shortcut functions to make it easier to save. */
     load<T>(def: T, serializer: (raw: T) => T = (raw) => raw) {
-        let obj: T = this.exists() ? serializer(this.toJSON<T>()) : serializer(def)
+        const obj: T = this.exists() ? serializer(this.toJSON<T>()) : serializer(def)
         return this.wrap(obj)
     }
     /**Turns an object into a wrappedObj. Essentially this just adds functions to make it easier to save. */
     wrap<T>(obj: T) {
-        const result = obj as T & wrappedObj;
+        const result = obj as T & WrappedObj;
         result.getFile = () => this;
         result.save = () => this.write(result);
         return result
     }
-    toDownloadable(url: string, key?: string, chk?: { sha1?: string | string[], size?: number }, opt?: { executable?: boolean | string, unzip?: { file: dir, exclude?: string[] } }) {
+    toDownloadable(url: string, key?: string, chk?: { sha1?: string | string[], size?: number }, opt?: { executable?: boolean | string, unzip?: { file: Dir, exclude?: string[] } }) {
         this.mkdir();
-        let d: downloadableFile = { key: key || [...this.path, this.name].join("/"), name: this.name, path: this.path, url: url, chk: {} }
+        const d: DownloadableFile = { key: key || [...this.path, this.name].join("/"), name: this.name, path: this.path, url: url, chk: {} }
         if (chk) {
             d.chk = chk;
         }
@@ -246,26 +250,26 @@ export class file extends dir {
      * 1 unzip only 
      * 2 fine
      */
-    static check(json: Partial<downloadableFile>) {
-        let f = new this(...json.path, json.name);
+    static check(json: Partial<DownloadableFile>) {
+        const f = new this(...json.path, json.name);
         let i = 2;
         if (json.dynamic && f.exists()) return 2;
         if (json.executable || json.unzip) i = 1;
         if (!json.chk || !json.path || !json.name) return 0;
         return f.chkSelf(json.chk) ? 0 : i;
     }
-    async expand(json: Partial<downloadableFile>, zipDir: dir) {
+    async expand(json: Partial<DownloadableFile>, zipDir: Dir) {
         if (json.unzip) {
-            await this.unzip(new dir(...json.unzip.file), json.unzip.exclude, zipDir);
+            await this.unzip(new Dir(...json.unzip.file), json.unzip.exclude, zipDir);
         }
         if (json.executable) {
             if (typeof json.executable == "boolean") this.chmod();
-            else new file(json.executable).chmod();
+            else new File(json.executable).chmod();
         }
     }
 
-    static async process(json: downloadableFile, zipDir: dir) {
-        let f = new this(...json.path, json.name);
+    static async process(json: DownloadableFile, zipDir: Dir) {
+        const f = new this(...json.path, json.name);
         if (json.dynamic && f.exists()) {
             return;
         }
@@ -274,11 +278,11 @@ export class file extends dir {
 
     }
     /**Similar to {@link extract}, but uses a blacklist approach */
-    unzip(path: dir, exclude?: string[], zipDir?: dir) {
-        var com = ['x', this.sysPath(), '-y', '-o' + path.sysPath()]
+    unzip(path: Dir, exclude?: string[], zipDir?: Dir) {
+        const com = ['x', this.sysPath(), '-y', '-o' + path.sysPath()]
         if (exclude) {
             exclude.forEach(e => {
-                var f = String(e);
+                let f = String(e);
                 if (f.endsWith("/")) f += "*"
                 com.push("-xr!" + f);
             })
@@ -289,11 +293,11 @@ export class file extends dir {
         });
     }
     /**Similar to {@link unzip}, but uses a whitelist approach */
-    extract(path: dir, files: string[], zipDir?: dir) {
-        var com = ['x', this.sysPath(), '-y', '-o' + path.sysPath()]
+    extract(path: Dir, files: string[], zipDir?: Dir) {
+        const com = ['x', this.sysPath(), '-y', '-o' + path.sysPath()]
 
         files.forEach(e => {
-            var f = String(e);
+            let f = String(e);
             if (f.endsWith("/")) f += "*"
             com.push(f);
         })
@@ -309,9 +313,9 @@ export class file extends dir {
         return new Promise((res) => access(this.sysPath(), constants.F_OK, (err) => res(err ? false : true)));
     }
 }
-let defDir = dir.tmpdir().getDir("gmll");
+let defDir = Dir.tmpdir().getDir("gmll");
 
-function get7zip(dir: dir = defDir) {
+function get7zip(dir: Dir = defDir) {
     const loc = dir.getDir("7z");
     const d = loc.getFile("index.json");
     if (!d.exists()) throw "Not initialized"
@@ -323,17 +327,21 @@ function get7zip(dir: dir = defDir) {
 export function set7zipRepo(z7: string) {
     z7Repo = z7;
 }
+
 let z7Repo = "https://download.hanro50.net.za/7-zip";
-export async function download7zip(dir: dir, os: "linux" | "windows" | "osx", arch: "arm" | "arm64" | "x32" | "x64") {
+export async function download7zip(dir: Dir, os: "linux" | "windows" | "osx", arch: "arm" | "arm64" | "x32" | "x64") {
+    const timeChk = Date.now();
     defDir = dir;
     const chkDef = { _ver: "22.01", data: {} };
     console.log("[GMLL]: Checking 7zip")
     const loc = dir.getDir("7z");
 
     let chk: { "_ver": string, data: { [key: string]: { size: number, sha1: string } } } = chkDef;
-    const chkFile = loc.getFile("hash.json")
+    const chkFile = loc.getFile("hash.json");
+    let fNew = true;
     if (chkFile.exists()) {
-        try { chk = chkFile.toJSON(); } catch { }
+        fNew = false;
+        try { chk = chkFile.toJSON(); } catch { /* empty */ }
 
         try {
             if (chk?._ver != chkDef._ver) {
@@ -341,23 +349,36 @@ export async function download7zip(dir: dir, os: "linux" | "windows" | "osx", ar
                 chkFile.rm();
                 chk = chkDef;
             }
-        } catch { }
+        } catch { /* empty */ }
     } else loc.mkdir();
+    const onReDownload = (file: File, key: string) => {
+        console.log("Re-downloading " + file.sysPath());
+        const old = JSON.stringify(chk.data[key]);
+        chk.data[key] = { size: file.getSize(), sha1: file.getHash() }
+        console.log(old + " vs " + JSON.stringify(chk.data[key]))
+        if (!fNew) {
+            console.warn("The files may have been tampered with!\nSet check file to be rewritten");
+            fNew = true;
+            //chkFile.rm();
+        }
+    }
     const manifest = loc.getFile("index.json");
     if (!z7Repo.endsWith("/")) z7Repo += "/";
     const link = `${z7Repo}${os}/${arch}/`
 
-    const f = await manifest.download(link + "index.json", chk["index"])
-    chk.data["index"] = { size: f.getSize(), sha1: f.getHash() }
+    const f = await manifest.download(link + "index.json", chk.data["index"], { onReDownload: (f) => onReDownload(f, "index") })
+    // chk.data["index"] = { size: f.getSize(), sha1: f.getHash() }
     const m = f.toJSON<{ _main: string, [key: string]: string }>()
     const _main = m._main;
     for (const key of Object.keys(m)) {
         console.log(key)
         if (key == "_main") continue;
         const obj = m[key]
-        const f = await loc.getFile(key).download(link + obj, chk.data[key])
-        chk.data[key] = { size: f.getSize(), sha1: f.getHash() }
+        const f = await loc.getFile(key).download(link + obj, chk.data[key], { onReDownload: (f) => onReDownload(f, key) })
         if (key == _main) f.chmod();
     }
-    chkFile.write(chk);
+    if (fNew)
+        chkFile.write(chk);
+
+    console.log("Zip file check took " + (Date.now() - timeChk) + " ms")
 }

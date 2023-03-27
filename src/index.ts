@@ -19,7 +19,7 @@ export * as files from "./modules/objects/files.js"
 /**Provides access to the nbt data reader in gmll */
 export * as nbt from "./modules/nbt.js"
 /**The main instance class in gmll */
-import instance from "./modules/objects/instance.js";
+import Instance from "./modules/objects/instance.js";
 
 import type * as types from "./types";
-export { instance, types } 
+export { Instance, types } 

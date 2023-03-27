@@ -1,5 +1,5 @@
 /**The compatibility lib for integration with other libraries */
-import type { player } from "../types";
+import type { Player } from "../types";
 /**
  * For third party login libraries. 
  * @param username The user's username
@@ -9,7 +9,7 @@ import type { player } from "../types";
  * @param demo Whether to launch the game in demo mode or not (Userfull for demo account functionality)
  * @returns 
  */
-export function getToken(username: string, uuid: string, accessToken: string, xuid: string, demo?: boolean): player {
+export function getToken(username: string, uuid: string, accessToken: string, xuid: string, demo?: boolean): Player {
     return {
         profile: {
             //No piracy -> Buy minecraft!
@@ -33,7 +33,7 @@ export function getToken(username: string, uuid: string, accessToken: string, xu
  * @param demo Whether to launch the game in demo mode or not (Userfull for demo account functionality)
  * @returns a GMLL launch token
  */
-export function mojang2token(username: string, uuid: string, accessToken: string, demo: boolean): player {
+export function mojang2token(username: string, uuid: string, accessToken: string, demo: boolean): Player {
     return {
         profile: {
             demo: demo,

@@ -5,26 +5,26 @@ import { getManifest, getJavaPath } from "../handler.js";
 import { combine, throwErr, lawyer, classPathResolver, getOS } from "../internal/util.js";
 import { platform } from "os";
 import { join } from "path";
-import { versionJson, versionManifest, artifact, mcJarTypeVal } from "../../types";
-import { dir, file } from "./files.js";
+import { VersionJson, VersionManifest, Artifact, MCJarTypeVal } from "../../types";
+import { Dir, File } from "./files.js";
 
 /**
  * Version data is unique. Each version of the game will generate an unique version object. 
  * Take note however. GMLL,unlike the default launcher, will store version data in the same folder as the version it is based upon. 
  * If forge still works, but you cannot find the file connected to it...this is why.
  */
-export default class version {
-    json: versionJson;
-    manifest: versionManifest;
+export default class Version {
+    json: VersionJson;
+    manifest: VersionManifest;
     name: string;
-    folder: dir;
-    file: file;
+    folder: Dir;
+    file: File;
     synced: boolean;
-    override?: artifact;
+    override?: Artifact;
     private pre1d9: boolean;
     private _mergeFailure: boolean;
     /**Gets a set version based on a given manifest or version string. Either do not have to be contained within the manifest database. */
-    static async get(manifest: string | versionManifest): Promise<version> {
+    static async get(manifest: string | VersionManifest): Promise<Version> {
         isInitialized();
         const v = new this(manifest);
         await v.getJSON();
@@ -34,7 +34,7 @@ export default class version {
      *  DO NOT USE CONSTRUCTOR DIRECTLY. FOR INTERNAL USE ONLY! 
      * @see {@link get} : This is the method that should instead be used
      */
-    private constructor(manifest: string | versionManifest) {
+    private constructor(manifest: string | VersionManifest) {
 
         this.manifest = typeof manifest == "string" ? getManifest(manifest) : manifest;
         this.pre1d9 = Date.parse(this.manifest.releaseTime) < Date.parse("2022-05-12T15:36:11+00:00");
@@ -61,7 +61,7 @@ export default class version {
      * @returns Gets the version json file. 
      * @see {@link json} for synchronous way to access this. The {@link get} method already calls this function and saves it accordingly. 
      */
-    async getJSON(): Promise<versionJson> {
+    async getJSON(): Promise<VersionJson> {
         const folder_old = getVersions().getDir(this.manifest.id);
         const file_old = folder_old.getFile(this.manifest.id + ".json");
         if (this.json && !this._mergeFailure)
@@ -69,17 +69,16 @@ export default class version {
         this._mergeFailure = false;
         if (this.file.sysPath() != file_old.sysPath() && !this.file.exists() && file_old.exists()) {
             console.log("[GMLL]: Cleaning up versions!")
-            this.json = file_old.toJSON<versionJson>();
-            this.synced = !this.json.hasOwnProperty("synced") || this.json.synced;
+            this.json = file_old.toJSON<VersionJson>();
+            this.synced = !("synced" in this.json) || this.json.synced;
             if (this.synced) {
                 copyFileSync(file_old.sysPath(), this.file.sysPath());
                 folder_old.rm();
             } else {
                 try {
                     console.log("[GMLL]: Detected synced is false. Aborting sync attempted");
-                    const base = (new version(this.json.inheritsFrom));
+                    const base = (new Version(this.json.inheritsFrom));
                     this.json = combine(await base.getJSON(), this.json);
-                    this.json = this.json
                     this.name = this.json.id;
                     this.folder = folder_old;
                     this.file = file_old;
@@ -102,7 +101,7 @@ export default class version {
         }
         if (this.json.inheritsFrom || this.manifest.base) {
             try {
-                const base = (new version(this.json.inheritsFrom || this.manifest.base));
+                const base = (new Version(this.json.inheritsFrom || this.manifest.base));
                 this.json = combine(await base.getJSON(), this.json);
                 this.folder = base.folder;
                 this.name = base.name;
@@ -119,7 +118,7 @@ export default class version {
      */
     async getAssets() {
         if (!this.json.assetIndex) {
-            const base = await (new version("1.0")).getJSON();
+            const base = await (new Version("1.0")).getJSON();
             this.json.assetIndex = base.assetIndex;
         }
         await assets(this.json.assetIndex);
@@ -133,8 +132,8 @@ export default class version {
     async getLibs() {
         await libraries(this.json);
     }
-    async getJar(type: mcJarTypeVal, jarFile: file) {
-        if (this.synced && this.json.hasOwnProperty("downloads")) {
+    async getJar(type: MCJarTypeVal, jarFile: File) {
+        if (this.synced && ("downloads" in this.json)) {
             const download = this.json.downloads[type];
             if (!jarFile.sha1(download.sha1) || !jarFile.size(download.size)) {
                 return await jarFile.download(download.url);
@@ -149,7 +148,7 @@ export default class version {
             delete this.json;
             this.json = await this.getJSON();
         }
-         await this.getAssets();
+        await this.getAssets();
         await this.getLibs();
         await this.getJar("client", this.folder.getFile(this.name + ".jar"));
         await this.getRuntime();
@@ -158,14 +157,14 @@ export default class version {
     getJavaPath() {
         return getJavaPath(this.json.javaVersion ? this.json.javaVersion.component : "jre-legacy");
     }
-    getClassPath(mode: "client" | "server" = "client", jarpath?: file) {
+    getClassPath(mode: "client" | "server" = "client", jarpath?: File) {
         const cp: string[] = [];
         this.json.libraries.forEach(lib => {
-            if (mode == "client" && lib.hasOwnProperty("clientreq") && !lib.clientreq) return;
-            else if (mode == "server" && !lib.serverreq && lib.hasOwnProperty("clientreq")) return
+            if (mode == "client" && ("clientreq" in lib) && !lib.clientreq) return;
+            else if (mode == "server" && !lib.serverreq && ("clientreq" in lib)) return
             if (lib.rules && !lawyer(lib.rules)) { return }
-            
-            const p = lib.natives? join("libraries", ...classPathResolver(lib.name,lib.natives[getOS()]).split("/"))  : join("libraries", ...classPathResolver(lib.name).split("/"));
+
+            const p = lib.natives ? join("libraries", ...classPathResolver(lib.name, lib.natives[getOS()]).split("/")) : join("libraries", ...classPathResolver(lib.name).split("/"));
             const p2 = getlibraries().getDir("..").getFile(p);
             if (!p2.exists()) {
                 console.error(`[GMLL]: ${p} does not exist. Removing to avoid possible error (${p2.sysPath()})`);

@@ -115,7 +115,7 @@ An instance contains all the local files of a launcher profile. Your texture, re
 ## Instance constructor
 GMLL's instance object accepts one parameter of type options. This is also the format GMLL will save instances in internally. 
 ```ts
-export interface options {
+export interface Options {
     /**The name of the instance */
     name?: string,
     /**The version of the game to load */

@@ -1,18 +1,19 @@
 import { spawn } from "child_process";
 import { randomUUID } from "crypto";
-import { instance } from "../../../index.js";
+
 import { getMeta, getAssets, getNatives, getLauncherName, getLauncherVersion, getlibraries, emit } from "../../config.js";
-import { dir, file } from "../../objects/files.js";
-import type { player, assetIndex, launchArguments } from "../../../types";
+import { Dir, File } from "../../objects/files.js";
+import type { Player, AssetIndex, LaunchArguments } from "../../../types";
 import { type, cpus } from "os";
 import { join } from "path";
 import { combine, fsSanitizer, processAssets, getClientID, lawyer } from "../util.js";
 import { download, getAgentFile } from "../../downloader.js";
+import instance from "../../objects/instance.js";
 
 /**
  * For internal use only
  */
-function parseArguments(val = {}, args: launchArguments) {
+function parseArguments(val = {}, args: LaunchArguments) {
     let out = "";
     args.forEach(e => {
         if (typeof e == "string")
@@ -42,13 +43,13 @@ export async function install(this: instance) {
         let security = false;
         //patch download files 
         const instance = version.json.instance;
-        for (var i = 0; i < instance.files.length; i++) {
+        for (let i = 0; i < instance.files.length; i++) {
             instance.files[i].path = [this.getDir().sysPath(), ...instance.files[i].path]
             instance.files[i].path.forEach(e => {
                 if (e.includes(".."))
                     security = true;
             })
-            new dir(...instance.files[i].path).mkdir()
+            new Dir(...instance.files[i].path).mkdir()
             if (instance.files[i].unzip) {
                 instance.files[i].unzip.file = [this.getDir().sysPath(), ...instance.files[i].unzip.file]
             }
@@ -56,7 +57,7 @@ export async function install(this: instance) {
         if (security) {
             /**DO NOT REMOVE. 
              * 1) This is here to prevent someone escaping the instance sandbox. 
-             * 2) This stops non standard modpacks causing issues...
+             * 2) This stops non standard modPacks causing issues...
              * 3) This is here to allow for future security measures
              */
             throw "Security exception!\nFound '..' in file path which is not allowed as it allows one to escape the instance folder"
@@ -88,8 +89,8 @@ export async function install(this: instance) {
      * @param token The player login token
      * @param resolution Optional information defining the game's resolution
      */
-export async function launch(this: instance, token: player, resolution?: { width: string, height: string }) {
-    //const metapaths = (await this.getMetaPaths());
+export async function launch(this: instance, token: Player, resolution?: { width: string, height: string }) {
+    //const metaPaths = (await this.getMetaPaths());
     if (!token) {
         console.warn("[GMLL]: No token detected. Launching game in demo mode!")
         const demoFile = getMeta().index.getFile("demo.txt");
@@ -105,15 +106,15 @@ export async function launch(this: instance, token: player, resolution?: { width
         }
     }
     const version = await this.install();
-    let jarModded = await instance.jarmod(await this.getMetaPaths(), version)
-    let cp: string[] = version.getClassPath(undefined, jarModded);
+    const jarModded = await instance.jarMod(await this.getMetaPaths(), version)
+    const cp: string[] = version.getClassPath(undefined, jarModded);
 
-    var versionJson = await version.getJSON();
-    var assetRoot = getAssets();
+    const versionJson = await version.getJSON();
+    let assetRoot = getAssets();
 
-    var assetsFile = this.getDir().getDir("assets");
+    let assetsFile = this.getDir().getDir("assets");
 
-    let AssetIndex = getAssets().getFile("indexes", (versionJson.assets || "pre-1.6") + ".json").toJSON<assetIndex>();
+    let AssetIndex = getAssets().getFile("indexes", (versionJson.assets || "pre-1.6") + ".json").toJSON<AssetIndex>();
     let assets_index_name = versionJson.assetIndex.id;
     if (this.assets.objects) {
         AssetIndex = combine(AssetIndex, this.assets);
@@ -166,8 +167,8 @@ export async function launch(this: instance, token: player, resolution?: { width
 
         port: 0
     }
-    const javaPath = this.javaPath == "default" ? version.getJavaPath() : new file(this.javaPath);
-    const rawJvmArgs: launchArguments = instance.defaultGameArguments;
+    const javaPath = this.javaPath == "default" ? version.getJavaPath() : new File(this.javaPath);
+    const rawJvmArgs: LaunchArguments = instance.defaultGameArguments;
     rawJvmArgs.push(...(versionJson.arguments?.jvm || instance.defJVM));
 
     const agentFile = getAgentFile();
@@ -175,19 +176,19 @@ export async function launch(this: instance, token: player, resolution?: { width
         if (agentFile.exists()) rawJvmArgs.push(`-javaagent:${agentFile.sysPath()}`);
         rawJvmArgs.push(...instance.oldJVM);
     }
-    var jvmArgs = parseArguments(args, rawJvmArgs);
+    const jvmArgs = parseArguments(args, rawJvmArgs);
 
     let gameArgs = versionJson.arguments ? parseArguments(args, versionJson.arguments.game) : "";
     gameArgs += versionJson.minecraftArguments ? "\x00" + versionJson.minecraftArguments.replace(/\s/g, "\x00") : "";
-    var launchCom = jvmArgs + "\x00" + versionJson.mainClass + (!gameArgs.startsWith("\x00") ? "\x00" : "") + gameArgs;
+    let launchCom = jvmArgs + "\x00" + versionJson.mainClass + (!gameArgs.startsWith("\x00") ? "\x00" : "") + gameArgs;
     Object.keys(args).forEach(key => {
-        const regex = new RegExp(`\\\$\{${key}\}`, "g")
+        const regex = new RegExp(`\\$\{${key}}`, "g")
         launchCom = launchCom.replace(regex, args[key])
     })
     emit("jvm.start", "Minecraft", this.getDir().sysPath());
     const launchArgs = launchCom.trim().split("\x00");
     if (launchArgs[0] == '') launchArgs.shift();
-    const s = spawn(javaPath.sysPath(), launchArgs, { "cwd": join(this.getDir().sysPath()), "env": combine(process.env, this.env),"detached":this.detach })
+    const s = spawn(javaPath.sysPath(), launchArgs, { "cwd": join(this.getDir().sysPath()), "env": combine(process.env, this.env), "detached": this.detach })
     s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));
     s.stderr.on('data', (chunk) => emit("jvm.stderr", "Minecraft", chunk));
 }
