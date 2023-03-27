@@ -2,15 +2,15 @@
 
 
 
-import { init, instance } from "gmll";
+import { init, Instance } from "gmll";
 //Import the auth class
-import { auth } from "msmc";
+import { Auth } from "msmc";
 
 await init()
-var int = new instance({"version":"quilt-loader-0.18.6-1.14.4"})
+var int = new Instance({"version":"quilt-loader-0.18.6-1.14.4"})
 await int.install()
 //Create a new auth manager
-const authManager = new auth("select_account");
+const authManager = new Auth("select_account");
 //Launch using the 'raw' gui framework (can be 'electron' or 'nwjs')
 const xboxManager = await authManager.launch("raw")
 //Generate the minecraft login token

@@ -1,7 +1,7 @@
 {
     "dependencies": {
         "gmll": "../",
-        "msmc": "^4.0.3",
+        "msmc": "^4.1.0",
         "node-fetch": "^2.6.6"
     },
     "devDependencies": {
