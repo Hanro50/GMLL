@@ -315,9 +315,7 @@ export interface Player {
 }
 
 export interface LaunchOptions {
-    /**Internal ID string. */
-    id?: string;
-    /**If true then minecraft will not close if you close your launcher!*/
+   /**If true then minecraft will not close if you close your launcher!*/
     detach?: boolean;
     /**The name of the instance */
     name?: string,

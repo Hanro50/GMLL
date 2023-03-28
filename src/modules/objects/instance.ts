@@ -8,9 +8,8 @@ import Version from "./version.js";
 import * as metaHandler from "../internal/handlers/meta.js";
 import * as modsHandler from "../internal/handlers/mods.js";
 import * as launchHandler from "../internal/handlers/launch.js";
-import { randomUUID } from "crypto";
 /**
- * An instance is what the name intails. An instance of the game Minecraft containing Minecraft specific data.
+ * An instance is what the name entails. An instance of the game Minecraft containing Minecraft specific data.
  * This information on where the game is stored and the like. The mods installed and what not. 
  */
 export default class Instance {
@@ -19,7 +18,7 @@ export default class Instance {
     path: string;
     version: string;
     name: string;
-    env: {[key:string]:string};
+    env: { [key: string]: string };
 
     ram: number;
     /**This is a custom field for launcher authors. It can safely be ignored*/
@@ -63,7 +62,6 @@ export default class Instance {
     ]
 
     constructor(opt: LaunchOptions = {}) {
-        this.id = opt.id || randomUUID();
         this.version = opt.version || getLatest().release;
         this.name = opt.name || this.version;
         this.path = opt.path || join("<instance>", fsSanitizer(this.name));
@@ -170,22 +168,20 @@ export default class Instance {
     }
 
     /**Gets a set profile based on the name of that profile */
-    public static get(profileID: string) {
-        if (!profileID.endsWith(".json")) profileID += ".json"
-        const _file = getMeta().profiles.getFile(fsSanitizer(profileID));
+    public static get(profile: string) {
+        if (!profile.endsWith(".json")) profile += ".json"
+        const _file = getMeta().profiles.getFile(fsSanitizer(profile));
         const json = _file.exists() ? _file.toJSON<LaunchOptions>() : {};
-        /**Here for some old fashioned backwards compatibility */
-        json.id = profileID;
         return new Instance(json);
     }
     /**
      * Deletes a profile based on the profileID
-     * @param profileID 
+     * @param profile
      * @returns 
      */
-    public static rm(profileID: string) {
-        if (!profileID.endsWith(".json")) profileID += ".json"
-        const _file = getMeta().profiles.getFile(fsSanitizer(profileID));
+    public static rm(profile: string) {
+        if (!profile.endsWith(".json")) profile += ".json"
+        const _file = getMeta().profiles.getFile(fsSanitizer(profile));
         return _file.rm();
     }
     /**
@@ -201,7 +197,7 @@ export default class Instance {
      * @see {@link get} for more info
      */
     save() {
-        getMeta().profiles.getFile(fsSanitizer(this.id || this.name + ".json")).write(this);
+        getMeta().profiles.getFile(fsSanitizer(this.name + ".json")).write(this);
         return this;
     }
     /**
