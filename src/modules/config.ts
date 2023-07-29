@@ -287,6 +287,7 @@ export function getMeta() {//.getDir(getOS(), getCpuArch())
         bin: files._platform.getDir("bin"),
         runtimes: files.runtimes.getDir("runtimes", "meta"),
         lzma: files.launcher.getDir("lzma"),
+        scratch: files.launcher.getDir("scratch"),
         manifests: files.launcher.getDir("manifests"),
         index: files.launcher.getDir("index"),
         profiles: files.launcher.getDir("profiles")

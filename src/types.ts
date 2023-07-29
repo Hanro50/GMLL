@@ -10,7 +10,7 @@ import type { Dir, File } from "./modules/objects/files";
  * The release type of a set version. Can be used to add filters to a version select field within a launcher so 
  * that a user isn't overwhelmed by the 7 billion different versions of fabric.
  */
-export type MCVersionType = "generated" | "old_alpha" | "old_beta" | "release" | "snapshot"| "custom" | "unknown" | Loader;
+export type MCVersionType = "generated" | "old_alpha" | "old_beta" | "release" | "snapshot" | "custom" | "unknown" | Loader;
 /**
  * The type of user profiles. Can be used to keep older versions of forge from trying to dynamically refresh your user object. 
  * Which if you logged in without a mojang account could cause tha game to crash
@@ -54,6 +54,7 @@ export interface DownloadableFile {
         file: string[],
         exclude?: string[]
     },
+    noRetry?: true,
     executable?: boolean | string,
     dynamic?: boolean
 }
@@ -315,7 +316,7 @@ export interface Player {
 }
 
 export interface LaunchOptions {
-   /**If true then minecraft will not close if you close your launcher!*/
+    /**If true then minecraft will not close if you close your launcher!*/
     detach?: boolean;
     /**The name of the instance */
     name?: string,
@@ -331,7 +332,7 @@ export interface LaunchOptions {
     /**Asset index injection */
     assets?: AssetIndex,
     /**environment variables */
-    env?: {[key:string]:string}
+    env?: { [key: string]: string }
     /**Define a custom java path. 
      * @warning It is recommended to let GMLL handle this for you. It is solely changeable to achieve parody with the vanilla launcher. 
      * Changing this can easily break older versions of forge, cause graphical corruption, crash legacy versions of minecraft, cause issues with arm Macs and a whole host of random BS.  
@@ -632,4 +633,62 @@ export interface ModInfo extends MetaObj {
 
 export interface InstallDat {
     legacy: boolean;
+}
+
+export interface curseforgeModpack {
+    minecraft: {
+        version: string,
+        modLoaders: [
+            {
+                id: string,
+                primary: true
+            }
+        ]
+    },
+    manifestType: "minecraftModpack",
+    manifestVersion: Number,
+    name: string,
+    version: string,
+    author: string,
+    files: [
+        {
+            projectID: Number,
+            fileID: Number,
+            downloadUrl?: string,
+            required: boolean
+        }],
+    overrides: string
+
+}
+
+export interface curseforgeModloader {
+    data: {
+        id: number,
+        gameVersionId: number,
+        minecraftGameVersionId: number,
+        forgeVersion: string,
+        name: string,
+        type: number,
+        downloadUrl: string,
+        filename: string,
+        installMethod: number,
+        latest: false,
+        recommended: false,
+        approved: false,
+        dateModified: string,
+        mavenVersionString: string,
+        versionJson: string,
+        librariesInstallLocation: string,
+        minecraftVersion: string,
+        additionalFilesJson: null,
+        modLoaderGameVersionId: number,
+        modLoaderGameVersionTypeId: number,
+        modLoaderGameVersionStatus: number,
+        modLoaderGameVersionTypeStatus: number,
+        mcGameVersionId: number,
+        mcGameVersionTypeId: number,
+        mcGameVersionStatus: number,
+        mcGameVersionTypeStatus: number,
+        installProfileJson: string
+    }
 }

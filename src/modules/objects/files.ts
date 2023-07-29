@@ -197,12 +197,19 @@ export class File extends Dir {
      * @param chk The file check
      * @returns this object to allow for chaining
      */
-    async download(url: string, chk?: { sha1?: string | string[], size?: number }, opt?: { signal?: AbortSignal, onReDownload: (file: File) => void }) {
+    async download(url: string, chk?: { sha1?: string | string[], size?: number }, opt?: { noRetry?: true, signal?: AbortSignal, onReDownload?: (file: File) => void }) {
         if (this.chkSelf(chk)) {
             await new Promise((resolve, reject) => {
                 const file = createWriteStream(this.sysPath());
                 fetch(url, { signal: opt?.signal }).then(res => {
-                    if (!res.ok) reject(res.status);
+
+                    if (!res.ok) {
+                        if (opt?.noRetry) {
+                            file.close();
+                            this.rm();
+                        } else
+                            reject(res.status)
+                    };
                     res.body.pipe(file, { end: true });
                     file.on("close", resolve);
                 }).catch(reject)
@@ -273,7 +280,7 @@ export class File extends Dir {
         if (json.dynamic && f.exists()) {
             return;
         }
-        await f.download(json.url, json.chk);
+        await f.download(json.url, json.chk, { noRetry: json.noRetry });
         await f.expand(json, zipDir);
 
     }
