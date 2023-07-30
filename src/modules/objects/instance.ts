@@ -260,7 +260,8 @@ export default class Instance {
                 const metaInf = tmp.getFile("manifest.json");
                 const installedFile = this.getDir().getFile("installed.txt");
                 const metaFile = getMeta().scratch.getFile("curse_meta.json");
-                let metaModData = metaFile.exists() ? metaFile.toJSON() : {};
+                let metaModData: { [key: string]: { id: string, sha1?: string | string[]; size?: number; } } = metaFile.exists() ? metaFile.toJSON() : {};
+
                 if (installedFile.exists() && metaInf.exists()) {
                     let inf = metaInf.toJSON<curseforgeModpack>();
                     this.version = "curse." + inf.name + "-" + inf.version;
@@ -281,16 +282,15 @@ export default class Instance {
                 let inf = metaInf.toJSON<curseforgeModpack>();
 
                 console.log("Applying overides")
-                tmp.getDir(inf.overrides).ls().forEach(e => {
-                    if (e instanceof File) {
-                        let file = this.getDir().getFile(e.getName()).rm();
-                        e.moveTo(file)
+                function copyFile(fToCopy: File | Dir, base: Dir) {
+                    if (fToCopy instanceof File) {
+                        let file = base.getFile(fToCopy.getName()).rm();
+                        fToCopy.moveTo(file)
                     } else {
-                        let dir = this.getDir().getDir(e.getName()).rm();
-                        e.moveTo(dir)
+                        fToCopy.ls().forEach((e) => copyFile(e, base.getDir(fToCopy.getName())));
                     }
-
-                })
+                }
+                tmp.getDir(inf.overrides).ls().forEach(e => copyFile(e, this.getDir()))
 
 
                 let mcVersion = inf.minecraft.version;
@@ -320,14 +320,20 @@ export default class Instance {
                 let files: DownloadableFile[] = [];
 
                 inf.files.forEach(f => {
-                    const name = `${f.projectID}-${f.fileID}.jar`;
+                    const name = `${f.projectID}-${f.fileID}`;
                     fileNames.push(name);
+
+                    let meta = metaModData[name];
+                    let fname = name;
+                    if (meta && meta.id && meta.sha1 && meta.size)
+                        fname = meta.id + "-" + meta.sha1.slice(0, 5) + meta.size.toString(36)
+
                     files.push({
-                        name: metaModData[name]?.id || name,
+                        name: fname+".jar",
                         path: [this.getDir().sysPath(), "mods"],
                         url: f.downloadUrl || `https://www.curseforge.com/api/v1/mods/${f.projectID}/files/${f.fileID}/download`,
-                        key: metaModData[name]?.id || name,
-                        chk: metaModData[name] || {}
+                        key: meta?.id || name,
+                        chk: meta || {}
 
                     })
                 })
@@ -336,26 +342,31 @@ export default class Instance {
                 await download(files);
 
                 this.version = mcVersion;
+                const err = (await this.getMetaPaths()).mods.getDir("unparsable").mkdir();
 
-                let meta = {};
                 (await this.getMods()).forEach((e) => {
-                    if (e.error) {
-                        e.path.rm();
-                        return;
-                    }
                     const fileName = e.path.getName();
-                    if (fileNames.includes(fileName)) {
 
-                        meta[fileName] = {
-                            sha1: e.path.getHash(),
-                            size: e.path.getSize(),
-                            id: fsSanitizer(e.id + "-" + e.version) + ".jar"
+
+                    if (fileNames.includes(fileName)) {
+                        if (e.error) {
+                            if (e.loader == "unknown")
+                                e.path.moveTo(err.getFile(e.path.getName()))
+                            return;
                         }
-                        const nfile = mods.getFile(meta[fileName].id);
+                        let sha1 = e.path.getHash()
+                        let size = e.path.getSize()
+
+                        metaModData[fileName] = {
+                            sha1,
+                            size,
+                            id: e.id + "-" + e.version
+                        }
+                        const nfile = mods.getFile(fsSanitizer(e.id + "-" + e.version + "-" + sha1.slice(0, 5) + size.toString(36)) + ".jar");
                         e.path.moveTo(nfile);
                     }
                 })
-                metaFile.write(meta);
+                metaFile.write(metaModData);
 
 
                 break;

@@ -50,7 +50,7 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
             name = name.slice(0, name.lastIndexOf("."));
             const fname = prefix ? join(prefix, name) : name;
             const d = tmp.getDir(fname).mkdir();
-            await file.extract(d, ["mcmod.info", "fabric.mod.json", "litemod.json", "riftmod.json", "quilt.mod.json", "META-INF/mods.toml", "META-INF/MANIFEST.MF"]);
+            await file.extract(d, ["pack.mcmeta", "mcmod.info", "fabric.mod.json", "litemod.json", "riftmod.json", "quilt.mod.json", "META-INF/mods.toml", "META-INF/MANIFEST.MF"]);
             let metaFile: File;
 
             //Legacy forge
@@ -184,7 +184,31 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
             //Fabric and rift
             if ((metaFile = d.getFile("fabric.mod.json")).exists() || (metaFile = d.getFile("riftmod.json")).exists()) {
                 type fabricMod = { "schemaVersion": number, "id": string, "version": string, "name": string, "description": string, "authors": string[], "contact": { "homepage": string, "sources": string }, "license": string, "icon": string, "environment": string, "entrypoints": { "main": string[], "client": string[] }, "mixins": string[], "depends": { [key: string]: string }, "suggests": { [key: string]: string } }
-                const metaInfo = metaFile.toJSON<fabricMod>();
+                let metaInfo: fabricMod;
+                try {
+                    metaInfo = metaFile.toJSON<fabricMod>();
+                } catch {
+                    try {
+                        metaInfo = JSON.parse(metaFile.read().replaceAll("\n", ""))
+                    } catch {
+                        try {
+                            metaInfo = JSON.parse(metaFile.read().replace(/("description":[^"]"[^"]*",)/g, ""))
+                        } catch (err) {
+                            emit('parser.fail', 'mod', err, file);
+                            mods.push({
+                                id: "unknown",
+                                authors: [],
+                                version: "unknown",
+                                loader: metaFile.getName().endsWith("fabric.mod.json") ? "fabric" : "riftMod",
+                                name: name,
+                                path: file,
+                                type,
+                                error: true
+                            });
+                            return
+                        }
+                    }
+                }
                 const icon = await getIcon(file, d, metaInfo.icon);
                 mods.push({
                     id: metaInfo.id,
@@ -345,6 +369,38 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
                 mods.push(metaInfFinal);
                 return
             }
+            if ((metaFile = d.getFile("pack.mcmeta")).exists()) {
+                let description = "";
+                let format = 0;
+                let name = d.getName().replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>{}[\]\\/]/gi, ' ');
+                let icon = undefined;
+                try {
+                    const p = metaFile.toJSON<{ pack: { pack_format: number, description: string, name: string } }>().pack;
+                    if (p.name) name = p.name;
+                    if (p.description) description = p.description;
+                    if (p.pack_format) format = p.pack_format;
+                } catch {
+                    const r = metaFile.read().split("\n")
+                    description = r[randomInt(0, Math.min(r.length, 200))]
+                }
+
+                try {
+                    icon = getIcon(file, d, "pack.png");
+                } catch { }
+                mods.push({
+                    id: "unknown",
+                    authors: [],
+                    version: `pack_format (${format}`,
+                    loader: "unknown",
+                    name: name,
+                    icon,
+                    path: file,
+                    description,
+                    type,
+                    error: false
+                });
+                return
+            }
             emit('parser.fail', 'mod', "Possibly missing mod data!", file);
             // console.warn(`[GMLL]: Could not parse mod -> ${name}\n[GMLL]: Possibly missing mod data!`)
         } catch (err) {
@@ -432,6 +488,7 @@ export async function getWorlds(this: Instance): Promise<MetaSave[]> {
                 }
             } else {
                 players["Player"] = { "data": level.Data.Player };
+
             }
 
             saves.push({ players, name: level.Data?.LevelName || e.getName(), level, path: e, icon })
