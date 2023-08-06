@@ -187,6 +187,7 @@ export async function launch(this: instance, token: Player, resolution?: { width
     })
     emit("jvm.start", "Minecraft", this.getDir().sysPath());
     const launchArgs = launchCom.trim().split("\x00");
+    console.log(launchCom.split("\x00"))
     if (launchArgs[0] == '') launchArgs.shift();
     const s = spawn(javaPath.sysPath(), launchArgs, { "cwd": join(this.getDir().sysPath()), "env": combine(process.env, this.env), "detached": this.detach })
     s.stdout.on('data', (chunk) => emit("jvm.stdout", "Minecraft", chunk));

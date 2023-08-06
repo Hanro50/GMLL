@@ -35,7 +35,7 @@ export default class Instance {
     /**Additional arguments added for legacy versions */
     public static oldJVM = [
         "-Djava.util.Arrays.useLegacyMergeSort=true",
-        "-Dminecraft.applet.TargetDirectory=\"${game_directory}\"",
+        "-Dminecraft.applet.TargetDirectory=${game_directory}",
     ]
 
     /**The default game arguments, don't mess with these unless you know what you are doing */

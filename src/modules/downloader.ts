@@ -1,6 +1,6 @@
 import { lawyer, getOS, assetTag, throwErr, classPathResolver, getErr, processAssets, getCpuArch, combine } from "./internal/util.js";
 import { resolve } from "path";
-import { emit, getAssets, getlibraries, getMeta, getNatives, getRepositories, getRuntimes, getUpdateConfig, onUnsupportedArm, __get } from "./config.js";
+import { emit, getAssets, getlibraries, getMeta, getNatives, getRepositories, getRuntimes, getUpdateConfig, onUnsupportedArm, __get, getMultiCoreMode } from "./config.js";
 import { cpus } from 'os';
 import nFetch from 'node-fetch';
 import { Dir, download7zip, File, packAsync } from "./objects/files.js";
@@ -46,7 +46,8 @@ export function download(obj: Partial<DownloadableFile>[]): Promise<void> {
     return new Promise<void>(async res => {
         await Promise.all(_zips);
         const numCPUs = Math.max(cpus().length, 2);
-        if (new File(__get).exists()) {
+        const multiCoreMode = getMultiCoreMode();
+        if (new File(__get).exists() && multiCoreMode) {
             emit("download.setup", numCPUs);
             let done = 0;
             let todo = 0;
@@ -79,7 +80,8 @@ export function download(obj: Partial<DownloadableFile>[]): Promise<void> {
                 });
             }
         } else {
-            console.warn("[GMLL]: Could not start main downloader, using single threaded fallback!");
+            if (multiCoreMode)
+                console.warn("[GMLL]: Could not start main downloader, using single threaded fallback!");
             emit("download.setup", 1);
             let done = 0;
             const data = Object.values(temp) as DownloadableFile[];
@@ -334,6 +336,10 @@ export async function getForgiac() {
  */
 export async function manifests() {
     const repositories = getRepositories();
+    const legacyFabricLoader = "https://meta.legacyfabric.net/v2/versions/loader/";
+    const legacyFabricVersions = "https://meta.legacyfabric.net/v2/versions/game/";
+
+
     const fabricLoader = "https://meta.fabricmc.net/v2/versions/loader/";
     const fabricVersions = "https://meta.fabricmc.net/v2/versions/game/";
 
@@ -392,6 +398,28 @@ export async function manifests() {
                 });
             });
             meta.manifests.getFile("fabric.json").write(result);
+        } catch (e) {
+            console.error(getErr(e));
+        }
+    }
+    if (update.includes("legacy-fabric")) {
+        try {
+            const jsGame = (await meta.index.getFile("legacy_fabric_game.json").download(legacyFabricVersions)).toJSON<[JSGameInf]>();
+            const jsLoader = (await meta.index.getFile("legacy_fabric_loader.json").download(legacyFabricLoader)).toJSON<[JSLoaderInf]>();
+            const result = [];
+            jsGame.forEach(game => {
+                const version = game.version;
+                jsLoader.forEach(l => {
+                    result.push({
+                        id: "legacy-fabric-loader-" + l.version + "-" + version,
+                        base: version,
+                        stable: l.stable,
+                        type: "legacy-fabric",
+                        url: legacyFabricLoader + version + "/" + l.version + "/profile/json"
+                    });
+                });
+            });
+            meta.manifests.getFile("legacy-fabric.json").write(result);
         } catch (e) {
             console.error(getErr(e));
         }

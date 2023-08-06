@@ -15,13 +15,26 @@ if (!__get__?.endsWith("get.js")) {
 }
 
 export const __get = __get__ || "ERROR";
-export type update = "fabric" | "vanilla" | "runtime" | "agent" | "quilt";
+export type update = "fabric" | "vanilla" | "runtime" | "agent" | "quilt" | "legacy-fabric";
 export const onUnsupportedArm = (getCpuArch() == "arm64" || getCpuArch() == "arm") && type() != "Darwin";
 const repositories = {
     maven: "https://download.hanro50.net.za/maven",
     forge: "https://download.hanro50.net.za/fmllibs",
     armFix: "https://download.hanro50.net.za/java",
 }
+let multiCoreMode = true;
+/**is multicore downloads currently enabled? */
+export function getMultiCoreMode() {
+    return multiCoreMode;
+}
+/**Should GMLL use it's multithreaded downloader? 
+ * @default true
+ */
+export function setMultiCoreMode(enabled: boolean) {
+    multiCoreMode = enabled;
+}
+
+
 export function getRepositories() {
     Object.keys(repositories).forEach(key => { if (!repositories[key].endsWith("/")) repositories[key] += "/" });
     return JSON.parse(JSON.stringify(repositories))
@@ -146,7 +159,7 @@ defEvents.on('jvm.start', (app, cwd) => console.log((`[${app}]: Starting in dire
 defEvents.on('jvm.stdout', (app, out) => console.log((`[${app}]: ${out}`).trim()));
 defEvents.on('jvm.stderr', (app, out) => console.log(`\x1b[31m\x1b[1m[${app}]: ${out}`.trim() + "\x1b[0m"));
 
-let updateConf: update[] = ["fabric", "vanilla", "runtime", "agent", "quilt"];
+let updateConf: update[] = ["fabric", "vanilla", "runtime", "agent", "quilt", "legacy-fabric"];
 
 let files: { _platform: Dir, assets: Dir, libraries: Dir, instances: Dir, versions: Dir, runtimes: Dir, launcher: Dir, natives: Dir }
 /**
@@ -305,7 +318,7 @@ export function getNatives() {
 /**
  * For internal use only 
  */
-export function emit(tag: string, ...args: Array<number | string|unknown>) {
+export function emit(tag: string, ...args: Array<number | string | unknown>) {
     defEvents.emit(tag, ...args);
 }
 /**Replaces the current event Listener */

@@ -39,6 +39,18 @@ GMLL is to big to maintain an up to date dev doc with the current amount of reso
 ## Quick start 
 This quick start will use MSMC for authentication. Full disclosure, GMLL endorses MSMC by virtue of the two projects sharing an author. 
 
+# Multithreaded downloading
+GMLL uses multiple threads by default to speed up downloads. This can be disabled however with the following bit of code
+```js
+//ES6 example
+import { setMultiCoreMode } from "gmll/config";
+setMultiCoreMode(false)
+```
+```js
+//Common.JS example
+const gmll = require("gmll");
+gmll.config.setMultiCoreMode(false)
+```
 ES6:
 ```js
 //All modules can be accessed from the main GMLL index file
