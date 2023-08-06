@@ -33,12 +33,6 @@ If your launcher is installed onto a drive which in of itself is not formatted a
 
 The reason why GMLL only works on a drive formatted as NTFS on Windows is due to it making use of junctions, whereas on Linux and Mac GMLL will use symlinks instead. While they behave functionally the same for our purposes, junctions are a filesystem specific feature that only works on NTFS. While Windows also supports symlinks, you require administrator privileges to create them.   
 
-## a word on the docs
-GMLL is to big to maintain an up to date dev doc with the current amount of resources awarded to the project. Instead, please see the included JSDocs in the comments in the type files. Since those will be exponentially easier to maintain and will likely provide the information specific to what you require a function to do. 
-
-## Quick start 
-This quick start will use MSMC for authentication. Full disclosure, GMLL endorses MSMC by virtue of the two projects sharing an author. 
-
 # Multithreaded downloading
 GMLL uses multiple threads by default to speed up downloads. This can be disabled however with the following bit of code
 ```js
@@ -51,6 +45,13 @@ setMultiCoreMode(false)
 const gmll = require("gmll");
 gmll.config.setMultiCoreMode(false)
 ```
+
+## a word on the docs
+GMLL is to big to maintain an up to date dev doc with the current amount of resources awarded to the project. Instead, please see the included JSDocs in the comments in the type files. Since those will be exponentially easier to maintain and will likely provide the information specific to what you require a function to do. 
+
+## Quick start 
+This quick start will use MSMC for authentication. Full disclosure, GMLL endorses MSMC by virtue of the two projects sharing an author. 
+
 ES6:
 ```js
 //All modules can be accessed from the main GMLL index file
