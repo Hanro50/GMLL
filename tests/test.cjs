@@ -15,7 +15,7 @@ gmll.init().then(async () => {
   const token = await xboxManager.getMinecraft();
   gmll.config.setMultiCoreMode(true);
   var int = new gmll.Instance({
-  //  version: "legacy-fabric-loader-0.14.22-1.4.7",
+    //  version: "legacy-fabric-loader-0.14.22-1.4.7",
   });
   //Launch with the gmll token
   int.launch(token.gmll());

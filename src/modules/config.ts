@@ -33,16 +33,16 @@ export function spawnDownloadWorker(options: WorkerOptions) {
 /**
  * Can be used to fine tune GMLL by purposefully skipping certain steps via initialization.
  * By default, GMLL uses these values to get the manifest files related to each of these items.
- * 
+ *
  * ##### Vanilla (DO NOT DISABLE unless you know what you are doing)
  * * runtime => The manifests needed to install the default java runtimes for minecraft.
  * * agent => Install Agenta, used to make sure pre 1.7.10 versions of minecraft can get the assets they want
- * 
+ *
  * ##### Modloaders (Can be removed to speed up initialization)
  * * fabric => Manifests needed for fabric support
  * * legacy-fabric => Manifests needed for legacy-fabric support
  * * quilt => Manifests needed for quilt support
- * 
+ *
  * #### More information:
  * * {@link clrUpdateConfig}
  * * {@link addUpdateConfig}
@@ -143,7 +143,7 @@ export interface Events {
     f: () => void,
   ): void;
   /**
-   * Thrown when the parsed resource file has an issue. 
+   * Thrown when the parsed resource file has an issue.
    * This can happen when decoding nbt data from world saves or metadata from mods, resource packs or texture packs
    * #### Return variables
    * - type=>Type of resource being parsed

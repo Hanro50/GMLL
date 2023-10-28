@@ -27,6 +27,6 @@ export * as nbt from "./modules/nbt.js";
 /**The main instance class in gmll */
 import Instance from "./modules/objects/instance.js";
 import type * as types from "./types";
-import type * as  Version from "./modules/objects/version";
+import type * as Version from "./modules/objects/version";
 
 export { Instance, types, Version };

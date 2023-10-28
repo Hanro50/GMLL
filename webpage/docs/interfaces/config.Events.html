@@ -21,7 +21,7 @@
 <ul class="tsd-hierarchy">
 <li><span class="target">Events</span></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/4b26f3a/src/modules/config.ts#L132">modules/config.ts:132</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/a217da4/src/modules/config.ts#L134">modules/config.ts:134</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-index-accordion" open><summary class="tsd-accordion-summary tsd-index-summary">
@@ -48,15 +48,17 @@
 <h5><code class="tsd-tag ts-flagRest">Rest</code> <span class="tsd-signature-symbol">...</span><span class="tsd-kind-parameter">args</span>: <span class="tsd-signature-type">any</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/4b26f3a/src/modules/config.ts#L203">modules/config.ts:203</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/a217da4/src/modules/config.ts#L197">modules/config.ts:197</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member"><a id="on" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>on</span><a href="#on" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="tsd-signature tsd-anchor-link" id="on.on-1"><span class="tsd-kind-call-signature">on</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">e</span>, <span class="tsd-kind-parameter">f</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#on.on-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>start=&gt;Used when the downloader starts up</p>
-<p>restart=&gt;Used when the downloader has detected a timeout and decides to reset so it can try again</p>
-<p>done=&gt;Fired when everything is wrapped up.</p>
+<div class="tsd-comment tsd-typography"><p>Called when the downloader/Encoder starts up</p>
+<a id="md:possible-events" class="tsd-anchor"></a><h4><a href="#md:possible-events">Possible events</a></h4><ul>
+<li>start=&gt;Used when the downloader starts up</li>
+<li>done=&gt;Fired when everything is wrapped up.</li>
+</ul>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -74,12 +76,16 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/4b26f3a/src/modules/config.ts#L140">modules/config.ts:140</a></li></ul></aside></li>
+<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/a217da4/src/modules/config.ts#L141">modules/config.ts:141</a></li></ul></aside></li>
 <li class="tsd-signature tsd-anchor-link" id="on.on-2"><span class="tsd-kind-call-signature">on</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">e</span>, <span class="tsd-kind-parameter">f</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#on.on-2" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>type=&gt;Type of resource being parsed</p>
-<p>err=&gt;The thrown error</p>
-<p>path=&gt;The path to the file that caused the issue</p>
+<div class="tsd-comment tsd-typography"><p>Thrown when the parsed resource file has an issue.
+This can happen when decoding nbt data from world saves or metadata from mods, resource packs or texture packs</p>
+<a id="md:return-variables" class="tsd-anchor"></a><h4><a href="#md:return-variables">Return variables</a></h4><ul>
+<li>type=&gt;Type of resource being parsed</li>
+<li>err=&gt;The thrown error</li>
+<li>path=&gt;The path to the file that caused the issue</li>
+</ul>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -106,11 +112,18 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/4b26f3a/src/modules/config.ts#L151">modules/config.ts:151</a></li></ul></aside></li>
+<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/a217da4/src/modules/config.ts#L153">modules/config.ts:153</a></li></ul></aside></li>
 <li class="tsd-signature tsd-anchor-link" id="on.on-3"><span class="tsd-kind-call-signature">on</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">e</span>, <span class="tsd-kind-parameter">f</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#on.on-3" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>type=&gt;Type of resource being parsed</p>
-<p>instance=&gt;The instance of which the load event is applicable.</p>
+<div class="tsd-comment tsd-typography"><p>Called when the metadata/nbt parser is started/done.</p>
+<a id="md:possible-events" class="tsd-anchor"></a><h4><a href="#md:possible-events">Possible events</a></h4><ul>
+<li>start =&gt; Called when the metadata/nbt parser is started.</li>
+<li>done =&gt; Called when the metadata/nbt parser is done.</li>
+</ul>
+<a id="md:return-variables" class="tsd-anchor"></a><h4><a href="#md:return-variables">Return variables</a></h4><ul>
+<li>type=&gt;Type of resource being parsed</li>
+<li>instance=&gt;The instance of which the load event is applicable.</li>
+</ul>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -135,7 +148,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/4b26f3a/src/modules/config.ts#L160">modules/config.ts:160</a></li></ul></aside></li>
+<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/a217da4/src/modules/config.ts#L166">modules/config.ts:166</a></li></ul></aside></li>
 <li class="tsd-signature tsd-anchor-link" id="on.on-4"><span class="tsd-kind-call-signature">on</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">e</span>, <span class="tsd-kind-parameter">f</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#on.on-4" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Used to give setup information. Useful for progress bars.</p>
@@ -161,7 +174,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/4b26f3a/src/modules/config.ts#L165">modules/config.ts:165</a></li></ul></aside></li>
+<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/a217da4/src/modules/config.ts#L171">modules/config.ts:171</a></li></ul></aside></li>
 <li class="tsd-signature tsd-anchor-link" id="on.on-5"><span class="tsd-kind-call-signature">on</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">e</span>, <span class="tsd-kind-parameter">f</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#on.on-5" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Fired when a file has been downloaded and saved to disk</p>
@@ -193,7 +206,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/4b26f3a/src/modules/config.ts#L167">modules/config.ts:167</a></li></ul></aside></li>
+<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/a217da4/src/modules/config.ts#L173">modules/config.ts:173</a></li></ul></aside></li>
 <li class="tsd-signature tsd-anchor-link" id="on.on-6"><span class="tsd-kind-call-signature">on</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">e</span>, <span class="tsd-kind-parameter">f</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#on.on-6" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Fired when GMLL needs to restart a download</p>
@@ -223,7 +236,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/4b26f3a/src/modules/config.ts#L172">modules/config.ts:172</a></li></ul></aside></li>
+<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/a217da4/src/modules/config.ts#L178">modules/config.ts:178</a></li></ul></aside></li>
 <li class="tsd-signature tsd-anchor-link" id="on.on-7"><span class="tsd-kind-call-signature">on</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">e</span>, <span class="tsd-kind-parameter">f</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#on.on-7" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>The events fired when GMLL has to spin up an instance of the JVM.</p>
@@ -251,7 +264,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/4b26f3a/src/modules/config.ts#L180">modules/config.ts:180</a></li></ul></aside></li>
+<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/a217da4/src/modules/config.ts#L186">modules/config.ts:186</a></li></ul></aside></li>
 <li class="tsd-signature tsd-anchor-link" id="on.on-8"><span class="tsd-kind-call-signature">on</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">e</span>, <span class="tsd-kind-parameter">f</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#on.on-8" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Console feedback from a JVM App.</p>
@@ -279,130 +292,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/4b26f3a/src/modules/config.ts#L185">modules/config.ts:185</a></li></ul></aside></li>
-<li class="tsd-signature tsd-anchor-link" id="on.on-9"><span class="tsd-kind-call-signature">on</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">e</span>, <span class="tsd-kind-parameter">f</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#on.on-9" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
-<li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5><span class="tsd-kind-parameter">e</span>: <span class="tsd-signature-type">&quot;proxy.start&quot;</span></h5></li>
-<li>
-<h5><span class="tsd-kind-parameter">f</span>: <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">port</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">)</span></h5>
-<ul class="tsd-parameters">
-<li class="tsd-parameter-signature">
-<ul class="tsd-signatures">
-<li class="tsd-signature"><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">port</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-<li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5><span class="tsd-kind-parameter">port</span>: <span class="tsd-signature-type">number</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4></li></ul></li></ul></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/4b26f3a/src/modules/config.ts#L190">modules/config.ts:190</a></li></ul></aside></li>
-<li class="tsd-signature tsd-anchor-link" id="on.on-10"><span class="tsd-kind-call-signature">on</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">e</span>, <span class="tsd-kind-parameter">f</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#on.on-10" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
-<li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5><span class="tsd-kind-parameter">e</span>: <span class="tsd-signature-type">&quot;proxy.fail&quot;</span></h5></li>
-<li>
-<h5><span class="tsd-kind-parameter">f</span>: <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">reason</span>, <span class="tsd-kind-parameter">error</span><span class="tsd-signature-symbol">?</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">)</span></h5>
-<ul class="tsd-parameters">
-<li class="tsd-parameter-signature">
-<ul class="tsd-signatures">
-<li class="tsd-signature"><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">reason</span>, <span class="tsd-kind-parameter">error</span><span class="tsd-signature-symbol">?</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-<li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5><span class="tsd-kind-parameter">reason</span>: <span class="tsd-signature-type">string</span></h5></li>
-<li>
-<h5><code class="tsd-tag ts-flagOptional">Optional</code> <span class="tsd-kind-parameter">error</span>: <span class="tsd-signature-type">string</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4></li></ul></li></ul></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/4b26f3a/src/modules/config.ts#L191">modules/config.ts:191</a></li></ul></aside></li>
-<li class="tsd-signature tsd-anchor-link" id="on.on-11"><span class="tsd-kind-call-signature">on</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">e</span>, <span class="tsd-kind-parameter">f</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#on.on-11" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
-<li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5><span class="tsd-kind-parameter">e</span>: <span class="tsd-signature-type">&quot;proxy.request&quot;</span></h5></li>
-<li>
-<h5><span class="tsd-kind-parameter">f</span>: <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">url</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">)</span></h5>
-<ul class="tsd-parameters">
-<li class="tsd-parameter-signature">
-<ul class="tsd-signatures">
-<li class="tsd-signature"><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">url</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-<li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5><span class="tsd-kind-parameter">url</span>: <span class="tsd-signature-type">string</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4></li></ul></li></ul></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/4b26f3a/src/modules/config.ts#L192">modules/config.ts:192</a></li></ul></aside></li>
-<li class="tsd-signature tsd-anchor-link" id="on.on-12"><span class="tsd-kind-call-signature">on</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">e</span>, <span class="tsd-kind-parameter">f</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#on.on-12" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
-<li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5><span class="tsd-kind-parameter">e</span>: <span class="tsd-signature-type">&quot;proxy.skinURL&quot;</span></h5></li>
-<li>
-<h5><span class="tsd-kind-parameter">f</span>: <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">username</span>, <span class="tsd-kind-parameter">uuid</span>, <span class="tsd-kind-parameter">clothing</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">)</span></h5>
-<ul class="tsd-parameters">
-<li class="tsd-parameter-signature">
-<ul class="tsd-signatures">
-<li class="tsd-signature"><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">username</span>, <span class="tsd-kind-parameter">uuid</span>, <span class="tsd-kind-parameter">clothing</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-<li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5><span class="tsd-kind-parameter">username</span>: <span class="tsd-signature-type">string</span></h5></li>
-<li>
-<h5><span class="tsd-kind-parameter">uuid</span>: <span class="tsd-signature-type">string</span></h5></li>
-<li>
-<h5><span class="tsd-kind-parameter">clothing</span>: <span class="tsd-signature-type">&quot;SKIN&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;CAPE&quot;</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4></li></ul></li></ul></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/4b26f3a/src/modules/config.ts#L193">modules/config.ts:193</a></li></ul></aside></li>
-<li class="tsd-signature tsd-anchor-link" id="on.on-13"><span class="tsd-kind-call-signature">on</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">e</span>, <span class="tsd-kind-parameter">f</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#on.on-13" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
-<li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5><span class="tsd-kind-parameter">e</span>: <span class="tsd-signature-type">&quot;proxy.skinURL.fail&quot;</span></h5></li>
-<li>
-<h5><span class="tsd-kind-parameter">f</span>: <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">username</span>, <span class="tsd-kind-parameter">clothing</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">)</span></h5>
-<ul class="tsd-parameters">
-<li class="tsd-parameter-signature">
-<ul class="tsd-signatures">
-<li class="tsd-signature"><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">username</span>, <span class="tsd-kind-parameter">clothing</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-<li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5><span class="tsd-kind-parameter">username</span>: <span class="tsd-signature-type">string</span></h5></li>
-<li>
-<h5><span class="tsd-kind-parameter">clothing</span>: <span class="tsd-signature-type">&quot;SKIN&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;CAPE&quot;</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4></li></ul></li></ul></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/4b26f3a/src/modules/config.ts#L197">modules/config.ts:197</a></li></ul></aside></li></ul></section></section></div>
+<li>Defined in <a href="https://github.com/Hanro50/GMLL/blob/a217da4/src/modules/config.ts#L191">modules/config.ts:191</a></li></ul></aside></li></ul></section></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -423,7 +313,19 @@
 <div class="tsd-accordion-details">
 <ul>
 <li><a href="#emit" class=""><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>emit</span></a></li>
-<li><a href="#on" class=""><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>on</span></a></li></ul></div></details></div>
+<li><a href="#on" class=""><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>on</span></a></li>
+<li>
+<ul>
+<li><a href="#md:possible-events"><span>Possible events</span></a></li>
+<li>
+<ul>
+<li><a href="#md:return-variables"><span>Return variables</span></a></li>
+<li>
+<ul>
+<li><a href="#md:possible-events"><span>Possible events</span></a></li>
+<li>
+<ul>
+<li><a href="#md:return-variables"><span>Return variables</span></a></li></ul></li></ul></li></ul></li></ul></li></ul></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1"></use></svg><span>gmll</span></a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container" data-base="..">
