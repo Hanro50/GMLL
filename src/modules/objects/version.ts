@@ -1,29 +1,29 @@
-import { copyFileSync } from 'fs';
+import { copyFileSync } from "fs";
 import {
 	isInitialized,
 	onUnsupportedArm,
 	getVersions,
 	getMeta,
 	getlibraries,
-} from '../config.js';
-import { assets, runtime, libraries } from '../downloader.js';
-import { getManifest, getJavaPath } from '../handler.js';
+} from "../config.js";
+import { assets, runtime, libraries } from "../downloader.js";
+import { getManifest, getJavaPath } from "../handler.js";
 import {
 	combine,
 	throwErr,
 	lawyer,
 	classPathResolver,
 	getOS,
-} from '../internal/util.js';
-import { platform } from 'os';
-import { join } from 'path';
+} from "../internal/util.js";
+import { platform } from "os";
+import { join } from "path";
 import {
 	VersionJson,
 	VersionManifest,
 	Artifact,
 	MCJarTypeVal,
-} from '../../types';
-import { Dir, File } from './files.js';
+} from "../../types";
+import { Dir, File } from "./files.js";
 
 /**
  * Version data is unique. Each version of the game will generate an unique version object.
@@ -53,24 +53,24 @@ export default class Version {
 	 */
 	private constructor(manifest: string | VersionManifest) {
 		this.manifest =
-			typeof manifest == 'string' ? getManifest(manifest) : manifest;
+			typeof manifest == "string" ? getManifest(manifest) : manifest;
 		this.pre1d9 =
 			Date.parse(this.manifest.releaseTime) <
-			Date.parse('2022-05-12T15:36:11+00:00');
+			Date.parse("2022-05-12T15:36:11+00:00");
 
-		if (onUnsupportedArm && this.pre1d9 && platform() != 'win32') {
+		if (onUnsupportedArm && this.pre1d9 && platform() != "win32") {
 			console.trace(manifest);
 			console.warn(
 				"Only 1.19 and up is supported on arm based Linux devices atm. As there's no x86 fallback!",
 			);
 		}
 		if (onUnsupportedArm && this.pre1d9) {
-			console.warn('Arm support is experimental!');
+			console.warn("Arm support is experimental!");
 		}
 		this.json;
 		this.name = this.manifest.base || this.manifest.id;
 		this.folder = getVersions().getDir(this.name);
-		this.file = this.folder.getFile(this.manifest.id + '.json');
+		this.file = this.folder.getFile(this.manifest.id + ".json");
 		this.synced = true;
 		this.folder.mkdir();
 	}
@@ -83,7 +83,7 @@ export default class Version {
 	 */
 	async getJSON(): Promise<VersionJson> {
 		const folder_old = getVersions().getDir(this.manifest.id);
-		const file_old = folder_old.getFile(this.manifest.id + '.json');
+		const file_old = folder_old.getFile(this.manifest.id + ".json");
 		if (this.json && !this._mergeFailure) return this.json;
 		this._mergeFailure = false;
 		if (
@@ -91,16 +91,16 @@ export default class Version {
 			!this.file.exists() &&
 			file_old.exists()
 		) {
-			console.log('[GMLL]: Cleaning up versions!');
+			console.log("[GMLL]: Cleaning up versions!");
 			this.json = file_old.toJSON<VersionJson>();
-			this.synced = !('synced' in this.json) || this.json.synced;
+			this.synced = !("synced" in this.json) || this.json.synced;
 			if (this.synced) {
 				copyFileSync(file_old.sysPath(), this.file.sysPath());
 				folder_old.rm();
 			} else {
 				try {
 					console.log(
-						'[GMLL]: Detected synced is false. Aborting sync attempted',
+						"[GMLL]: Detected synced is false. Aborting sync attempted",
 					);
 					const base = new Version(this.json.inheritsFrom);
 					this.json = combine(await base.getJSON(), this.json);
@@ -108,13 +108,13 @@ export default class Version {
 					this.folder = folder_old;
 					this.file = file_old;
 				} catch (e) {
-					console.warn('[GMLL]: Dependency merge failed.');
+					console.warn("[GMLL]: Dependency merge failed.");
 					this._mergeFailure = true;
 				}
 				if (onUnsupportedArm && !this.pre1d9) {
 					this.json = combine(
 						this.json,
-						getMeta().index.getFile('arm-patch.json').toJSON(),
+						getMeta().index.getFile("arm-patch.json").toJSON(),
 					);
 				}
 				return this.json;
@@ -123,35 +123,33 @@ export default class Version {
 		if (this.manifest.url) {
 			this.json = (
 				await this.folder
-					.getFile(this.manifest.id + '.json')
+					.getFile(this.manifest.id + ".json")
 					.download(this.manifest.url, { sha1: this.manifest.sha1 })
 			).toJSON();
 		} else if (this.file.exists()) {
 			this.json = this.file.toJSON();
 		} else {
 			throwErr(
-				this.manifest.type == 'unknown'
-					? 'Unknown version, please check spelling of given version ID'
-					: 'Version json is missing for this version!',
+				this.manifest.type == "unknown"
+					? "Unknown version, please check spelling of given version ID"
+					: "Version json is missing for this version!",
 			);
 		}
 		if (this.json.inheritsFrom || this.manifest.base) {
 			try {
-				const base = new Version(
-					this.json.inheritsFrom || this.manifest.base,
-				);
+				const base = new Version(this.json.inheritsFrom || this.manifest.base);
 				this.json = combine(await base.getJSON(), this.json);
 				this.folder = base.folder;
 				this.name = base.name;
 			} catch (e) {
-				console.warn('[GMLL]: Dependency merge failed.');
+				console.warn("[GMLL]: Dependency merge failed.");
 				this._mergeFailure = true;
 			}
 		}
 		if (onUnsupportedArm && !this.pre1d9) {
 			this.json = combine(
 				this.json,
-				getMeta().index.getFile('arm-patch.json').toJSON(),
+				getMeta().index.getFile("arm-patch.json").toJSON(),
 			);
 		}
 		return this.json;
@@ -161,7 +159,7 @@ export default class Version {
 	 */
 	async getAssets() {
 		if (!this.json.assetIndex) {
-			const base = await new Version('1.0').getJSON();
+			const base = await new Version("1.0").getJSON();
 			this.json.assetIndex = base.assetIndex;
 		}
 		await assets(this.json.assetIndex);
@@ -169,7 +167,7 @@ export default class Version {
 	async getRuntime() {
 		const jre = this.json.javaVersion
 			? this.json.javaVersion.component
-			: 'jre-legacy';
+			: "jre-legacy";
 		await runtime(jre);
 		return jre;
 	}
@@ -177,7 +175,7 @@ export default class Version {
 		await libraries(this.json);
 	}
 	async getJar(type: MCJarTypeVal, jarFile: File) {
-		if (this.synced && 'downloads' in this.json) {
+		if (this.synced && "downloads" in this.json) {
 			const download = this.json.downloads[type];
 			if (!jarFile.sha1(download.sha1) || !jarFile.size(download.size)) {
 				return await jarFile.download(download.url);
@@ -187,50 +185,43 @@ export default class Version {
 	async install() {
 		if (this._mergeFailure) {
 			this._mergeFailure = false;
-			console.log('[GMLL]: Correcting earlier dependency merge failure.');
+			console.log("[GMLL]: Correcting earlier dependency merge failure.");
 			delete this.json;
 			this.json = await this.getJSON();
 		}
 		await this.getAssets();
 		await this.getLibs();
-		await this.getJar('client', this.folder.getFile(this.name + '.jar'));
+		await this.getJar("client", this.folder.getFile(this.name + ".jar"));
 		await this.getRuntime();
 	}
 	getJavaPath() {
 		return getJavaPath(
-			this.json.javaVersion
-				? this.json.javaVersion.component
-				: 'jre-legacy',
+			this.json.javaVersion ? this.json.javaVersion.component : "jre-legacy",
 		);
 	}
-	getClassPath(mode: 'client' | 'server' = 'client', jarpath?: File) {
+	getClassPath(mode: "client" | "server" = "client", jarpath?: File) {
 		const cp: string[] = [];
 		this.json.libraries.forEach((lib) => {
-			if (mode == 'client' && 'clientreq' in lib && !lib.clientreq)
-				return;
-			else if (mode == 'server' && !lib.serverreq && 'clientreq' in lib)
-				return;
+			if (mode == "client" && "clientreq" in lib && !lib.clientreq) return;
+			else if (mode == "server" && !lib.serverreq && "clientreq" in lib) return;
 			if (lib.rules && !lawyer(lib.rules)) {
 				return;
 			}
 
 			const p = lib.natives
 				? join(
-						'libraries',
-						...classPathResolver(
-							lib.name,
-							lib.natives[getOS()],
-						).split('/'),
+						"libraries",
+						...classPathResolver(lib.name, lib.natives[getOS()]).split("/"),
 				  )
-				: join('libraries', ...classPathResolver(lib.name).split('/'));
-			const p2 = getlibraries().getDir('..').getFile(p);
+				: join("libraries", ...classPathResolver(lib.name).split("/"));
+			const p2 = getlibraries().getDir("..").getFile(p);
 			if (!p2.exists()) {
 				console.error(
 					`[GMLL]: ${p} does not exist. Removing to avoid possible error (${p2.sysPath()})`,
 				);
 			} else if (!cp.includes(p)) cp.push(p);
 		});
-		const jar = jarpath || this.folder.getFile(this.name + '.jar');
+		const jar = jarpath || this.folder.getFile(this.name + ".jar");
 		if (jar.exists()) {
 			cp.push(jar.sysPath());
 		}

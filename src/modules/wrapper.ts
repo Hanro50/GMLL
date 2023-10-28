@@ -1,5 +1,5 @@
 /**The compatibility lib for integration with other libraries */
-import type { Player } from '../types';
+import type { Player } from "../types";
 /**
  * For third party login libraries.
  * @param username The user's username
@@ -20,7 +20,7 @@ export function getToken(
 		profile: {
 			//No piracy -> Buy minecraft!
 			demo: demo || !accessToken,
-			type: 'mojang',
+			type: "mojang",
 			id: uuid,
 			name: username,
 			xuid,
@@ -48,10 +48,10 @@ export function mojang2token(
 	return {
 		profile: {
 			demo: demo,
-			type: 'mojang',
+			type: "mojang",
 			id: uuid,
 			name: username,
-			xuid: '', //Not used by mojang accounts
+			xuid: "", //Not used by mojang accounts
 		},
 		access_token: accessToken,
 	};

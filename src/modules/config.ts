@@ -1,13 +1,13 @@
-import { EventEmitter } from 'events';
-import { manifests } from './downloader.js';
-import { Dir, File, set7zipRepo as _set7zipRepo } from './objects/files.js';
-import { getCpuArch, getErr, getOS, throwErr } from './internal/util.js';
-import { type } from 'os';
-import type Instance from './objects/instance.js';
-import type { WorkerOptions, Worker } from 'worker_threads';
+import { EventEmitter } from "events";
+import { manifests } from "./downloader.js";
+import { Dir, File, set7zipRepo as _set7zipRepo } from "./objects/files.js";
+import { getCpuArch, getErr, getOS, throwErr } from "./internal/util.js";
+import { type } from "os";
+import type Instance from "./objects/instance.js";
+import type { WorkerOptions, Worker } from "worker_threads";
 
 let workerSpawner = async (options: WorkerOptions) => {
-	const makeWorker = (await import('./internal/worker.mjs')).makeWorker;
+	const makeWorker = (await import("./internal/worker.mjs")).makeWorker;
 	return makeWorker(options);
 };
 /**Sets the worker spawner for the download manager.
@@ -48,18 +48,18 @@ export function spawnDownloadWorker(options: WorkerOptions) {
  * * {@link addUpdateConfig}
  * * {@link getUpdateConfig}
  */
-export type update = 'runtime' | 'agent' | 'fabric' | 'legacy-fabric' | 'quilt';
+export type update = "runtime" | "agent" | "fabric" | "legacy-fabric" | "quilt";
 /**
  * Check if we are running under Windows/Linux on arm
  *
  * Apple silicon is actually officially supported as per 1.19
  */
 export const onUnsupportedArm =
-	(getCpuArch() == 'arm64' || getCpuArch() == 'arm') && type() != 'Darwin';
+	(getCpuArch() == "arm64" || getCpuArch() == "arm") && type() != "Darwin";
 let repositories = {
-	maven: 'https://download.hanro50.net.za/maven',
-	forge: 'https://download.hanro50.net.za/fmllibs',
-	armFix: 'https://download.hanro50.net.za/java',
+	maven: "https://download.hanro50.net.za/maven",
+	forge: "https://download.hanro50.net.za/fmllibs",
+	armFix: "https://download.hanro50.net.za/java",
 };
 let multiCoreMode = true;
 /**is multicore downloads currently enabled? */
@@ -84,7 +84,7 @@ export function setMultiCoreMode(enabled: boolean) {
  */
 export function getRepositories() {
 	Object.keys(repositories).forEach((key) => {
-		if (!repositories[key].endsWith('/')) repositories[key] += '/';
+		if (!repositories[key].endsWith("/")) repositories[key] += "/";
 	});
 	return JSON.parse(JSON.stringify(repositories));
 }
@@ -109,18 +109,18 @@ export function set7zipRepo(z7: string) {
 }
 if (onUnsupportedArm) {
 	console.warn(
-		'[GMLL]: Running on an non M1 Arm platform! We are desperate for dedicated testers!',
+		"[GMLL]: Running on an non M1 Arm platform! We are desperate for dedicated testers!",
 	);
 }
 let initialized = false;
 
-const _packageFile = new File('package.json');
+const _packageFile = new File("package.json");
 const _packageJSON: { version?: string; name?: string } = _packageFile.exists()
-	? new File('package.json').toJSON<{ version: string }>()
+	? new File("package.json").toJSON<{ version: string }>()
 	: {};
 
-let version = _packageJSON.version || '0.0.0';
-let launcherName = _packageJSON.name || 'GMLL';
+let version = _packageJSON.version || "0.0.0";
+let launcherName = _packageJSON.name || "GMLL";
 
 const startUpCalls: Array<() => void | Promise<void>> = [];
 /**Checks if GMLL is initialized and throws an error if it is not */
@@ -139,7 +139,7 @@ export interface Events {
 	 * - done=>Fired when everything is wrapped up.
 	 */
 	on(
-		e: 'download.start' | 'download.done' | 'encode.start' | 'encode.done',
+		e: "download.start" | "download.done" | "encode.start" | "encode.done",
 		f: () => void,
 	): void;
 	/**
@@ -151,7 +151,7 @@ export interface Events {
 	 * - path=>The path to the file that caused the issue
 	 */
 	on(
-		e: 'parser.fail',
+		e: "parser.fail",
 		f: (type: string, err: Error, path: File | Dir) => void,
 	): void;
 	/**
@@ -164,36 +164,32 @@ export interface Events {
 	 * - instance=>The instance of which the load event is applicable.
 	 */
 	on(
-		e: 'parser.start' | 'parser.done',
+		e: "parser.start" | "parser.done",
 		f: (type: string, instance: Instance) => void,
 	): void;
 	/**Used to give setup information. Useful for progress bars. */
-	on(e: 'download.setup', f: (cores: number) => void): void;
+	on(e: "download.setup", f: (cores: number) => void): void;
 	/**Fired when a file has been downloaded and saved to disk */
 	on(
-		e: 'download.progress' | 'encode.progress' | 'parser.progress',
+		e: "download.progress" | "encode.progress" | "parser.progress",
 		f: (key: string, index: number, total: number, left: number) => void,
 	): void;
 	/**Fired when GMLL needs to restart a download */
 	on(
-		e: 'download.fail',
-		f: (
-			key: string,
-			type: 'retry' | 'fail' | 'system',
-			err: string,
-		) => void,
+		e: "download.fail",
+		f: (key: string, type: "retry" | "fail" | "system", err: string) => void,
 	): void;
 	/**The events fired when GMLL has to spin up an instance of the JVM.
 	 * @param app The name of the Java app currently running. (Forgiac|Minecraft)
 	 * @param cwd The directory the app is running within.
 	 */
-	on(e: 'jvm.start', f: (app: string, cwd: string) => void): void;
+	on(e: "jvm.start", f: (app: string, cwd: string) => void): void;
 	/**Console feedback from a JVM App.
 	 * @param app The name of the Java app currently running. (Forgiac|Minecraft)
 	 * @param chunk The aforementioned feedback
 	 */
 	on(
-		e: 'jvm.stdout' | 'jvm.stderr',
+		e: "jvm.stdout" | "jvm.stderr",
 		f: (app: string, chunk: string) => void,
 	): void;
 
@@ -203,88 +199,84 @@ export interface Events {
 let defEvents: Events = new EventEmitter();
 
 //Encode Manager
-defEvents.on('parser.start', (type, int) =>
+defEvents.on("parser.start", (type, int) =>
 	console.log(`[GMLL:parser]: Parsing ${type}s of instance ${int.getName()}`),
 );
-defEvents.on('parser.progress', (key, index, total, left) =>
+defEvents.on("parser.progress", (key, index, total, left) =>
 	console.log(
 		`[GMLL:parser]: Done with ${index} of ${total} : ${left} : ${key}`,
 	),
 );
-defEvents.on('parser.done', (type, int) =>
+defEvents.on("parser.done", (type, int) =>
 	console.log(
 		`[GMLL:parser]: Done parsing ${type}s of instance ${int.getName()}`,
 	),
 );
-defEvents.on('parser.fail', (type, err, path) => {
+defEvents.on("parser.fail", (type, err, path) => {
 	console.error(`[GMLL:parser]: Error parsing ${type} => ${path.sysPath()}`);
-	if (typeof err == 'string') console.warn(`[GMLL:parser]: Reason => ${err}`);
+	if (typeof err == "string") console.warn(`[GMLL:parser]: Reason => ${err}`);
 	else console.trace(err);
 });
 //Encode Manager
-defEvents.on('encode.start', () =>
-	console.log('[GMLL:encode]: Starting to encode files'),
+defEvents.on("encode.start", () =>
+	console.log("[GMLL:encode]: Starting to encode files"),
 );
-defEvents.on('encode.progress', (key, index, total, left) =>
+defEvents.on("encode.progress", (key, index, total, left) =>
 	console.log(
 		`[GMLL:encode]: Done with ${index} of ${total} : ${left} : ${key}`,
 	),
 );
-defEvents.on('encode.done', () =>
-	console.log('[GMLL:encode]: Done with encoding files'),
+defEvents.on("encode.done", () =>
+	console.log("[GMLL:encode]: Done with encoding files"),
 );
 
 //Download Manager
-defEvents.on('download.setup', (cores) =>
+defEvents.on("download.setup", (cores) =>
 	console.log(`[GMLL:download]: Dividing out work to ${cores} cores`),
 );
-defEvents.on('download.start', () =>
-	console.log('[GMLL:download]: Starting download'),
+defEvents.on("download.start", () =>
+	console.log("[GMLL:download]: Starting download"),
 );
-defEvents.on('download.progress', (key, index, total, left) =>
+defEvents.on("download.progress", (key, index, total, left) =>
 	console.log(
 		`[GMLL:download]: Done with ${index} of ${total} : ${left} : ${key}`,
 	),
 );
-defEvents.on('download.done', () =>
-	console.log('[GMLL:download]: Done with download'),
+defEvents.on("download.done", () =>
+	console.log("[GMLL:download]: Done with download"),
 );
-defEvents.on('download.fail', (key, type, err) => {
+defEvents.on("download.fail", (key, type, err) => {
 	switch (type) {
-		case 'retry':
-			console.log(
-				'[GMLL:download]: Trying to download ' + key + ' again',
-			);
+		case "retry":
+			console.log("[GMLL:download]: Trying to download " + key + " again");
 			break;
-		case 'fail':
-			console.log(getErr('Failed to download ' + key));
+		case "fail":
+			console.log(getErr("Failed to download " + key));
 			break;
-		case 'system':
+		case "system":
 			console.log(
-				getErr(
-					'Failed to download ' + key + ' due to an error \n' + err,
-				),
+				getErr("Failed to download " + key + " due to an error \n" + err),
 			);
 			break;
 	}
 });
 //JVM events
-defEvents.on('jvm.start', (app, cwd) =>
+defEvents.on("jvm.start", (app, cwd) =>
 	console.log(`[${app}]: Starting in directory <${cwd}>`.trim()),
 );
-defEvents.on('jvm.stdout', (app, out) =>
+defEvents.on("jvm.stdout", (app, out) =>
 	console.log(`[${app}]: ${out}`.trim()),
 );
-defEvents.on('jvm.stderr', (app, out) =>
-	console.log(`\x1b[31m\x1b[1m[${app}]: ${out}`.trim() + '\x1b[0m'),
+defEvents.on("jvm.stderr", (app, out) =>
+	console.log(`\x1b[31m\x1b[1m[${app}]: ${out}`.trim() + "\x1b[0m"),
 );
 
 let updateConf: update[] = [
-	'fabric',
-	'runtime',
-	'agent',
-	'quilt',
-	'legacy-fabric',
+	"fabric",
+	"runtime",
+	"agent",
+	"quilt",
+	"legacy-fabric",
 ];
 
 let files: {
@@ -302,31 +294,31 @@ let files: {
  * @param {String} _root Essentially where you want to create a new .minecraft folder
  */
 export function setRoot(_root: Dir | string) {
-	if (typeof _root == 'string') _root = new Dir(_root);
-	if (_root.sysPath().includes('\x00')) {
-		console.error('Path should not contain a NULL character!');
+	if (typeof _root == "string") _root = new Dir(_root);
+	if (_root.sysPath().includes("\x00")) {
+		console.error("Path should not contain a NULL character!");
 	}
 	initialized = false;
-	const platform = _root.getDir('platform', getOS(), getCpuArch());
+	const platform = _root.getDir("platform", getOS(), getCpuArch());
 	files = {
-		assets: _root.getDir('assets'),
-		libraries: _root.getDir('libraries'),
-		instances: _root.getDir('instances'),
-		versions: _root.getDir('versions'),
-		launcher: _root.getDir('launcher'),
+		assets: _root.getDir("assets"),
+		libraries: _root.getDir("libraries"),
+		instances: _root.getDir("instances"),
+		versions: _root.getDir("versions"),
+		launcher: _root.getDir("launcher"),
 		_platform: platform,
-		runtimes: platform.getDir('runtimes'),
-		natives: Dir.tmpdir().getDir('gmll', 'natives', getOS(), getCpuArch()),
+		runtimes: platform.getDir("runtimes"),
+		natives: Dir.tmpdir().getDir("gmll", "natives", getOS(), getCpuArch()),
 	};
 }
 
-setRoot(new Dir('.minecraft'));
+setRoot(new Dir(".minecraft"));
 /**
  * The location of the asset directory. Used to store textures, music and sounds.
  * @param _assets The location you want the asset directory to be at
  */
 export function setAssets(_assets: Dir | string) {
-	if (typeof _assets == 'string') _assets = new Dir(_assets);
+	if (typeof _assets == "string") _assets = new Dir(_assets);
 	files.assets = _assets;
 	files.assets.mkdir();
 }
@@ -335,7 +327,7 @@ export function setAssets(_assets: Dir | string) {
  * @param _libraries The location you want the library directory to be at
  */
 export function setLibraries(_libraries: Dir | string) {
-	if (typeof _libraries == 'string') _libraries = new Dir(_libraries);
+	if (typeof _libraries == "string") _libraries = new Dir(_libraries);
 	files.libraries = _libraries;
 	files.libraries.mkdir();
 }
@@ -344,7 +336,7 @@ export function setLibraries(_libraries: Dir | string) {
  * @param _instances The location you want the instance directory to be at
  */
 export function setInstances(_instances: Dir | string) {
-	if (typeof _instances == 'string') _instances = new Dir(_instances);
+	if (typeof _instances == "string") _instances = new Dir(_instances);
 	files.instances = _instances;
 	files.instances.mkdir();
 }
@@ -354,7 +346,7 @@ export function setInstances(_instances: Dir | string) {
  * @param _versions The location you want the version directory to be at
  */
 export function setVersions(_versions: Dir | string) {
-	if (typeof _versions == 'string') _versions = new Dir(_versions);
+	if (typeof _versions == "string") _versions = new Dir(_versions);
 	files.versions = _versions;
 	files.versions.mkdir();
 }
@@ -367,7 +359,7 @@ export function setVersions(_versions: Dir | string) {
  * @param _runtimes The location you want the runtime directory to be at
  */
 export function setRuntimes(_runtimes: Dir | string) {
-	if (typeof _runtimes == 'string') _runtimes = new Dir(_runtimes);
+	if (typeof _runtimes == "string") _runtimes = new Dir(_runtimes);
 	files.runtimes = _runtimes;
 	files.runtimes.mkdir();
 }
@@ -376,7 +368,7 @@ export function setRuntimes(_runtimes: Dir | string) {
  * @param _launcher   The location you want the meta directory to be at
  */
 export async function setLauncher(_launcher: Dir | string) {
-	if (typeof _launcher == 'string') _launcher = new Dir(_launcher);
+	if (typeof _launcher == "string") _launcher = new Dir(_launcher);
 	initialized = false;
 	files.launcher = _launcher;
 	await initialize();
@@ -387,7 +379,7 @@ export async function setLauncher(_launcher: Dir | string) {
  * @param _natives The location you want the bin directory to be at
  */
 export function setNatives(_natives: Dir | string) {
-	if (typeof _natives == 'string') _natives = new Dir(_natives);
+	if (typeof _natives == "string") _natives = new Dir(_natives);
 	files.natives = _natives;
 	_natives.mkdir();
 }
@@ -434,13 +426,13 @@ export function getRuntimes() {
 export function getMeta() {
 	//.getDir(getOS(), getCpuArch())
 	const meta = {
-		bin: files._platform.getDir('bin'),
-		runtimes: files.runtimes.getDir('runtimes', 'meta'),
-		lzma: files.launcher.getDir('lzma'),
-		scratch: files.launcher.getDir('scratch'),
-		manifests: files.launcher.getDir('manifests'),
-		index: files.launcher.getDir('index'),
-		profiles: files.launcher.getDir('profiles'),
+		bin: files._platform.getDir("bin"),
+		runtimes: files.runtimes.getDir("runtimes", "meta"),
+		lzma: files.launcher.getDir("lzma"),
+		scratch: files.launcher.getDir("scratch"),
+		manifests: files.launcher.getDir("manifests"),
+		index: files.launcher.getDir("index"),
+		profiles: files.launcher.getDir("profiles"),
 	};
 	return meta;
 }
@@ -512,26 +504,26 @@ export function resolvePath(file: string) {
  * Used to set the reported launcher name reported by GMLL to Minecraft
  * @param _version Any version string
  */
-export function setLauncherName(_name = 'GMLL') {
+export function setLauncherName(_name = "GMLL") {
 	launcherName = _name;
 }
 /**
  * Used to get the currently reported launcher name reported by GMLL to Minecraft
  */
 export function getLauncherName() {
-	return launcherName || 'GMLL';
+	return launcherName || "GMLL";
 }
 
 /**
  * Used to set the reported launcher version reported by GMLL to Minecraft
  * @param _version Any version string
  */
-export function setLauncherVersion(_version = '0.0.0') {
+export function setLauncherVersion(_version = "0.0.0") {
 	version = _version;
 }
 /**
  * Used to get the currently reported launcher version reported by GMLL to Minecraft
  */
 export function getLauncherVersion() {
-	return version || '0.0.0';
+	return version || "0.0.0";
 }

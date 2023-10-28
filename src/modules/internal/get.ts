@@ -5,8 +5,8 @@
  *
  */
 
-import { Dir, File } from '../objects/files.js';
-import { parentPort, workerData } from 'worker_threads';
+import { Dir, File } from "../objects/files.js";
+import { parentPort, workerData } from "worker_threads";
 
 export type getWorkerDate = {
 	processCMD: string;
@@ -29,17 +29,17 @@ async function load(a: any, retry = 0) {
 			retry++;
 			parentPort.postMessage({
 				cmd: failCMD,
-				type: 'retry',
+				type: "retry",
 				key: o.key,
 				err: e,
 			});
 			await load(a, retry);
 			return;
 		}
-		console.error('[GMLL]: procedural failure : ' + new Dir(...o.path));
+		console.error("[GMLL]: procedural failure : " + new Dir(...o.path));
 		parentPort.postMessage({
 			cmd: failCMD,
-			type: 'system',
+			type: "system",
 			key: o.path,
 			err: e,
 		});
@@ -47,7 +47,7 @@ async function load(a: any, retry = 0) {
 	}
 }
 
-parentPort.on('message', async (a) => {
+parentPort.on("message", async (a) => {
 	if (a.data && a.cmd == postCMD) await load(a);
 });
-parentPort.postMessage({ cmd: getCMD, type: 'system' });
+parentPort.postMessage({ cmd: getCMD, type: "system" });

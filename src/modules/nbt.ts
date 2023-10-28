@@ -1,21 +1,21 @@
 /**
  * An NBT reader implement in JS.
  */
-import { Dir, File } from './objects/files.js';
+import { Dir, File } from "./objects/files.js";
 export enum tagTypes {
-	'TAG_End' = 0,
-	'TAG_Byte' = 1,
-	'TAG_Short' = 2,
-	'TAG_Int' = 3,
-	'TAG_Long' = 4,
-	'TAG_Float' = 5,
-	'TAG_Double' = 6,
-	'TAG_Byte_Array' = 7,
-	'TAG_String' = 8,
-	'TAG_List' = 9,
-	'TAG_Compound' = 10,
-	'TAG_Int_Array' = 11,
-	'TAG_Long_Array' = 12,
+	"TAG_End" = 0,
+	"TAG_Byte" = 1,
+	"TAG_Short" = 2,
+	"TAG_Int" = 3,
+	"TAG_Long" = 4,
+	"TAG_Float" = 5,
+	"TAG_Double" = 6,
+	"TAG_Byte_Array" = 7,
+	"TAG_String" = 8,
+	"TAG_List" = 9,
+	"TAG_Compound" = 10,
+	"TAG_Int_Array" = 11,
+	"TAG_Long_Array" = 12,
 }
 export type typedNBT = {
 	[key: string]:
@@ -130,14 +130,14 @@ export function readNBT<T>(raw: Buffer, typed?: true): T | typedNBT {
 			default:
 				//Unknown flag. Due to how dat files are encoded. The decoder cannot continue if it hits an unknown flag
 				console.error(
-					'Unknown type',
+					"Unknown type",
 					[String.fromCharCode(c), c],
-					' at ',
+					" at ",
 					i,
 					raw[i],
 				);
 				console.error([raw.slice(3, i + 10).toString()]);
-				throw 'UNKNOWN TYPE';
+				throw "UNKNOWN TYPE";
 		}
 	}
 	const c = raw[i];
@@ -151,9 +151,9 @@ export async function readDat<T>(
 	path: File,
 	typed?: true,
 ): Promise<T | typedNBT> {
-	if (!path.sysPath().toLocaleLowerCase().endsWith('.dat'))
-		console.warn('Potentially unsupported file extention detected!');
-	const p = Dir.tmpdir().getDir('gmll', path.getHash()).mkdir();
+	if (!path.sysPath().toLocaleLowerCase().endsWith(".dat"))
+		console.warn("Potentially unsupported file extention detected!");
+	const p = Dir.tmpdir().getDir("gmll", path.getHash()).mkdir();
 	//We need to decompress the dat file
 	await path.unzip(p);
 	const file = p.ls()[0] as File;

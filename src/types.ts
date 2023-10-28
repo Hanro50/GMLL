@@ -4,64 +4,64 @@
  * ---------------------------------------------------------------------------------------------
  */
 
-import type { Dir, File } from './modules/objects/files';
+import type { Dir, File } from "./modules/objects/files";
 
 /**
  * The release type of a set version. Can be used to add filters to a version select field within a launcher so
  * that a user isn't overwhelmed by the 7 billion different versions of fabric.
  */
 export type MCVersionType =
-	| 'generated'
-	| 'old_alpha'
-	| 'old_beta'
-	| 'release'
-	| 'snapshot'
-	| 'custom'
-	| 'unknown'
+	| "generated"
+	| "old_alpha"
+	| "old_beta"
+	| "release"
+	| "snapshot"
+	| "custom"
+	| "unknown"
 	| Loader;
 /**
  * The type of user profiles. Can be used to keep older versions of forge from trying to dynamically refresh your user object.
  * Which if you logged in without a mojang account could cause tha game to crash
  */
-export type MCUserTypeVal = 'msa' | 'mojang' | 'legacy';
+export type MCUserTypeVal = "msa" | "mojang" | "legacy";
 /**
  * The versions of the minecraft jar a set release's version json may have. Can be used to potentially download the server version
  * of a set release.
  */
 export type MCJarTypeVal =
-	| 'client'
-	| 'client_mappings'
-	| 'server'
-	| 'server_mappings'
-	| 'windows_server';
+	| "client"
+	| "client_mappings"
+	| "server"
+	| "server_mappings"
+	| "windows_server";
 /**
  * The version of the java runtime a set release uses internally. The 'java-runtime-arm' can be ignored unless you have GMLL
  * booted up on something like the raspberry pi. Otherwise gamma and beta are different versions of java 17, alpha is java 16
  * and legacy is a version of java 8
  */
 export type MCRuntimeVal =
-	| 'java-runtime-arm'
-	| 'java-runtime-gamma'
-	| 'java-runtime-alpha'
-	| 'java-runtime-beta'
-	| 'jre-legacy'
-	| 'minecraft-java-exe';
+	| "java-runtime-arm"
+	| "java-runtime-gamma"
+	| "java-runtime-alpha"
+	| "java-runtime-beta"
+	| "jre-legacy"
+	| "minecraft-java-exe";
 /**
  * Potential architectures. Only x86, x64 and arm64 are fixed values at this stage and are technically supported.
  * Use the others for stuff at your own risk since GMLL might be forced to change this if mojang suddenly chooses
  * to support one of the other architectures
  */
 export type CpuArchRuleVal =
-	| 'x86'
-	| 'x64'
-	| 'arm'
-	| 'arm64'
-	| 'mips'
-	| 'mipsel'
-	| 'ppc'
-	| 'ppc64'
-	| 's390'
-	| 's390x';
+	| "x86"
+	| "x64"
+	| "arm"
+	| "arm64"
+	| "mips"
+	| "mipsel"
+	| "ppc"
+	| "ppc64"
+	| "s390"
+	| "s390x";
 /**
  * ---------------------------------------------------------------------------------------------
  * Downloader
@@ -109,22 +109,19 @@ export interface AssetIndex {
 }
 
 export type MojangResourceFile = {
-	type: 'file';
+	type: "file";
 	downloads?: { lzma?: UrlFile; raw: UrlFile };
 	executable?: boolean;
 };
-export type MojangResourceLink = { type: 'link'; target: string };
-export type MojangResourceDir = { type: 'directory' };
+export type MojangResourceLink = { type: "link"; target: string };
+export type MojangResourceDir = { type: "directory" };
 /**
  * The generic resource file format mojang uses.
  * The two downloadables in this formate are the java edition runtimes and Minecraft Dungeons
  */
 export interface MojangResourceManifest {
 	files: {
-		[key: string]:
-			| MojangResourceDir
-			| MojangResourceLink
-			| MojangResourceFile;
+		[key: string]: MojangResourceDir | MojangResourceLink | MojangResourceFile;
 	};
 }
 /**
@@ -147,21 +144,21 @@ export type RuntimeManifestEntry = {
 };
 export type RuntimeManifest = {
 	[key in
-		| 'gamecore'
-		| 'linux'
-		| 'linux-i386'
-		| 'mac-os'
-		| 'windows-x64'
-		| 'windows-x86'
-		| 'linux-arm64'
-		| 'linux-arm32'
-		| 'windows-arm64']: {
+		| "gamecore"
+		| "linux"
+		| "linux-i386"
+		| "mac-os"
+		| "windows-x64"
+		| "windows-x86"
+		| "linux-arm64"
+		| "linux-arm32"
+		| "windows-arm64"]: {
 		[key in
-			| 'java-runtime-beta'
-			| 'java-runtime-alpha'
-			| 'jre-legacy'
-			| 'minecraft-java-exe'
-			| 'java-runtime-arm']: Array<RuntimeManifestEntry>;
+			| "java-runtime-beta"
+			| "java-runtime-alpha"
+			| "jre-legacy"
+			| "minecraft-java-exe"
+			| "java-runtime-arm"]: Array<RuntimeManifestEntry>;
 	};
 };
 
@@ -209,9 +206,9 @@ export interface VersionManifest {
  * Rules used in minecraft's version.json that determins if a set property should apply or not.
  */
 export interface VersionJsonRule {
-	action: 'allow' | 'disallow';
+	action: "allow" | "disallow";
 	os?: {
-		name?: 'osx' | 'windows' | 'linux';
+		name?: "osx" | "windows" | "linux";
 		arch?: CpuArchRuleVal;
 		version?: string;
 	};
@@ -246,7 +243,7 @@ export interface Library {
 	url?: string;
 	rules?: VersionJsonRules;
 	extract?: {
-		exclude: ['META-INF/'];
+		exclude: ["META-INF/"];
 	};
 	natives?: {
 		linux?: string;
@@ -278,7 +275,7 @@ export interface VersionJson {
 		client: {
 			argument: string;
 			file: Artifact;
-			type: 'log4j2-xml';
+			type: "log4j2-xml";
 		};
 	};
 	javaVersion?: {
@@ -393,7 +390,7 @@ export interface LaunchOptions {
 	 * Changing this can easily break older versions of forge, cause graphical corruption, crash legacy versions of minecraft, cause issues with arm Macs and a whole host of random BS.
 	 * If brought up in the support channels for GMLL, you'll be asked to set this to it's default value if we see that you have changed it.
 	 */
-	javaPath?: 'default' | string;
+	javaPath?: "default" | string;
 	/**By default GMLL spins up a proxy server when launching Minecraft 1.5.2 and older to reroute some requests that no longer work*/
 	noLegacyFix?: boolean;
 }
@@ -504,9 +501,9 @@ export interface PlayerDat {
 	DeathTime: number;
 	Dimension:
 		| number
-		| 'minecraft:overworld'
-		| 'minecraft:the_nether'
-		| 'minecraft:the_end';
+		| "minecraft:overworld"
+		| "minecraft:the_nether"
+		| "minecraft:the_end";
 	EnderItems: [];
 	FallDistance: number;
 	FallFlying?: number;
@@ -563,42 +560,42 @@ export interface LevelDat {
 			PreviouslyKilled: number;
 		}>;
 		GameRules?: Partial<{
-			announceAdvancements: 'true' | 'false';
-			commandBlockOutput: 'true' | 'false';
-			disableElytraMovementCheck: 'true' | 'false';
-			disableRaids: 'true' | 'false';
-			doDaylightCycle: 'true' | 'false';
-			doEntityDrops: 'true' | 'false';
-			doFireTick: 'true' | 'false';
-			doImmediateRespawn: 'true' | 'false';
-			doInsomnia: 'true' | 'false';
-			doLimitedCrafting: 'true' | 'false';
-			doMobLoot: 'true' | 'false';
-			doMobSpawning: 'true' | 'false';
-			doPatrolSpawning: 'true' | 'false';
-			doTileDrops: 'true' | 'false';
-			doTraderSpawning: 'true' | 'false';
-			doWardenSpawning: 'true' | 'false';
-			doWeatherCycle: 'true' | 'false';
-			drowningDamage: 'true' | 'false';
-			fallDamage: 'true' | 'false';
-			fireDamage: 'true' | 'false';
-			forgiveDeadPlayers: 'true' | 'false';
-			freezeDamage: 'true' | 'false';
-			keepInventory: 'true' | 'false';
-			logAdminCommands: 'true' | 'false';
+			announceAdvancements: "true" | "false";
+			commandBlockOutput: "true" | "false";
+			disableElytraMovementCheck: "true" | "false";
+			disableRaids: "true" | "false";
+			doDaylightCycle: "true" | "false";
+			doEntityDrops: "true" | "false";
+			doFireTick: "true" | "false";
+			doImmediateRespawn: "true" | "false";
+			doInsomnia: "true" | "false";
+			doLimitedCrafting: "true" | "false";
+			doMobLoot: "true" | "false";
+			doMobSpawning: "true" | "false";
+			doPatrolSpawning: "true" | "false";
+			doTileDrops: "true" | "false";
+			doTraderSpawning: "true" | "false";
+			doWardenSpawning: "true" | "false";
+			doWeatherCycle: "true" | "false";
+			drowningDamage: "true" | "false";
+			fallDamage: "true" | "false";
+			fireDamage: "true" | "false";
+			forgiveDeadPlayers: "true" | "false";
+			freezeDamage: "true" | "false";
+			keepInventory: "true" | "false";
+			logAdminCommands: "true" | "false";
 			maxCommandChainLength: string;
 			maxEntityCramming: string;
-			mobGriefing: 'true' | 'false';
-			naturalRegeneration: 'true' | 'false';
+			mobGriefing: "true" | "false";
+			naturalRegeneration: "true" | "false";
 			playersSleepingPercentage: string;
 			randomTickSpeed: string;
-			reducedDebugInfo: 'true' | 'false';
-			sendCommandFeedback: 'true' | 'false';
-			showDeathMessages: 'true' | 'false';
+			reducedDebugInfo: "true" | "false";
+			sendCommandFeedback: "true" | "false";
+			showDeathMessages: "true" | "false";
 			spawnRadius: string;
-			spectatorsGenerateChunks: 'true' | 'false';
-			universalAnger: 'true' | 'false';
+			spectatorsGenerateChunks: "true" | "false";
+			universalAnger: "true" | "false";
 		}>;
 		Player: PlayerDat;
 		Version?:
@@ -608,27 +605,27 @@ export interface LevelDat {
 		WorldGenSettings?: Partial<{
 			dimensions: {
 				[Key in
-					| 'minecraft:overworld'
-					| 'minecraft:the_nether'
-					| 'minecraft:the_end']: {
+					| "minecraft:overworld"
+					| "minecraft:the_nether"
+					| "minecraft:the_end"]: {
 					generator: {
 						settings:
-							| 'minecraft:overworld'
-							| 'minecraft:nether'
-							| 'minecraft:end';
+							| "minecraft:overworld"
+							| "minecraft:nether"
+							| "minecraft:end";
 						biome_source: {
 							preset?: string;
 							type:
-								| 'minecraft:multi_noise'
-								| 'minecraft:noise'
-								| 'minecraft:fixed';
+								| "minecraft:multi_noise"
+								| "minecraft:noise"
+								| "minecraft:fixed";
 						};
-						type: 'minecraft:noise';
+						type: "minecraft:noise";
 					};
 					type:
-						| 'minecraft:overworld'
-						| 'minecraft:the_nether'
-						| 'minecraft:the_end';
+						| "minecraft:overworld"
+						| "minecraft:the_nether"
+						| "minecraft:the_end";
 				};
 			};
 			bonus_chest: number;
@@ -682,12 +679,12 @@ export type ForgeDep = {
 	side: string;
 };
 export type Loader =
-	| 'forge'
-	| 'fabric'
-	| 'liteLoader'
-	| 'riftMod'
-	| 'unknown'
-	| 'quilt';
+	| "forge"
+	| "fabric"
+	| "liteLoader"
+	| "riftMod"
+	| "unknown"
+	| "quilt";
 
 export interface ModInfo extends MetaObj {
 	id: string;
@@ -710,7 +707,7 @@ export interface ModInfo extends MetaObj {
 	screenshots?: string[];
 	source?: string;
 	licence?: string;
-	type: 'mod' | 'coremod' | 'jarmod';
+	type: "mod" | "coremod" | "jarmod";
 	//Here if GMLL could not find any mod information about the mod
 	error?: boolean;
 }
@@ -729,7 +726,7 @@ export interface curseforgeModpack {
 			},
 		];
 	};
-	manifestType: 'minecraftModpack';
+	manifestType: "minecraftModpack";
 	manifestVersion: Number;
 	name: string;
 	version: string;
