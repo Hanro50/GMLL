@@ -1,10 +1,4 @@
-import {
-  resolvePath,
-  getMeta,
-  getAssets,
-  getVersions,
-  emit,
-} from "../config.js";
+import { resolvePath, getMeta, getAssets, emit } from "../config.js";
 import { getLatest } from "../handler.js";
 import {
   fsSanitizer,
