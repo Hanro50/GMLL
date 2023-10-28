@@ -69,11 +69,12 @@ export default class Instance {
 		},
 		{
 			rules: [{ action: 'allow', os: { name: 'windows' } }],
-			value:
-				'-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump',
+			value: '-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump',
 		},
 		{
-			rules: [{ action: 'allow', os: { name: 'windows', version: '^10\\.' } }],
+			rules: [
+				{ action: 'allow', os: { name: 'windows', version: '^10\\.' } },
+			],
 			value: ['-Dos.name=Windows 10', '-Dos.version=10.0'],
 		},
 		{ rules: [{ action: 'allow', os: { arch: 'x86' } }], value: '-Xss1M' },
@@ -97,7 +98,10 @@ export default class Instance {
 		this.detach = opt.detach || false;
 		this.getDir().mkdir();
 		const MESA = 'MESA_GL_VERSION_OVERRIDE';
-		if (!['x64', 'arm64', 'ppc64'].includes(getCpuArch()) && this.ram > 1.4) {
+		if (
+			!['x64', 'arm64', 'ppc64'].includes(getCpuArch()) &&
+			this.ram > 1.4
+		) {
 			console.warn(
 				'[GMLL]: Setting ram limit to 1.4GB due to running on a 32-bit version of java!',
 			);
@@ -265,7 +269,9 @@ export default class Instance {
 		if (typeof path == 'string') path = new File(path);
 		if (!path.exists()) throwErr('Cannot find file');
 		const hash = path.getHash();
-		path.copyTo(assetTag(getAssets().getDir('objects'), hash).getFile(hash));
+		path.copyTo(
+			assetTag(getAssets().getDir('objects'), hash).getFile(hash),
+		);
 		if (!this.assets.objects) this.assets.objects = {};
 		const asset = { hash: hash, size: path.getSize(), ignore: true };
 		this.assets.objects[key] = asset;
@@ -294,10 +300,14 @@ export default class Instance {
 	) {
 		switch (type) {
 			case 'curseforge':
-				console.warn("GMLL's support for curse modpacks is in an Alpha state!");
+				console.warn(
+					"GMLL's support for curse modpacks is in an Alpha state!",
+				);
 				console.log('Use GMLLs native modpack api instead if you can');
 				console.log('Only fabric modpacks work properly atm.');
-				const tmp = getMeta().scratch.getDir('curse', this.name).mkdir();
+				const tmp = getMeta()
+					.scratch.getDir('curse', this.name)
+					.mkdir();
 				const metaInf = tmp.getFile('manifest.json');
 				const installedFile = this.getDir().getFile('installed.txt');
 				const metaFile = getMeta().scratch.getFile('curse_meta.json');
@@ -312,7 +322,9 @@ export default class Instance {
 				if (installedFile.exists() && metaInf.exists()) {
 					const inf = metaInf.toJSON<curseforgeModpack>();
 					this.version = 'curse.' + inf.name + '-' + inf.version;
-					console.log('Installed files found, assuming file was installed!');
+					console.log(
+						'Installed files found, assuming file was installed!',
+					);
 					return this;
 				}
 				// await this.install();
@@ -336,11 +348,12 @@ export default class Instance {
 					} else {
 						fToCopy
 							.ls()
-							.forEach((e) => copyFile(e, base.getDir(fToCopy.getName())));
+							.forEach((e) =>
+								copyFile(e, base.getDir(fToCopy.getName())),
+							);
 					}
 				}
-				tmp
-					.getDir(inf.overrides)
+				tmp.getDir(inf.overrides)
 					.ls()
 					.forEach((e) => copyFile(e, this.getDir()));
 
@@ -383,7 +396,10 @@ export default class Instance {
 					let fname = name;
 					if (meta && meta.id && meta.sha1 && meta.size)
 						fname =
-							meta.id + '-' + meta.sha1.slice(0, 5) + meta.size.toString(36);
+							meta.id +
+							'-' +
+							meta.sha1.slice(0, 5) +
+							meta.size.toString(36);
 
 					files.push({
 						name: fname + '.jar',
@@ -437,7 +453,10 @@ export default class Instance {
 
 				break;
 			case 'gmll':
-				if (forge) console.warn('The forge property goes unused in this mode!');
+				if (forge)
+					console.warn(
+						'The forge property goes unused in this mode!',
+					);
 				if (typeof urlorFile == 'string')
 					this.version = (await importLink(urlorFile)).id;
 				else console.warn('Only URLS are supported');

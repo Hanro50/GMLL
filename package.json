@@ -1,172 +1,172 @@
 {
-  "name": "gmll",
-  "version": "3.3.0",
-  "description": "A generic launcher core for building custom launchers",
-  "license": "MIT",
-  "homepage": "https://www.hanro50.net.za/gmll",
-  "types": "./types/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "types": [
-        "./types/types.d.ts"
-      ],
-      "config": [
-        "./types/modules/config.d.ts"
-      ],
-      "downloader": [
-        "./types/modules/downloader.d.ts"
-      ],
-      "handler": [
-        "./types/modules/handler.d.ts"
-      ],
-      "wrapper": [
-        "./types/modules/wrapper.d.ts"
-      ],
-      "nbt": [
-        "./types/modules/nbt.d.ts"
-      ],
-      "proxy": [
-        "./types/modules/proxy.d.ts"
-      ],
-      "objects/instance": [
-        "./types/modules/objects/instance.d.ts"
-      ],
-      "objects/version": [
-        "./types/modules/objects/version.d.ts"
-      ],
-      "objects/files": [
-        "./types/modules/objects/files.d.ts"
-      ]
-    }
-  },
-  "exports": {
-    ".": {
-      "types": "./types/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    },
-    "./types": {
-      "types": "./types/types.d.ts",
-      "import": "./dist/types.js",
-      "require": "./dist/types.js"
-    },
-    "./config": {
-      "types": "./types/modules/config.d.ts",
-      "import": "./dist/modules/config.js",
-      "require": "./dist/modules/config.js"
-    },
-    "./downloader": {
-      "types": "./types/modules/downloader.d.ts",
-      "import": "./dist/modules/downloader.js",
-      "require": "./dist/modules/downloader.js"
-    },
-    "./handler": {
-      "types": "./types/modules/handler.d.ts",
-      "import": "./dist/modules/handler.js",
-      "require": "./dist/modules/handler.js"
-    },
-    "./wrapper": {
-      "types": "./types/modules/wrapper.d.ts",
-      "import": "./dist/modules/wrapper.js",
-      "require": "./dist/modules/wrapper.js"
-    },
-    "./nbt": {
-      "types": "./types/modules/nbt.d.ts",
-      "import": "./dist/modules/nbt.js",
-      "require": "./dist/modules/nbt.js"
-    },
-    "./objects/instance": {
-      "types": "./types/modules/objects/instance.d.ts",
-      "import": "./dist/modules/objects/instance.js",
-      "require": "./dist/modules/objects/instance.js"
-    },
-    "./objects/version": {
-      "types": "./types/modules/objects/instance.d.ts",
-      "import": "./dist/modules/objects/version.js",
-      "require": "./dist/modules/objects/version.js"
-    },
-    "./objects/files": {
-      "types": "./types/modules/objects/files.d.ts",
-      "import": "./dist/modules/objects/files.js",
-      "require": "./dist/modules/objects/files.js"
-    }
-  },
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "dependencies": {
-    "node-fetch": "2.x",
-    "tslib": "^2.3.1"
-  },
-  "devDependencies": {
-    "@types/node": "^16.11.10",
-    "@types/node-fetch": "^2.5.12",
-    "@typescript-eslint/eslint-plugin": "^5.56.0",
-    "@typescript-eslint/parser": "^5.6.0",
-    "eslint": "^8.36.0",
-    "eslint-config-standard-with-typescript": "^34.0.1",
-    "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-n": "^15.6.1",
-    "eslint-plugin-promise": "^6.1.1",
-    "prettier": "^3.0.3",
-    "typedoc": "^0.25.2",
-    "typescript": "^4.9.5"
-  },
-  "files": [
-    "dist",
-    "types",
-    "package.json",
-    "LICENSE",
-    "README.md"
-  ],
-  "engines": {
-    "node": ">=14"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Hanro50/GMLL"
-  },
-  "funding": [
-    {
-      "type": "paypal",
-      "url": "https://paypal.me/hanro50"
-    }
-  ],
-  "scripts": {
-    "build": "node build.cjs",
-    "build-dev": "tsc -w",
-    "test": "tsc&&cd tests&&node test.cjs&&node test.mjs",
-    "test-cjs": "cd tests&&node test.cjs",
-    "test-mjs": "cd tests&&node test.mjs",
-    "docs": "typedoc src/index.ts --out ./webpage/docs/",
-    "format": "prettier . -w"
-  },
-  "keywords": [
-    "msmc",
-    "mc",
-    "minecraft",
-    "launcher",
-    "java",
-    "java edition",
-    "es6",
-    "commonjs",
-    "gmll",
-    "arm",
-    "arm-support",
-    "fabric",
-    "forge",
-    "management",
-    "instances-management",
-    "instances",
-    "mod",
-    "mods",
-    "mc-mod",
-    "mc-mods",
-    "modpack",
-    "modpack-api",
-    "backend",
-    "extendable",
-    "nbt",
-    "jarmods",
-    "skin fix"
-  ]
+	"name": "gmll",
+	"version": "3.3.0",
+	"description": "A generic launcher core for building custom launchers",
+	"license": "MIT",
+	"homepage": "https://www.hanro50.net.za/gmll",
+	"types": "./types/index.d.ts",
+	"typesVersions": {
+		"*": {
+			"types": [
+				"./types/types.d.ts"
+			],
+			"config": [
+				"./types/modules/config.d.ts"
+			],
+			"downloader": [
+				"./types/modules/downloader.d.ts"
+			],
+			"handler": [
+				"./types/modules/handler.d.ts"
+			],
+			"wrapper": [
+				"./types/modules/wrapper.d.ts"
+			],
+			"nbt": [
+				"./types/modules/nbt.d.ts"
+			],
+			"proxy": [
+				"./types/modules/proxy.d.ts"
+			],
+			"objects/instance": [
+				"./types/modules/objects/instance.d.ts"
+			],
+			"objects/version": [
+				"./types/modules/objects/version.d.ts"
+			],
+			"objects/files": [
+				"./types/modules/objects/files.d.ts"
+			]
+		}
+	},
+	"exports": {
+		".": {
+			"types": "./types/index.d.ts",
+			"import": "./dist/index.js",
+			"require": "./dist/index.js"
+		},
+		"./types": {
+			"types": "./types/types.d.ts",
+			"import": "./dist/types.js",
+			"require": "./dist/types.js"
+		},
+		"./config": {
+			"types": "./types/modules/config.d.ts",
+			"import": "./dist/modules/config.js",
+			"require": "./dist/modules/config.js"
+		},
+		"./downloader": {
+			"types": "./types/modules/downloader.d.ts",
+			"import": "./dist/modules/downloader.js",
+			"require": "./dist/modules/downloader.js"
+		},
+		"./handler": {
+			"types": "./types/modules/handler.d.ts",
+			"import": "./dist/modules/handler.js",
+			"require": "./dist/modules/handler.js"
+		},
+		"./wrapper": {
+			"types": "./types/modules/wrapper.d.ts",
+			"import": "./dist/modules/wrapper.js",
+			"require": "./dist/modules/wrapper.js"
+		},
+		"./nbt": {
+			"types": "./types/modules/nbt.d.ts",
+			"import": "./dist/modules/nbt.js",
+			"require": "./dist/modules/nbt.js"
+		},
+		"./objects/instance": {
+			"types": "./types/modules/objects/instance.d.ts",
+			"import": "./dist/modules/objects/instance.js",
+			"require": "./dist/modules/objects/instance.js"
+		},
+		"./objects/version": {
+			"types": "./types/modules/objects/instance.d.ts",
+			"import": "./dist/modules/objects/version.js",
+			"require": "./dist/modules/objects/version.js"
+		},
+		"./objects/files": {
+			"types": "./types/modules/objects/files.d.ts",
+			"import": "./dist/modules/objects/files.js",
+			"require": "./dist/modules/objects/files.js"
+		}
+	},
+	"main": "dist/index.js",
+	"module": "dist/index.js",
+	"dependencies": {
+		"node-fetch": "2.x",
+		"tslib": "^2.3.1"
+	},
+	"devDependencies": {
+		"@types/node": "^16.11.10",
+		"@types/node-fetch": "^2.5.12",
+		"@typescript-eslint/eslint-plugin": "^5.56.0",
+		"@typescript-eslint/parser": "^5.6.0",
+		"eslint": "^8.36.0",
+		"eslint-config-standard-with-typescript": "^34.0.1",
+		"eslint-plugin-import": "^2.27.5",
+		"eslint-plugin-n": "^15.6.1",
+		"eslint-plugin-promise": "^6.1.1",
+		"prettier": "^3.0.3",
+		"typedoc": "^0.25.2",
+		"typescript": "^4.9.5"
+	},
+	"files": [
+		"dist",
+		"types",
+		"package.json",
+		"LICENSE",
+		"README.md"
+	],
+	"engines": {
+		"node": ">=14"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Hanro50/GMLL"
+	},
+	"funding": [
+		{
+			"type": "paypal",
+			"url": "https://paypal.me/hanro50"
+		}
+	],
+	"scripts": {
+		"build": "node build.cjs",
+		"build-dev": "tsc -w",
+		"test": "tsc&&cd tests&&node test.cjs&&node test.mjs",
+		"test-cjs": "cd tests&&node test.cjs",
+		"test-mjs": "cd tests&&node test.mjs",
+		"docs": "typedoc src/index.ts --out ./webpage/docs/",
+		"format": "prettier . -w"
+	},
+	"keywords": [
+		"msmc",
+		"mc",
+		"minecraft",
+		"launcher",
+		"java",
+		"java edition",
+		"es6",
+		"commonjs",
+		"gmll",
+		"arm",
+		"arm-support",
+		"fabric",
+		"forge",
+		"management",
+		"instances-management",
+		"instances",
+		"mod",
+		"mods",
+		"mc-mod",
+		"mc-mods",
+		"modpack",
+		"modpack-api",
+		"backend",
+		"extendable",
+		"nbt",
+		"jarmods",
+		"skin fix"
+	]
 }

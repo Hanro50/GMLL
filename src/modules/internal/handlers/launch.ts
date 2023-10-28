@@ -85,9 +85,12 @@ export async function install(this: instance) {
 		await download(instance.files);
 		if (!chk.exists()) {
 			if (instance.meta) this.meta = combine(this.meta, instance.meta);
-			if (instance.assets) this.assets = combine(instance.assets, this.assets);
+			if (instance.assets)
+				this.assets = combine(instance.assets, this.assets);
 			if (instance.forge) {
-				const fFile = this.getDir().getFile(...instance.forge.installer);
+				const fFile = this.getDir().getFile(
+					...instance.forge.installer,
+				);
 				if (!fFile.exists()) {
 					throw 'Cannot find forge installer';
 				}
