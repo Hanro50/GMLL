@@ -97,16 +97,16 @@ const { Auth } = require("msmc");
 //Changes where GMLL puts the ".minecraft" gmll creates (will default to a folder called .minecraft in the same folder in your root process directory)
 setRoot(".MC");
 gmll.init().then(async () => {
-	//Create a new auth manager
-	const authManager = new Auth("select_account");
-	//Launch using the 'raw' gui framework (can be 'electron' or 'nwjs')
-	const xboxManager = await authManager.launch("raw");
-	//Generate the minecraft login token
-	const token = await xboxManager.getMinecraft();
-	//GMLL uses the concept of instances. Essentially containerized minecraft installations
-	var int = new gmll.Instance();
-	//Launch with a token retrieved by msmc
-	int.launch(token.gmll());
+  //Create a new auth manager
+  const authManager = new Auth("select_account");
+  //Launch using the 'raw' gui framework (can be 'electron' or 'nwjs')
+  const xboxManager = await authManager.launch("raw");
+  //Generate the minecraft login token
+  const token = await xboxManager.getMinecraft();
+  //GMLL uses the concept of instances. Essentially containerized minecraft installations
+  var int = new gmll.Instance();
+  //Launch with a token retrieved by msmc
+  int.launch(token.gmll());
 });
 ```
 
@@ -150,18 +150,18 @@ GMLL's instance object accepts one parameter of type options. This is also the f
 
 ```ts
 export interface Options {
-	/**The name of the instance */
-	name?: string;
-	/**The version of the game to load */
-	version?: string;
-	/**The installation path */
-	path?: string;
-	/**Ram in GB */
-	ram?: Number;
-	/**Custom data your launcher can use */
-	meta?: any;
-	/**Asset index injection */
-	assets?: assets;
+  /**The name of the instance */
+  name?: string;
+  /**The version of the game to load */
+  version?: string;
+  /**The installation path */
+  path?: string;
+  /**Ram in GB */
+  ram?: Number;
+  /**Custom data your launcher can use */
+  meta?: any;
+  /**Asset index injection */
+  assets?: assets;
 }
 ```
 
@@ -199,8 +199,8 @@ const { Instance } = require("gmll/objects/instance");
 import { Instance } from "gmll/objects/instance";
 const i777 = instance.get("MY INSTANCE");
 i777.injectAsset(
-	"minecraft/sounds/ambient/cave/cave1.ogg",
-	"path/to/rick/roll.ogg",
+  "minecraft/sounds/ambient/cave/cave1.ogg",
+  "path/to/rick/roll.ogg",
 );
 i777.setIcon("path/to/32x32.png", "path/to/16x16.png", "path/to/mac.icns");
 ```
@@ -321,11 +321,11 @@ The "runtimes" folder contains all the java runtimes GMLL knows about. Adding cu
 ```ts
 async function setLauncher(_launcher: dir | string): Promise<void>;
 export declare function getMeta(): {
-	manifests: dir;
-	runtimes: dir;
-	index: dir;
-	profiles: dir;
-	temp: dir;
+  manifests: dir;
+  runtimes: dir;
+  index: dir;
+  profiles: dir;
+  temp: dir;
 };
 ```
 

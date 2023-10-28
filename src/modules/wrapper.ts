@@ -10,23 +10,23 @@ import type { Player } from "../types";
  * @returns
  */
 export function getToken(
-	username: string,
-	uuid: string,
-	accessToken: string,
-	xuid: string,
-	demo?: boolean,
+  username: string,
+  uuid: string,
+  accessToken: string,
+  xuid: string,
+  demo?: boolean,
 ): Player {
-	return {
-		profile: {
-			//No piracy -> Buy minecraft!
-			demo: demo || !accessToken,
-			type: "mojang",
-			id: uuid,
-			name: username,
-			xuid,
-		},
-		access_token: accessToken,
-	};
+  return {
+    profile: {
+      //No piracy -> Buy minecraft!
+      demo: demo || !accessToken,
+      type: "mojang",
+      id: uuid,
+      name: username,
+      xuid,
+    },
+    access_token: accessToken,
+  };
 }
 /**
  * Due to mojang accounts becoming deprecated and the lack of accounts available to test endpoints for Mojang accounts.
@@ -40,19 +40,19 @@ export function getToken(
  * @returns a GMLL launch token
  */
 export function mojang2token(
-	username: string,
-	uuid: string,
-	accessToken: string,
-	demo: boolean,
+  username: string,
+  uuid: string,
+  accessToken: string,
+  demo: boolean,
 ): Player {
-	return {
-		profile: {
-			demo: demo,
-			type: "mojang",
-			id: uuid,
-			name: username,
-			xuid: "", //Not used by mojang accounts
-		},
-		access_token: accessToken,
-	};
+  return {
+    profile: {
+      demo: demo,
+      type: "mojang",
+      id: uuid,
+      name: username,
+      xuid: "", //Not used by mojang accounts
+    },
+    access_token: accessToken,
+  };
 }

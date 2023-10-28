@@ -9,7 +9,7 @@ import { initialize } from "./modules/config.js";
  *
  * @warning THIS MUST BE RAN BEFORE DOING ANYTHING WITH INSTANCES IN GMLL */
 export async function init() {
-	await initialize();
+  await initialize();
 }
 /**The core config class. Used to change the locations of files and to get the location of files as well! */
 export * as config from "./modules/config.js";

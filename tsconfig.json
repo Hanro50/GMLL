@@ -1,21 +1,21 @@
 {
-	// Change this to match your project
-	"include": ["src/**/*"],
-	"exclude": ["node_modules", "dist"],
-	"compilerOptions": {
-		"outDir": "dist",
-		"moduleResolution": "node",
-		"resolveJsonModule": true,
-		"target": "ESNext",
-		"allowJs": true,
-		"allowSyntheticDefaultImports": true,
-		"importHelpers": true,
-		"esModuleInterop": true,
-		"removeComments": false,
-		"declaration": true,
-		"declarationDir": "types",
-		"rootDir": "src/",
-		"module": "CommonJS",
-		"baseUrl": "src" // this must be specified if "paths" is specified.
-	}
+  // Change this to match your project
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"],
+  "compilerOptions": {
+    "outDir": "dist",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "target": "ESNext",
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "importHelpers": true,
+    "esModuleInterop": true,
+    "removeComments": false,
+    "declaration": true,
+    "declarationDir": "types",
+    "rootDir": "src/",
+    "module": "CommonJS",
+    "baseUrl": "src" // this must be specified if "paths" is specified.
+  }
 }

@@ -1,26 +1,26 @@
 {
-	// Use IntelliSense to learn about possible attributes.
-	// Hover to view descriptions of existing attributes.
-	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-	"version": "0.2.0",
-	"configurations": [
-		{
-			"type": "pwa-node",
-			"request": "launch",
-			"name": "Launch Program <CommonJS>",
-			"skipFiles": ["<node_internals>/**"],
-			"cwd": "${workspaceFolder}/tests",
-			"program": "${workspaceFolder}/tests/test.cjs",
-			"outFiles": ["${workspaceFolder}/**/*.js"]
-		},
-		{
-			"type": "pwa-node",
-			"request": "launch",
-			"name": "Launch Program <ES6>",
-			"skipFiles": ["<node_internals>/**"],
-			"cwd": "${workspaceFolder}/tests",
-			"program": "${workspaceFolder}/tests/test.mjs",
-			"outFiles": ["${workspaceFolder}/**/*.js"]
-		}
-	]
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "pwa-node",
+      "request": "launch",
+      "name": "Launch Program <CommonJS>",
+      "skipFiles": ["<node_internals>/**"],
+      "cwd": "${workspaceFolder}/tests",
+      "program": "${workspaceFolder}/tests/test.cjs",
+      "outFiles": ["${workspaceFolder}/**/*.js"]
+    },
+    {
+      "type": "pwa-node",
+      "request": "launch",
+      "name": "Launch Program <ES6>",
+      "skipFiles": ["<node_internals>/**"],
+      "cwd": "${workspaceFolder}/tests",
+      "program": "${workspaceFolder}/tests/test.mjs",
+      "outFiles": ["${workspaceFolder}/**/*.js"]
+    }
+  ]
 }
