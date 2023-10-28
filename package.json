@@ -3,7 +3,6 @@
     "version": "3.2.1",
     "description": "A generic launcher core for building custom launchers",
     "license": "MIT",
-    
     "homepage": "https://www.hanro50.net.za/gmll",
     "types": "./types/index.d.ts",
     "typesVersions": {
@@ -108,6 +107,7 @@
         "eslint-plugin-import": "^2.27.5",
         "eslint-plugin-n": "^15.6.1",
         "eslint-plugin-promise": "^6.1.1",
+        "typedoc": "^0.25.2",
         "typescript": "^4.9.5"
     },
     "files": [
@@ -135,7 +135,8 @@
         "build-dev": "tsc -w",
         "test": "tsc&&cd tests&&node test.cjs&&node test.mjs",
         "test-cjs": "cd tests&&node test.cjs",
-        "test-mjs": "cd tests&&node test.mjs"
+        "test-mjs": "cd tests&&node test.mjs",
+        "docs": "typedoc src/index.ts"
     },
     "keywords": [
         "msmc",
