@@ -138,7 +138,8 @@
     "test-cjs": "cd tests&&node test.cjs",
     "test-mjs": "cd tests&&node test.mjs",
     "docs": "typedoc src/index.ts --out ./webpage/docs/",
-    "format": "prettier . -w"
+    "format": "prettier . -w",
+    "lint": "eslint . --ext .ts"
   },
   "keywords": [
     "msmc",
