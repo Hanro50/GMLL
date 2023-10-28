@@ -4,7 +4,6 @@ import {
   assetTag,
   throwErr,
   classPathResolver,
-  getErr,
   processAssets,
   getCpuArch,
   combine,
