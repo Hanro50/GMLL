@@ -199,6 +199,10 @@ export interface VersionManifest {
  * Version json
  * ---------------------------------------------------------------------------------------------
  */
+
+/**
+ * Rules used in minecraft's version.json that determins if a set property should apply or not.
+ */
 export interface VersionJsonRule {
   action: "allow" | "disallow";
   os?: {
@@ -208,8 +212,11 @@ export interface VersionJsonRule {
   };
   features?: LaunchOptions;
 }
+/**@see {@link VersionJsonRule} */
 export type VersionJsonRules = Array<VersionJsonRule>;
-
+/**
+ * Download artifact minecraft uses internally.
+ */
 export interface Artifact {
   sha1: string;
   url: string;
@@ -357,7 +364,7 @@ export interface Player {
   };
   access_token?: string;
 }
-
+/**Launch options for minecraft */
 export interface LaunchOptions {
   /**If true then minecraft will not close if you close your launcher!*/
   detach?: boolean;
@@ -385,7 +392,7 @@ export interface LaunchOptions {
   /**By default GMLL spins up a proxy server when launching Minecraft 1.5.2 and older to reroute some requests that no longer work*/
   noLegacyFix?: boolean;
 }
-
+/** Used internally for modpack handling */
 export interface InstancePackConfig {
   /**The main domain and sub-domain you'll be hosting your files on*/
   baseDownloadLink: string;
@@ -406,12 +413,14 @@ export interface MetaObj {
   path: Dir | File;
   icon?: string;
 }
+/**The return object for the getResourcePacks function. */
 export interface MetaResourcePack extends MetaObj {
   description: string;
   format?: number;
   credits?: string;
   license?: string;
 }
+/**Used in the world save nbt data */
 export interface PlayerStats {
   stats: {
     [key: string]: {
@@ -420,6 +429,7 @@ export interface PlayerStats {
   };
   DataVersion: number;
 }
+/**Used in the world save nbt data */
 export interface MetaSave extends MetaObj {
   level: LevelDat;
   players: { [playerID: string]: { data: PlayerDat; stats?: PlayerStats } };

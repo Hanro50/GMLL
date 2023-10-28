@@ -3,8 +3,11 @@
  * INDEX
  * ---------------------------------------------------------------------------------------------
  */
+
 import { initialize } from "./modules/config.js";
-/**Does a range of required preflight checks. Will cause errors if ignored!*/
+/**Does a range of required preflight checks. Will cause errors if ignored!
+ *
+ * @warning THIS MUST BE RAN BEFORE DOING ANYTHING WITH INSTANCES IN GMLL */
 export async function init() {
   await initialize();
 }
@@ -20,8 +23,10 @@ export * as wrapper from "./modules/wrapper.js";
 export * as files from "./modules/objects/files.js";
 /**Provides access to the nbt data reader in gmll */
 export * as nbt from "./modules/nbt.js";
+
 /**The main instance class in gmll */
 import Instance from "./modules/objects/instance.js";
-
 import type * as types from "./types";
-export { Instance, types };
+import type * as  Version from "./modules/objects/version";
+
+export { Instance, types, Version };

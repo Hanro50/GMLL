@@ -3,8 +3,6 @@
  * This is the core of the download manager. No code from the main thread should interact with it!
  * If GMLL is unable to reach this library then it will use a slower fallback.
  *
- * Redefine the property __get in the config module to change where GMLL looks for this file.
- * ^ If you want to reenable the faster downloader.
  */
 
 import { Dir, File } from "../objects/files.js";

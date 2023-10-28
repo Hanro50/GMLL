@@ -1,6 +1,6 @@
 {
   "name": "gmll",
-  "version": "3.2.1",
+  "version": "3.3.0",
   "description": "A generic launcher core for building custom launchers",
   "license": "MIT",
   "homepage": "https://www.hanro50.net.za/gmll",
@@ -136,7 +136,7 @@
     "test": "tsc&&cd tests&&node test.cjs&&node test.mjs",
     "test-cjs": "cd tests&&node test.cjs",
     "test-mjs": "cd tests&&node test.mjs",
-    "docs": "typedoc src/index.ts",
+    "docs": "typedoc src/index.ts --out ./webpage/docs/",
     "format": "prettier . -w"
   },
   "keywords": [

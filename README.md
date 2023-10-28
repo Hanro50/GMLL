@@ -3,6 +3,7 @@
 <a href="https://github.com/Hanro50/GMLL/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/msmc" alt="MIT license"/></a>
 <a href="https://www.npmjs.com/package/gmll"><img src="https://img.shields.io/npm/v/gmll" alt="Version Number"/></a>
 <a href="https://github.com/Hanro50/gmll/"><img src="https://img.shields.io/github/stars/hanro50/gmll" alt="Github Stars"/></a><br/>
+<a href="https://www.hanro50.net.za/gmll/docs/"><img src="https://img.shields.io/badge/GMLL-docs-blue" alt="Documention"/></a><br/>
 A generic batteries included Minecraft Launcher Library.
 Features include forge, fabric and quilt support. An instance manager, a metadata reader for mods, worlds, resource packs and texturepacks. Various fixes for legacy versions of the game.
 

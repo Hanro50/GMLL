@@ -4,33 +4,59 @@ import { Dir, File, set7zipRepo as _set7zipRepo } from "./objects/files.js";
 import { getCpuArch, getErr, getOS, throwErr } from "./internal/util.js";
 import { type } from "os";
 import type Instance from "./objects/instance.js";
-import { getPath } from "./internal/root.cjs";
-let __get__;
-try {
-  __get__ = getPath();
-} catch {
-  /* empty */
+import type { WorkerOptions, Worker } from "worker_threads";
+
+let workerSpawner = async (options: WorkerOptions) => {
+  const makeWorker = (await import("./internal/worker.mjs")).makeWorker;
+  return makeWorker(options);
+};
+/**Sets the worker spawner for the download manager.
+ * in gmll this function looks like this
+ *
+ * import { Worker, WorkerOptions } from "worker_threads";
+ * export function makeWorker(options) {
+ *   return new Worker(new URL("./get.js", import.meta), options);
+ * }
+ *
+ * where "./get.js" references this file src/modules/internal/get.js
+ */
+export function setDownloadWorkerSpawner(
+  func: (options: WorkerOptions) => Promise<Worker>,
+) {
+  workerSpawner = func;
 }
-if (!__get__?.endsWith("get.js")) {
-  console.warn(
-    "[GMLL]: The internal downloader script may not be within it's own file. GMLL will use the much slower fallback downloader!",
-  );
-  console.warn(
-    "[GMLL]: Please update the '__get' property in the config module to point to the correct standalone js file.",
-  );
+/**Internal function. Used to get the spawner for the workers the downloader uses */
+export function spawnDownloadWorker(options: WorkerOptions) {
+  return workerSpawner(options);
 }
 
-export const __get = __get__ || "ERROR";
-export type update =
-  | "fabric"
-  | "vanilla"
-  | "runtime"
-  | "agent"
-  | "quilt"
-  | "legacy-fabric";
+/**
+ * Can be used to fine tune GMLL by purposefully skipping certain steps via initialization.
+ * By default, GMLL uses these values to get the manifest files related to each of these items.
+ * 
+ * ##### Vanilla (DO NOT DISABLE unless you know what you are doing)
+ * * runtime => The manifests needed to install the default java runtimes for minecraft.
+ * * agent => Install Agenta, used to make sure pre 1.7.10 versions of minecraft can get the assets they want
+ * 
+ * ##### Modloaders (Can be removed to speed up initialization)
+ * * fabric => Manifests needed for fabric support
+ * * legacy-fabric => Manifests needed for legacy-fabric support
+ * * quilt => Manifests needed for quilt support
+ * 
+ * #### More information:
+ * * {@link clrUpdateConfig}
+ * * {@link addUpdateConfig}
+ * * {@link getUpdateConfig}
+ */
+export type update = "runtime" | "agent" | "fabric" | "legacy-fabric" | "quilt";
+/**
+ * Check if we are running under Windows/Linux on arm
+ *
+ * Apple silicon is actually officially supported as per 1.19
+ */
 export const onUnsupportedArm =
   (getCpuArch() == "arm64" || getCpuArch() == "arm") && type() != "Darwin";
-const repositories = {
+let repositories = {
   maven: "https://download.hanro50.net.za/maven",
   forge: "https://download.hanro50.net.za/fmllibs",
   armFix: "https://download.hanro50.net.za/java",
@@ -47,6 +73,15 @@ export function setMultiCoreMode(enabled: boolean) {
   multiCoreMode = enabled;
 }
 
+/**
+ * The repositories GMLL uses for some of it's self hosted files.
+ * By default these are hosted on https://download.hanro50.net.za/
+ *
+ * #### More information:
+ * * maven => ({@link setMavenRepo}) The maven repo GMLL should pull Agenta and forgiac from
+ * * forge => ({@link setForgeRepo}) The forge archive GMLL should redirect requests to https://files.minecraftforge.net/fmllibs towards
+ * * armFix => ({@link setArmfixRepo}) The location serving the resources needed for the arm fix to function
+ */
 export function getRepositories() {
   Object.keys(repositories).forEach((key) => {
     if (!repositories[key].endsWith("/")) repositories[key] += "/";
@@ -61,7 +96,9 @@ export function setMavenRepo(maven: string) {
 export function setForgeRepo(forge: string) {
   repositories.forge = forge;
 }
-/**The location serving the resources needed for the arm fix to function*/
+/**The location serving the resources needed for the arm fix to function
+ * (allows for running Minecraft on arm on non mac platforms)
+ */
 export function setArmfixRepo(armFix: string) {
   repositories.armFix = armFix;
 }
@@ -86,7 +123,7 @@ let version = _packageJSON.version || "0.0.0";
 let launcherName = _packageJSON.name || "GMLL";
 
 const startUpCalls: Array<() => void | Promise<void>> = [];
-
+/**Checks if GMLL is initialized and throws an error if it is not */
 export function isInitialized() {
   if (!initialized) {
     throwErr(
@@ -96,26 +133,35 @@ export function isInitialized() {
 }
 export interface Events {
   /**
-   * start=>Used when the downloader starts up
-   * restart=>Used when the downloader has detected a timeout and decides to reset so it can try again
-   * done=>Fired when everything is wrapped up.
+   * Called when the downloader/Encoder starts up
+   * #### Possible events
+   * - start=>Used when the downloader starts up
+   * - done=>Fired when everything is wrapped up.
    */
   on(
     e: "download.start" | "download.done" | "encode.start" | "encode.done",
     f: () => void,
   ): void;
   /**
-   * type=>Type of resource being parsed
-   * err=>The thrown error
-   * path=>The path to the file that caused the issue
+   * Thrown when the parsed resource file has an issue. 
+   * This can happen when decoding nbt data from world saves or metadata from mods, resource packs or texture packs
+   * #### Return variables
+   * - type=>Type of resource being parsed
+   * - err=>The thrown error
+   * - path=>The path to the file that caused the issue
    */
   on(
     e: "parser.fail",
     f: (type: string, err: Error, path: File | Dir) => void,
   ): void;
   /**
-   * type=>Type of resource being parsed
-   * instance=>The instance of which the load event is applicable.
+   * Called when the metadata/nbt parser is started/done.
+   * #### Possible events
+   * - start => Called when the metadata/nbt parser is started.
+   * - done => Called when the metadata/nbt parser is done.
+   * #### Return variables
+   * - type=>Type of resource being parsed
+   * - instance=>The instance of which the load event is applicable.
    */
   on(
     e: "parser.start" | "parser.done",
@@ -145,18 +191,6 @@ export interface Events {
   on(
     e: "jvm.stdout" | "jvm.stderr",
     f: (app: string, chunk: string) => void,
-  ): void;
-
-  on(e: "proxy.start", f: (port: number) => void): void;
-  on(e: "proxy.fail", f: (reason: string, error?: string) => void): void;
-  on(e: "proxy.request", f: (url: string) => void): void;
-  on(
-    e: "proxy.skinURL",
-    f: (username: string, uuid: string, clothing: "SKIN" | "CAPE") => void,
-  ): void;
-  on(
-    e: "proxy.skinURL.fail",
-    f: (username: string, clothing: "SKIN" | "CAPE") => void,
   ): void;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -196,28 +230,6 @@ defEvents.on("encode.done", () =>
   console.log("[GMLL:encode]: Done with encoding files"),
 );
 
-//Proxy Manager
-defEvents.on("proxy.start", (port) =>
-  console.log(`[GMLL:Proxy]: Proxy server is now listening on port ${port}`),
-);
-defEvents.on("proxy.fail", (reason, error) =>
-  console.log(
-    `\x1b[31m\x1b[1m[GMLL:Proxy]: ${reason}\x1b[0m${error ? `\n${error}` : ""}`,
-  ),
-);
-defEvents.on("proxy.request", (url) =>
-  console.log(`[GMLL:Proxy]: Proxying request [${url}]`),
-);
-defEvents.on("proxy.skinURL", (username, uuid, clothing) =>
-  console.log(
-    `[GMLL:Proxy]: Resolved ${clothing.toLocaleLowerCase()} for ${username} [${uuid}]`,
-  ),
-);
-defEvents.on("proxy.skinURL.fail", (username, clothing) =>
-  console.log(
-    `\x1b[31m\x1b[1m[GMLL:Proxy]: Could not resolve ${clothing.toLocaleLowerCase()} for ${username}\x1b[0m`,
-  ),
-);
 //Download Manager
 defEvents.on("download.setup", (cores) =>
   console.log(`[GMLL:download]: Dividing out work to ${cores} cores`),
@@ -261,7 +273,6 @@ defEvents.on("jvm.stderr", (app, out) =>
 
 let updateConf: update[] = [
   "fabric",
-  "vanilla",
   "runtime",
   "agent",
   "quilt",
@@ -341,9 +352,10 @@ export function setVersions(_versions: Dir | string) {
 }
 /**
  * Runtimes are the various different versions of Java minecraft needs to function.
- * Java 8 for pre-1.17 builds of the game
- * Java 16 for 1.17
- * Java 17 for 1.18+
+ * - Java 8 for pre-1.17 builds of the game
+ * - Java 16 for 1.17
+ * - Java 17 for 1.18+
+ * - Java 17 for 1.18+
  * @param _runtimes The location you want the runtime directory to be at
  */
 export function setRuntimes(_runtimes: Dir | string) {

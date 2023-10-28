@@ -20,8 +20,8 @@ import {
   getRuntimes,
   getUpdateConfig,
   onUnsupportedArm,
-  __get,
   getMultiCoreMode,
+  spawnDownloadWorker,
 } from "./config.js";
 import { cpus } from "os";
 import nFetch from "node-fetch";
@@ -40,7 +40,7 @@ import type {
   VanillaManifestJson,
 } from "../types";
 import { Worker } from "worker_threads";
-
+const assetURL = "https://resources.download.minecraft.net/";
 const processCMD = "download.progress";
 const failCMD = "download.fail";
 const getCMD = "download.get";
@@ -48,7 +48,9 @@ const postCMD = "download.post";
 /**
  * Download function. Can be used for downloading modpacks and launcher updates.
  * Checks sha1 hashes and can use multiple cores to download files rapidly.
- * Untested on Intel's new CPUs, use at own risk and report to me if it breaks. -Hanro50
+ * Untested on Intel's new CPUs, use at own risk and report to me if it breaks.
+ *
+ * -Hanro50
  *
  * @param obj The objects that will be downloaded
  */
@@ -84,99 +86,108 @@ export function download(obj: Partial<DownloadableFile>[]): Promise<void> {
     await Promise.all(_zips);
     const numCPUs = Math.max(cpus().length, 2);
     const multiCoreMode = getMultiCoreMode();
-    if (new File(__get).exists() && multiCoreMode) {
-      emit("download.setup", numCPUs);
-      let done = 0;
+    let done = 0;
+    if (multiCoreMode) {
       let todo = 0;
-      const data = Object.values(temp) as DownloadableFile[];
       const workers: Worker[] = [];
       const fire = () => workers.forEach((w) => w.terminate());
-      for (let i3 = 0; i3 < numCPUs; i3++) {
-        const w = new Worker(__get, {
-          workerData: {
-            processCMD,
-            failCMD,
-            getCMD,
-            postCMD,
-            zipDir: getMeta().bin.path,
-          },
-        });
-        workers.push(w);
-        w.on("message", (msg) => {
-          switch (msg.cmd) {
-            case processCMD: {
-              done++;
-              delete temp[msg.key];
-              const left = Object.values(temp).length;
-              emit("download.progress", msg.key, done, totalItems, left);
+      try {
+        emit("download.setup", numCPUs);
 
-              if (left < 1) {
-                //   active = false;
-                //     clearTimeout(to);
-                emit("download.done");
-                fire();
-                return res();
+        const data = Object.values(temp) as DownloadableFile[];
+
+        for (let i3 = 0; i3 < numCPUs; i3++) {
+          const w = await spawnDownloadWorker({
+            workerData: {
+              processCMD,
+              failCMD,
+              getCMD,
+              postCMD,
+              zipDir: getMeta().bin.path,
+            },
+          });
+          workers.push(w);
+          w.on("message", (msg) => {
+            switch (msg.cmd) {
+              case processCMD: {
+                done++;
+                delete temp[msg.key];
+                const left = Object.values(temp).length;
+                emit("download.progress", msg.key, done, totalItems, left);
+
+                if (left < 1) {
+                  //   active = false;
+                  //     clearTimeout(to);
+                  emit("download.done");
+                  fire();
+                  return res();
+                }
               }
+              case getCMD:
+                w.postMessage({ cmd: postCMD, data: data[todo] });
+                todo++;
+                break;
+              case failCMD:
+                emit(msg.cmd, msg.key, msg.type, msg.err);
+                break;
+              default:
+                return;
             }
-            case getCMD:
-              w.postMessage({ cmd: postCMD, data: data[todo] });
-              todo++;
-              break;
-            case failCMD:
-              emit(msg.cmd, msg.key, msg.type, msg.err);
-              break;
-            default:
-              return;
-          }
-        });
-      }
-    } else {
-      if (multiCoreMode)
-        console.warn(
-          "[GMLL]: Could not start main downloader, using single threaded fallback!",
-        );
-      emit("download.setup", 1);
-      let done = 0;
-      const data = Object.values(temp) as DownloadableFile[];
-      const fallback = async (o: DownloadableFile, retry = 0) => {
-        try {
-          await File.process(o, getMeta().bin);
-          return o;
-        } catch (e) {
-          console.trace(e);
-          if (retry <= 3) {
-            retry++;
-            emit(failCMD, o.key, "retry", e.err);
-            await fallback(o, retry);
-            return o;
-          }
-          console.error("[GMLL]: procedural failure : " + new Dir(...o.path));
-          emit(failCMD, o.key, "system", e.err);
+          });
         }
-        return o;
-      };
-      const lf = async (o: DownloadableFile) => {
-        if (!o) return;
-        done++;
-        delete temp[o.key];
-        const left = Object.values(temp).length;
-        emit("download.progress", o.key, done, totalItems, left);
-      };
 
-      for (let i3 = 0; i3 < data.length; i3 += 100) {
-        const lst = [];
-        for (let i2 = 0; i2 < 100 && i3 + i2 < data.length; i2++)
-          lst.push(
-            fallback(data[i3 + i2])
-              .then(lf)
-              .catch(console.trace),
-          );
-        await Promise.all(lst);
-        console.log("TICK!");
+        return;
+      } catch (e) {
+        console.error("[gmll]: " + e);
+        fire();
       }
-      emit("download.done");
-      return res();
     }
+
+    if (multiCoreMode)
+      console.warn(
+        "[GMLL]: The main downloader encountered an error, using single threaded fallback!",
+      );
+    emit("download.setup", 1);
+
+    const data = Object.values(temp) as DownloadableFile[];
+    const fallback = async (o: DownloadableFile, retry = 0) => {
+      try {
+        await File.process(o, getMeta().bin);
+        return o;
+      } catch (e) {
+        console.trace(e);
+        if (retry <= 3) {
+          retry++;
+          emit(failCMD, o.key, "retry", e.err);
+          await fallback(o, retry);
+          return o;
+        }
+        console.error("[GMLL]: procedural failure : " + new Dir(...o.path));
+        emit(failCMD, o.key, "system", e.err);
+      }
+      return o;
+    };
+    const lf = async (o: DownloadableFile) => {
+      if (!o) return;
+      done++;
+      delete temp[o.key];
+      const left = Object.values(temp).length;
+      emit("download.progress", o.key, done, totalItems, left);
+    };
+
+    for (let i3 = 0; i3 < data.length; i3 += 100) {
+      const lst = [];
+      for (let i2 = 0; i2 < 100 && i3 + i2 < data.length; i2++)
+        lst.push(
+          fallback(data[i3 + i2])
+            .then(lf)
+            .catch(console.trace),
+        );
+      await Promise.all(lst);
+      console.log("TICK!");
+    }
+    emit("download.done");
+    return res();
   });
 }
 
@@ -199,6 +210,9 @@ export function runtime(runtime: MCRuntimeVal) {
 /**
  * Did you know you can use this file to download dungeons?
  * (We prefer not to be sued...so no more details then that)
+ *
+ * This can decode Mojang's resource file format and download it.
+ * @see {@link encodeMRF} if you want to encode a file into this crazy format.
  */
 export function mojangRFDownloader(
   file: MojangResourceManifest,
@@ -256,8 +270,9 @@ export function mojangRFDownloader(
   return download(arr);
 }
 
-export const assetURL = "https://resources.download.minecraft.net/";
-/**Install a set version's assets based on a provided asset index. */
+/**Install a set version's assets based on a provided asset index from that version.
+ * It is best to let GMLL handle this for you. See the version object instead.
+ */
 export async function assets(index: Artifact) {
   const root = getAssets();
   const indexes = root.getDir("indexes").mkdir();
@@ -493,6 +508,8 @@ export async function getForgiac() {
 }
 /**
  * Updates GMLL's manifest files. Used internally
+ *
+ *
  */
 export async function manifests() {
   const repositories = getRepositories();
@@ -534,13 +551,12 @@ export async function manifests() {
   if (onUnsupportedArm) {
     await meta.index.getFile("arm-patch.json").download(armPatch);
   }
-  if (update.includes("vanilla")) {
-    const r = await nFetch(mcVersionManifest);
-    if (r.status == 200) {
-      const json: VanillaManifestJson = await r.json();
-      meta.index.getFile("latest.json").write(json.latest);
-      meta.manifests.getFile("vanilla.json").write(json.versions);
-    }
+
+  const r = await nFetch(mcVersionManifest);
+  if (r.status == 200) {
+    const json: VanillaManifestJson = await r.json();
+    meta.index.getFile("latest.json").write(json.latest);
+    meta.manifests.getFile("vanilla.json").write(json.versions);
   }
 
   if (update.includes("fabric")) {
@@ -667,7 +683,9 @@ export function getAgentFile() {
     .getFile("agenta-1.6.1.jar");
 }
 /**
- * Used for runtime management
+ * Used for runtime management.
+ * Short for encode Mojang Resource Format
+ *
  */
 export async function encodeMRF(url: string, root: Dir, out: Dir) {
   const res: MojangResourceManifest = { files: {} };
