@@ -83,6 +83,7 @@ export function setMultiCoreMode(enabled: boolean) {
  * * maven => ({@link setMavenRepo}) The maven repo GMLL should pull Agenta and forgiac from
  * * forge => ({@link setForgeRepo}) The forge archive GMLL should redirect requests to https://files.minecraftforge.net/fmllibs towards
  * * armFix => ({@link setArmfixRepo}) The location serving the resources needed for the arm fix to function
+ * * z7Repo => ({@link set7zipRepo}) The location serving a local version of 7zip
  */
 export function getRepositories():typeof repositories  {
   Object.keys(repositories).forEach((key) => {
