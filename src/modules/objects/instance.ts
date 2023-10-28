@@ -15,7 +15,7 @@ import type {
   VersionJson,
   curseforgeModpack,
 } from "../../types";
-import { Dir, File } from "./files.js";
+import { Dir, File } from "gfsl";
 import Version from "./version.js";
 import * as metaHandler from "../internal/handlers/meta.js";
 import * as modsHandler from "../internal/handlers/mods.js";
@@ -130,6 +130,7 @@ export default class Instance {
    * @param name The name that should be used to identify the generated version files
    * @param forge The path to a forge installation jar
    * @param trimMisc Gets rid of any unnecessary miscellaneous files
+ * @deprecated Use {@link pack} instead 
    */
   public wrap = modsHandler.wrap;
   /**
@@ -364,8 +365,8 @@ export default class Instance {
             } else {
               console.warn(
                 "Unsupported modloader type " +
-                  e.id +
-                  "\nIf this is forge then supply the forge jar yourself.\nGMLL is not natively compatible with the method Curse uses to install forge.",
+                e.id +
+                "\nIf this is forge then supply the forge jar yourself.\nGMLL is not natively compatible with the method Curse uses to install forge.",
               );
             }
           }
@@ -423,11 +424,11 @@ export default class Instance {
             const nfile = mods.getFile(
               fsSanitizer(
                 e.id +
-                  "-" +
-                  e.version +
-                  "-" +
-                  sha1.slice(0, 5) +
-                  size.toString(36),
+                "-" +
+                e.version +
+                "-" +
+                sha1.slice(0, 5) +
+                size.toString(36),
               ) + ".jar",
             );
             e.path.moveTo(nfile);

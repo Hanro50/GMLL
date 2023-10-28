@@ -20,7 +20,7 @@ export * as handler from "./modules/handler.js";
 /**Integration with other libs */
 export * as wrapper from "./modules/wrapper.js";
 /**Provides access to GMLL's file handler */
-export * as files from "./modules/objects/files.js";
+export * as files from "gfsl";
 /**Provides access to the nbt data reader in gmll */
 export * as nbt from "./modules/nbt.js";
 

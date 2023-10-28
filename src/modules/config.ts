@@ -1,10 +1,11 @@
 import { EventEmitter } from "events";
 import { manifests } from "./downloader.js";
-import { Dir, File, set7zipRepo as _set7zipRepo } from "./objects/files.js";
+
 import { getCpuArch, getErr, getOS, throwErr } from "./internal/util.js";
 import { type } from "os";
 import type Instance from "./objects/instance.js";
 import type { WorkerOptions, Worker } from "worker_threads";
+import { Dir,File } from "gfsl";
 
 let workerSpawner = async (options: WorkerOptions) => {
   const makeWorker = (await import("./internal/worker.mjs")).makeWorker;
@@ -60,6 +61,7 @@ let repositories = {
   maven: "https://download.hanro50.net.za/maven",
   forge: "https://download.hanro50.net.za/fmllibs",
   armFix: "https://download.hanro50.net.za/java",
+  z7Repo:"https://download.hanro50.net.za/7-zip",
 };
 let multiCoreMode = true;
 /**is multicore downloads currently enabled? */
@@ -82,7 +84,7 @@ export function setMultiCoreMode(enabled: boolean) {
  * * forge => ({@link setForgeRepo}) The forge archive GMLL should redirect requests to https://files.minecraftforge.net/fmllibs towards
  * * armFix => ({@link setArmfixRepo}) The location serving the resources needed for the arm fix to function
  */
-export function getRepositories() {
+export function getRepositories():typeof repositories  {
   Object.keys(repositories).forEach((key) => {
     if (!repositories[key].endsWith("/")) repositories[key] += "/";
   });
@@ -104,8 +106,8 @@ export function setArmfixRepo(armFix: string) {
 }
 
 /**The location serving 7zip binaries*/
-export function set7zipRepo(z7: string) {
-  _set7zipRepo(z7);
+export function set7zipRepo(z7Repo: string) {
+  repositories.z7Repo = z7Repo;
 }
 if (onUnsupportedArm) {
   console.warn(

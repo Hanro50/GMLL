@@ -1,6 +1,6 @@
 import { getAssets } from "../../config.js";
 import { installForge as _installForge } from "../../handler.js";
-import { Dir, File, packAsync } from "../../objects/files.js";
+import { Dir, File, packAsync } from "gfsl";
 import Instance from "../../objects/instance.js";
 import Version from "../../objects/version.js";
 import { platform } from "os";
@@ -26,16 +26,20 @@ export async function getJarModPriority(this: Instance) {
  * @param name The name that should be used to identify the generated version files
  * @param forge The path to a forge installation jar
  * @param trimMisc Gets rid of any unnecessary miscellaneous files
+
  */
-export async function wrap(
-  this: Instance,
-  baseUrl: string,
-  save: Dir | string,
-  name: string = "custom_" + this.name,
-  forge?: { jar: File | string } | File,
-  trimMisc = false,
+export async function pack(this: Instance, config: InstancePackConfig
 ) {
-  if (typeof save == "string") save = new Dir(save);
+  const saveDir = (typeof config.outputDir == "string") ? new Dir(config.outputDir) : config.outputDir
+  const baseDownloadLink = config.baseDownloadLink;
+  const trimMisc = config.trimMisc;
+  let _forge = config.forgeInstallerPath;
+  if (_forge) {
+    _forge = (config.forgeInstallerPath instanceof File) ? config.forgeInstallerPath : new File(config.forgeInstallerPath);
+  }
+  const forge = _forge as File;
+  const modpackName = config.modpackName || this.getName();
+
   await this.install();
   const blacklist = [
     "usercache.json",
@@ -62,15 +66,15 @@ export async function wrap(
   const cp = (d: Dir, path: string[]) => {
     if (d.exists()) {
       d.ls().forEach((e) => {
-        if (typeof save == "string") save = new Dir(save);
+        if (!e.exists()) return;
         if (e instanceof File) {
-          const f = new File(save.javaPath(), ...path, e.name);
+          const f = new File(saveDir.javaPath(), ...path, e.name);
           e.copyTo(f.mkdir());
           resources.push({
             key: [...path, e.name].join("/"),
             name: e.name,
             path: path,
-            url: [baseUrl, ...path, e.name].join("/"),
+            url: [baseDownloadLink, ...path, e.name].join("/"),
             chk: { sha1: f.getHash(), size: f.getSize() },
           });
         } else if (!e.isLink()) {
@@ -80,10 +84,8 @@ export async function wrap(
       });
     }
   };
-  separate.forEach((e) => {
-    cp(me.getDir(e), [e]);
-  });
-  const data = save.getDir(".data").mkdir();
+  separate.forEach((e) => cp(me.getDir(e), [e]));
+  const data = saveDir.getDir(".data").mkdir();
   for (let i = 0; i < bundle.length; i++) {
     const e = bundle[i];
     const ls = me.getDir(e).ls();
@@ -101,7 +103,7 @@ export async function wrap(
           key: [e, name].join("/"),
           name: zip,
           path: [".data"],
-          url: [baseUrl, ".data", zip].join("/"),
+          url: [baseDownloadLink, ".data", zip].join("/"),
           chk: { sha1: file.getHash(), size: file.getSize() },
         });
       }
@@ -118,10 +120,10 @@ export async function wrap(
       resources.push({
         dynamic: dynamic.includes(e),
         unzip: { file: [] },
-        key: [e, name].join("/"),
+        key: [e, modpackName].join("/"),
         name: zip,
         path: [".data"],
-        url: [baseUrl, ".data", zip].join("/"),
+        url: [baseDownloadLink, ".data", zip].join("/"),
         chk: { sha1: file.getHash(), size: file.getSize() },
       });
     }
@@ -132,7 +134,7 @@ export async function wrap(
   const miscZip = data.getFile(zip).mkdir();
   const avoid = [...separate, ...bundle, ...blacklist, ...pack];
   if (this.assets && this.assets.objects) {
-    const assetDir = save.getDir("assets").mkdir();
+    const assetDir = saveDir.getDir("assets").mkdir();
     Object.values(this.assets.objects).forEach((e) => {
       assetTag(getAssets().getDir("objects"), e.hash)
         .getFile(e.hash)
@@ -160,7 +162,7 @@ export async function wrap(
       key: "misc",
       name: "misc.zip",
       path: [".data"],
-      url: [baseUrl, ".data", zip].join("/"),
+      url: [baseDownloadLink, ".data", zip].join("/"),
       chk: { sha1: miscZip.getHash(), size: miscZip.getSize() },
     });
   } else {
@@ -176,61 +178,57 @@ export async function wrap(
       meta: this.meta,
     },
 
-    id: name,
+    id: modpackName,
   };
-  const versionFile = save.getDir(".meta").mkdir().getFile("version.json");
+  const versionFile = saveDir.getDir(".meta").mkdir().getFile("version.json");
   let finalVersion = this.version;
   if (forge) {
-    let _forge: File;
-    if (forge instanceof File) _forge = forge;
-    else if (typeof forge.jar == "string") _forge = new File(forge.jar);
-    else _forge = forge.jar;
-    const path = save.getDir(".forgiac").rm().mkdir();
-    const _manifest = await _installForge(_forge, [
+    const path = saveDir.getDir(".forgiac").rm().mkdir();
+    const _manifest = await _installForge(forge, [
       "--.minecraft",
       path.sysPath(),
     ]);
-    const forgePath = save.getDir("forge").mkdir();
+    const forgePath = saveDir.getDir("forge").mkdir();
     finalVersion = _manifest.id;
-    _forge.copyTo(forgePath.getFile(_forge.getName()));
+    forge.copyTo(forgePath.getFile(forge.getName()));
     ver.instance.files.push({
-      key: _forge.getName(),
-      name: _forge.getName(),
+      key: forge.getName(),
+      name: forge.getName(),
       path: ["forge"],
-      url: [baseUrl, "forge", _forge.getName()].join("/"),
-      chk: { sha1: _forge.getHash(), size: _forge.getSize() },
+      url: [baseDownloadLink, "forge", forge.getName()].join("/"),
+      chk: { sha1: forge.getHash(), size: forge.getSize() },
     });
-    ver.instance.forge = { installer: ["forge", _forge.getName()] };
+    ver.instance.forge = { installer: ["forge", forge.getName()] };
 
     path.rm();
   }
   ver.inheritsFrom = finalVersion;
   versionFile.write(ver);
   const manifest: VersionManifest = {
-    id: name,
+    id: modpackName,
     type: "custom",
     sha1: versionFile.getHash(),
     base: finalVersion,
-    url: baseUrl + "/" + ".meta/version.json",
+    url: baseDownloadLink + "/" + ".meta/version.json",
     _comment: "Drop this into gmll's manifest folder",
   };
   delete manifest._comment;
-  save.getFile(".meta", "manifest.json").write(manifest);
-  save.getFile(".meta", "api.json").write({
-    name: name,
+  saveDir.getFile(".meta", "manifest.json").write(manifest);
+  saveDir.getFile(".meta", "api.json").write({
+    name: modpackName,
     version: 1,
-    sha: save.getFile(".meta", "manifest.json").getHash(),
+    sha: saveDir.getFile(".meta", "manifest.json").getHash(),
     _comment:
       "Here for future proofing incase we need to introduce a breaking change to this system.",
   });
 
   let index = `<!DOCTYPE html><html><!--This is just a place holder! GMLL doesn't check this. It is merely here to look nice and serve as a directory listing-->`;
-  index += `<head><link rel="stylesheet" href="https://styles.hanro50.net.za/v1/main"><title>${name}</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="A GMLL minecraft modpack"></head><body><h1>${name}</h1><h2>Copy the link to this page into gmll to import this modpack!</h2><h2>File list</h2>`;
+  index += `<head><link rel="stylesheet" href="https://styles.hanro50.net.za/v1/main"><title>${modpackName}</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="A GMLL minecraft modpack"></head><body><h1>${modpackName}</h1><h2>Copy the link to this page into gmll to import this modpack!</h2><h2>File list</h2>`;
   function read(f: Dir, directory = []) {
     f.ls().forEach((e) => {
       if (
         e.getName() == "index.html" ||
-        e.getName() == `manifest_${fsSanitizer(name)}.json`
+        e.getName() == `manifest_${fsSanitizer(modpackName)}.json`
       )
         return;
       if (e instanceof File) {
@@ -239,24 +237,29 @@ export async function wrap(
       } else read(e, [...directory, e.getName()]);
     });
   }
-  read(save);
+  read(saveDir);
   index += `</body></html>`;
   console.log(index);
-  save.getFile("index.html").write(index);
-  save.getFile(`manifest_${fsSanitizer(name)}.json`).write(manifest);
+  saveDir.getFile("index.html").write(index);
+  saveDir.getFile(`manifest_${fsSanitizer(modpackName)}.json`).write(manifest);
   return ver;
 }
 /**An version of the wrap function that takes an object as a variable instead of the mess the base function takes. */
-export function pack(this: Instance, config: InstancePackConfig) {
-  if (typeof config.forgeInstallerPath == "string")
-    config.forgeInstallerPath = new File(config.forgeInstallerPath);
+export function wrap(this: Instance,
+  baseUrl: string,
+  save: Dir | string = new Dir(),
+  modpackName: string = "custom_" + this.name,
+  forge?: { jar: File | string } | File,
+  trimMisc = false) {
+  let forgeInstallerPath = ("jar" in forge) ? forge.jar : forge
 
-  return this.wrap(
-    config.baseDownloadLink,
-    config.outputDir,
-    config.modpackName,
-    config.forgeInstallerPath,
-    config.trimMisc,
+  return this.pack({
+    baseDownloadLink: baseUrl,
+    outputDir: save,
+    forgeInstallerPath,
+    modpackName,
+    trimMisc
+  }
   );
 }
 /**Install forge in this instance. */
@@ -267,6 +270,7 @@ export async function installForge(this: Instance, forge?: File | string) {
 }
 /**
  * Used to modify minecraft's jar file (Low level)
+
  * @param metaPaths
  * @param version
  * @returns
@@ -289,7 +293,7 @@ export async function jarMod(
   const tmp = Dir.tmpdir().getDir("gmll", "tmp").rm().mkdir();
   const jar = version.folder.getFile(version.name + ".jar");
   if (!jar.exists()) return;
-  await jar.unzip(tmp, ["META-INF/*"]);
+  await jar.unzip(tmp, { exclude: ["META-INF/*"] });
 
   let priority = {
     _comment:

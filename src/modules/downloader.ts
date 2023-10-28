@@ -25,7 +25,7 @@ import {
 } from "./config.js";
 import { cpus } from "os";
 import nFetch from "node-fetch";
-import { Dir, download7zip, File, packAsync } from "./objects/files.js";
+import { Dir, download7zip, File, packAsync } from "gfsl";
 import { readlinkSync } from "fs";
 import type {
   DownloadableFile,
@@ -40,6 +40,7 @@ import type {
   VanillaManifestJson,
 } from "../types";
 import { Worker } from "worker_threads";
+import { check, expand, processFile, toDownloadable } from "./internal/downloadable.js";
 const assetURL = "https://resources.download.minecraft.net/";
 const processCMD = "download.progress";
 const failCMD = "download.fail";
@@ -62,7 +63,8 @@ export function download(obj: Partial<DownloadableFile>[]): Promise<void> {
   const temp = {};
   const unzip: { [key: string]: Partial<DownloadableFile> } = {};
   obj.forEach((e) => {
-    switch (File.check(e)) {
+
+    switch (check(e)) {
       case 0:
         temp[e.key] = e;
         break;
@@ -74,10 +76,11 @@ export function download(obj: Partial<DownloadableFile>[]): Promise<void> {
   const totalItems = Object.values(temp).length;
   const _zips: Promise<void>[] = [];
   Object.values(unzip).forEach((json) => {
-    _zips.push(new File(...json.path, json.name).expand(json, getMeta().bin));
+    _zips.push(expand(new File(...json.path, json.name), json, getMeta().bin));
   });
 
   if (totalItems <= 0) {
+    console.log(totalItems)
     emit("download.done");
     return new Promise((e) => Promise.all(_zips).then(() => e()));
   }
@@ -152,7 +155,7 @@ export function download(obj: Partial<DownloadableFile>[]): Promise<void> {
     const data = Object.values(temp) as DownloadableFile[];
     const fallback = async (o: DownloadableFile, retry = 0) => {
       try {
-        await File.process(o, getMeta().bin);
+        await processFile(o, getMeta().bin);
         return o;
       } catch (e) {
         console.trace(e);
@@ -256,7 +259,7 @@ export function mojangRFDownloader(
           url = obj.downloads.raw.url;
           chk = { size: obj.downloads.raw.size, sha1: obj.downloads.raw.sha1 };
         }
-        arr.push(_file.toDownloadable(url, key, chk, opt));
+        arr.push(toDownloadable(_file, url, key, chk, opt));
         break;
       case "link":
         _file.mkdir();
@@ -325,9 +328,8 @@ export async function assets(index: Artifact) {
     const obj = o[1];
     if (!obj.ignore)
       downloader.push(
-        assetTag(root.getDir("objects"), obj.hash)
-          .getFile(obj.hash)
-          .toDownloadable(getURL(obj), key, { sha1: obj.hash, size: obj.size }),
+        toDownloadable(assetTag(root.getDir("objects"), obj.hash)
+          .getFile(obj.hash), getURL(obj), key, { sha1: obj.hash, size: obj.size }),
       );
   });
   await download(downloader);
@@ -358,7 +360,7 @@ export async function libraries(version: VersionJson) {
         const art = e.downloads.classifiers[e.natives[OS]];
         const subDownload = getlibraries().getFile(art.path);
         arr.push(
-          subDownload.toDownloadable(
+          toDownloadable(subDownload,
             art.url,
             art.path,
             { sha1: art.sha1, size: art.size },
@@ -391,7 +393,7 @@ export async function libraries(version: VersionJson) {
         finalDownload = getlibraries().getFile(e.downloads.artifact.path);
         finalDownload.mkdir();
         arr.push(
-          finalDownload.toDownloadable(
+          toDownloadable(finalDownload,
             e.downloads.artifact.url,
             e.downloads.artifact.path,
             {
@@ -422,7 +424,7 @@ export async function libraries(version: VersionJson) {
           console.error(getErr(e));
         }
       }
-      arr.push(file.toDownloadable(e.url + path, path, { sha1: sha1 }));
+      arr.push(toDownloadable(file, e.url + path, path, { sha1: sha1 }));
     }
   }
   return await download(arr);
@@ -670,11 +672,13 @@ export async function manifests() {
   const arch = getCpuArch();
   if (["arm", "arm64", "x32", "x64"].includes(arch))
     await download7zip(
-      meta.bin,
-      getOS(),
-      arch as "arm" | "arm64" | "x32" | "x64",
+      {
+        dir: meta.bin,
+        arch: arch as "arm" | "arm64" | "x32" | "x64",
+        z7Repo:repositories.z7Repo
+      }
     );
-  else await download7zip(meta.bin, getOS(), getOS() != "osx" ? "x32" : "x64");
+  else await download7zip({ dir: meta.bin, "arch": getOS() != "osx" ? "x32" : "x64",        z7Repo:repositories.z7Repo });
 }
 export function getAgentFile() {
   return getlibraries()

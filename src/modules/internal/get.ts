@@ -5,8 +5,9 @@
  *
  */
 
-import { Dir, File } from "../objects/files.js";
+import { Dir } from "gfsl";
 import { parentPort, workerData } from "worker_threads";
+import { processFile } from "./downloadable.js";
 
 export type getWorkerDate = {
   processCMD: string;
@@ -21,7 +22,7 @@ const { processCMD, failCMD, getCMD, postCMD, zipDir }: getWorkerDate =
 async function load(a: any, retry = 0) {
   const o = a.data;
   try {
-    await File.process(o, new Dir(...zipDir));
+    await processFile(o, new Dir(...zipDir));
     parentPort.postMessage({ cmd: processCMD, key: o.key });
     return;
   } catch (e) {
