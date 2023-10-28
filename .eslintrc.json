@@ -21,6 +21,7 @@
     "no-case-declarations": "off",
     "no-fallthrough": "off",
     "new-cap": "error",
-    "no-inner-declarations": "off"
+    "no-inner-declarations": "off",
+    "no-empty": "off"
   }
 }
