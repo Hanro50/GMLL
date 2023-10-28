@@ -195,14 +195,14 @@ export interface Events {
    * @param app The name of the Java app currently running. (Forgiac|Minecraft)
    * @param cwd The directory the app is running within.
    */
-  on(e: "jvm.start", f: (app: string, cwd: string) => void): void;
+  on(e: "jvm.start", f: (app: string, cwd: string,meta?:Instance) => void): void;
   /**Console feedback from a JVM App.
    * @param app The name of the Java app currently running. (Forgiac|Minecraft)
    * @param chunk The aforementioned feedback
    */
   on(
     e: "jvm.stdout" | "jvm.stderr",
-    f: (app: string, chunk: string) => void,
+    f: (app: string, chunk: string,meta?:Instance) => void,
   ): void;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -214,7 +214,7 @@ defEvents.on("debug.warn", (message) =>
   console.warn(`[GMLL:warn]: ${message}`),
 );
 defEvents.on("debug.error", (message) => {
-  console.warn(`[GMLL:err]: ${message}`);
+  console.warn(`[GMLL:error]: ${message}`);
   console.trace();
 });
 //Encode Manager
@@ -284,10 +284,10 @@ defEvents.on("jvm.start", (app, cwd) =>
   console.log(`[${app}]: Starting in directory <${cwd}>`.trim()),
 );
 defEvents.on("jvm.stdout", (app, out) =>
-  console.log(`[${app}]: ${out}`.trim()),
+  console.log(`[${app}:out]: ${out}`.trim()),
 );
 defEvents.on("jvm.stderr", (app, out) =>
-  console.log(`\x1b[31m\x1b[1m[${app}]: ${out}`.trim() + "\x1b[0m"),
+  console.log(`\x1b[31m\x1b[1m[${app}:err]: ${out}`.trim() + "\x1b[0m"),
 );
 
 let updateConf: update[] = [

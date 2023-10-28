@@ -229,7 +229,7 @@ export async function launch(
     const regex = new RegExp(`\\$\{${key}}`, "g");
     launchCom = launchCom.replace(regex, args[key]);
   });
-  emit("jvm.start", "Minecraft", this.getDir().sysPath());
+  emit("jvm.start", "Minecraft", this.getDir().sysPath(),this);
   const launchArgs = launchCom.trim().split("\x00");
   if (launchArgs[0] == "") launchArgs.shift();
   const runningInstance = spawn(javaPath.sysPath(), launchArgs, {
@@ -238,10 +238,10 @@ export async function launch(
     detached: this.detach,
   });
   runningInstance.stdout.on("data", (chunk) =>
-    emit("jvm.stdout", "Minecraft", chunk),
+    emit("jvm.stdout", "Minecraft", chunk,this),
   );
   runningInstance.stderr.on("data", (chunk) =>
-    emit("jvm.stderr", "Minecraft", chunk),
+    emit("jvm.stderr", "Minecraft", chunk,this),
   );
   return runningInstance;
 }

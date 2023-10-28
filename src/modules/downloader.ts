@@ -151,7 +151,7 @@ export function download(obj: Partial<DownloadableFile>[]): Promise<void> {
     if (multiCoreMode)
       emit(
         "debug.warn",
-        "[GMLL]: The main downloader encountered an error, using single threaded fallback!",
+        "The main downloader encountered an error, using single threaded fallback!",
       );
     emit("download.setup", 1);
 
@@ -168,10 +168,7 @@ export function download(obj: Partial<DownloadableFile>[]): Promise<void> {
           await fallback(o, retry);
           return o;
         }
-        emit(
-          "debug.error",
-          "[GMLL]: procedural failure : " + new Dir(...o.path),
-        );
+        emit("debug.error", "procedural failure : " + new Dir(...o.path));
         emit(failCMD, o.key, "system", e.err);
       }
       return o;
