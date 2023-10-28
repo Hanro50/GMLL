@@ -23,5 +23,6 @@
     "new-cap": "error",
     "no-inner-declarations": "off",
     "no-empty": "off"
-  }
+  },
+  "ignorePatterns": ["dist", "node_modules", "files_old.ts"]
 }
