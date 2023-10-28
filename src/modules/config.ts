@@ -195,14 +195,17 @@ export interface Events {
    * @param app The name of the Java app currently running. (Forgiac|Minecraft)
    * @param cwd The directory the app is running within.
    */
-  on(e: "jvm.start", f: (app: string, cwd: string,meta?:Instance) => void): void;
+  on(
+    e: "jvm.start",
+    f: (app: string, cwd: string, meta?: Instance) => void,
+  ): void;
   /**Console feedback from a JVM App.
    * @param app The name of the Java app currently running. (Forgiac|Minecraft)
    * @param chunk The aforementioned feedback
    */
   on(
     e: "jvm.stdout" | "jvm.stderr",
-    f: (app: string, chunk: string,meta?:Instance) => void,
+    f: (app: string, chunk: string, meta?: Instance) => void,
   ): void;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
