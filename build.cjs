@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 /* eslint-disable @typescript-eslint/no-var-requires */
-const { execSync } = require("child_process")
+const { execSync } = require("child_process");
 const { rmSync } = require("fs");
 
 console.log("[build]: Removing old files!");
