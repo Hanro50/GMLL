@@ -39,7 +39,10 @@ export type typedNBT = {
           | { tag: tagTypes.TAG_Compound; value: typedNBT[] }
           | {
               tag: tagTypes.TAG_Byte_Array;
-              value: { tag: tagTypes.TAG_Byte; value: number[][] };
+              value: {
+                tag: tagTypes.TAG_Byte;
+                value: number[][];
+              };
             }
           | {
               tag: tagTypes.TAG_Int_Array;
@@ -47,7 +50,10 @@ export type typedNBT = {
             }
           | {
               tag: tagTypes.TAG_Long_Array;
-              value: { tag: tagTypes.TAG_Long; value: number[][] };
+              value: {
+                tag: tagTypes.TAG_Long;
+                value: number[][];
+              };
             }
           //No...I am not enabling any more insanity then this
           | {

@@ -4,7 +4,6 @@ import {
   assetTag,
   throwErr,
   classPathResolver,
-  getErr,
   processAssets,
   getCpuArch,
   combine,
@@ -84,6 +83,7 @@ export function download(obj: Partial<DownloadableFile>[]): Promise<void> {
   });
 
   if (totalItems <= 0) {
+    console.log(totalItems);
     emit("download.done");
     return new Promise((e) => Promise.all(_zips).then(() => e()));
   }
@@ -129,7 +129,10 @@ export function download(obj: Partial<DownloadableFile>[]): Promise<void> {
                 }
               }
               case getCMD:
-                w.postMessage({ cmd: postCMD, data: data[todo] });
+                w.postMessage({
+                  cmd: postCMD,
+                  data: data[todo],
+                });
                 todo++;
                 break;
               case failCMD:
@@ -259,7 +262,10 @@ export function mojangRFDownloader(
           };
         } else {
           url = obj.downloads.raw.url;
-          chk = { size: obj.downloads.raw.size, sha1: obj.downloads.raw.sha1 };
+          chk = {
+            size: obj.downloads.raw.size,
+            sha1: obj.downloads.raw.sha1,
+          };
         }
         arr.push(toDownloadable(_file, url, key, chk, opt));
         break;

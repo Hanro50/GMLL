@@ -101,7 +101,9 @@ export interface UrlFile {
  * The format of the asset index file minecraft uses
  */
 export interface AssetIndex {
-  objects: { [key: string]: { hash: string; size: number; ignore?: boolean } };
+  objects: {
+    [key: string]: { hash: string; size: number; ignore?: boolean };
+  };
   map_to_resources?: boolean;
   virtual?: boolean;
 }
@@ -725,14 +727,14 @@ export interface curseforgeModpack {
     ];
   };
   manifestType: "minecraftModpack";
-  manifestVersion: Number;
+  manifestVersion: number;
   name: string;
   version: string;
   author: string;
   files: [
     {
-      projectID: Number;
-      fileID: Number;
+      projectID: number;
+      fileID: number;
       downloadUrl?: string;
       required: boolean;
     },

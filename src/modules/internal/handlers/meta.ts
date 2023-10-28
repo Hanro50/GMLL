@@ -542,7 +542,11 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
         let icon = undefined;
         try {
           const p = metaFile.toJSON<{
-            pack: { pack_format: number; description: string; name: string };
+            pack: {
+              pack_format: number;
+              description: string;
+              name: string;
+            };
           }>().pack;
           if (p.name) name = p.name;
           if (p.description) description = p.description;
@@ -705,7 +709,11 @@ export async function getResourcePacks(
     if (pack.exists()) {
       try {
         const p = pack.toJSON<{
-          pack: { pack_format: number; description: string; name: string };
+          pack: {
+            pack_format: number;
+            description: string;
+            name: string;
+          };
         }>().pack;
         if (p.name) name = p.name;
         if (p.description) description = p.description;
@@ -722,7 +730,15 @@ export async function getResourcePacks(
     const creditsFile = d.getFile("credits.txt");
     const credits = creditsFile.exists() ? creditsFile.read() : null;
 
-    return { credits, license, name, description, format, icon, path: source };
+    return {
+      credits,
+      license,
+      name,
+      description,
+      format,
+      icon,
+      path: source,
+    };
   }
   const c = l.length;
   let n = 0;

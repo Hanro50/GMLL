@@ -258,7 +258,7 @@ export function wrap(
   forge?: { jar: File | string } | File,
   trimMisc = false,
 ) {
-  let forgeInstallerPath = "jar" in forge ? forge.jar : forge;
+  const forgeInstallerPath = "jar" in forge ? forge.jar : forge;
 
   return this.pack({
     baseDownloadLink: baseUrl,
