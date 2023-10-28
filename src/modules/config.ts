@@ -5,7 +5,7 @@ import { getCpuArch, getErr, getOS, throwErr } from "./internal/util.js";
 import { type } from "os";
 import type Instance from "./objects/instance.js";
 import type { WorkerOptions, Worker } from "worker_threads";
-import { Dir,File } from "gfsl";
+import { Dir, File } from "gfsl";
 
 let workerSpawner = async (options: WorkerOptions) => {
   const makeWorker = (await import("./internal/worker.mjs")).makeWorker;
@@ -61,7 +61,7 @@ const repositories = {
   maven: "https://download.hanro50.net.za/maven",
   forge: "https://download.hanro50.net.za/fmllibs",
   armFix: "https://download.hanro50.net.za/java",
-  z7Repo:"https://download.hanro50.net.za/7-zip",
+  z7Repo: "https://download.hanro50.net.za/7-zip",
 };
 let multiCoreMode = true;
 /**is multicore downloads currently enabled? */
@@ -85,7 +85,7 @@ export function setMultiCoreMode(enabled: boolean) {
  * * armFix => ({@link setArmfixRepo}) The location serving the resources needed for the arm fix to function
  * * z7Repo => ({@link set7zipRepo}) The location serving a local version of 7zip
  */
-export function getRepositories():typeof repositories  {
+export function getRepositories(): typeof repositories {
   Object.keys(repositories).forEach((key) => {
     if (!repositories[key].endsWith("/")) repositories[key] += "/";
   });
@@ -112,7 +112,7 @@ export function set7zipRepo(z7Repo: string) {
 }
 if (onUnsupportedArm) {
   console.warn(
-    "[GMLL]: Running on an non M1 Arm platform! We are desperate for dedicated testers!",
+    "[GMLL:system]: Running on an non M1 Arm platform! We are desperate for dedicated testers!",
   );
 }
 let initialized = false;
@@ -135,6 +135,15 @@ export function isInitialized() {
   }
 }
 export interface Events {
+  /**
+   * Used for debug information
+   * This is purely debug information.
+   * The exact info given by this function is liable to change without warning
+   */
+  on(
+    e: "debug.info" | "debug.warn" | "debug.error",
+    f: (message: string) => void,
+  ): void;
   /**
    * Called when the downloader/Encoder starts up
    * #### Possible events
@@ -200,7 +209,14 @@ export interface Events {
   emit(tag: string, ...args: any): void;
 }
 let defEvents: Events = new EventEmitter();
-
+defEvents.on("debug.info", (message) => console.log(`[GMLL:info]: ${message}`));
+defEvents.on("debug.warn", (message) =>
+  console.warn(`[GMLL:warn]: ${message}`),
+);
+defEvents.on("debug.error", (message) => {
+  console.warn(`[GMLL:err]: ${message}`);
+  console.trace();
+});
 //Encode Manager
 defEvents.on("parser.start", (type, int) =>
   console.log(`[GMLL:parser]: Parsing ${type}s of instance ${int.getName()}`),
@@ -299,7 +315,7 @@ let files: {
 export function setRoot(_root: Dir | string) {
   if (typeof _root == "string") _root = new Dir(_root);
   if (_root.sysPath().includes("\x00")) {
-    console.error("Path should not contain a NULL character!");
+    console.error("[GMLL:crit]: Path should not contain a NULL character!");
   }
   initialized = false;
   const platform = _root.getDir("platform", getOS(), getCpuArch());

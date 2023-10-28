@@ -138,7 +138,7 @@
     "test": "tsc&&cd tests&&node test.cjs&&node test.mjs",
     "test-cjs": "cd tests&&node test.cjs",
     "test-mjs": "cd tests&&node test.mjs",
-    "docs": "typedoc src/index.ts --out ./webpage/docs/",
+    "docs": "typedoc",
     "format": "prettier . -w",
     "lint": "eslint . --ext .ts"
   },

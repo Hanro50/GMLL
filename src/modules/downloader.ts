@@ -88,7 +88,6 @@ export function download(obj: Partial<DownloadableFile>[]): Promise<void> {
     emit("download.done");
     return new Promise((e) => Promise.all(_zips).then(() => e()));
   }
-  console.log(totalItems);
   return new Promise<void>(async (res) => {
     await Promise.all(_zips);
     const numCPUs = Math.max(cpus().length, 2);
@@ -148,13 +147,14 @@ export function download(obj: Partial<DownloadableFile>[]): Promise<void> {
 
         return;
       } catch (e) {
-        console.error("[gmll]: " + e);
+        emit("debug.error", e);
         fire();
       }
     }
 
     if (multiCoreMode)
-      console.warn(
+      emit(
+        "debug.warn",
         "[GMLL]: The main downloader encountered an error, using single threaded fallback!",
       );
     emit("download.setup", 1);
@@ -172,7 +172,10 @@ export function download(obj: Partial<DownloadableFile>[]): Promise<void> {
           await fallback(o, retry);
           return o;
         }
-        console.error("[GMLL]: procedural failure : " + new Dir(...o.path));
+        emit(
+          "debug.error",
+          "[GMLL]: procedural failure : " + new Dir(...o.path),
+        );
         emit(failCMD, o.key, "system", e.err);
       }
       return o;
@@ -194,7 +197,6 @@ export function download(obj: Partial<DownloadableFile>[]): Promise<void> {
             .catch(console.trace),
         );
       await Promise.all(lst);
-      console.log("TICK!");
     }
     emit("download.done");
     return res();
@@ -437,7 +439,7 @@ export async function libraries(version: VersionJson) {
           }
           break;
         } catch (e) {
-          console.error(getErr(e));
+          emit("debug.error", e);
         }
       }
       arr.push(toDownloadable(file, e.url + path, path, { sha1: sha1 }));
@@ -462,8 +464,10 @@ export async function getRuntimeIndexes(manifest: RuntimeManifest) {
     case "windows":
       if (onUnsupportedArm && "windows-arm64" in manifest) {
         platform = "windows-arm64";
-        console.warn(
-          "[GMLL]: Loading intel fallback for Windows on arm. Please contact GMLL's developer if this bugs out.",
+        emit(
+          "debug.warn",
+
+          "Loading intel fallback for Windows on arm. Please contact GMLL's developer if this bugs out.",
         );
         for (const key of Object.keys(manifest[platform]))
           if (manifest[platform][key].length < 1)
@@ -487,8 +491,9 @@ export async function getRuntimeIndexes(manifest: RuntimeManifest) {
       if (getCpuArch() == "arm64") {
         platform = "mac-os-arm64";
         //Intel fallback for m1
-        console.warn(
-          "[GMLL]: Loading intel fallback for M1. Please contact GMLL's developer if this bugs out.",
+        emit(
+          "debug.warn",
+          "Loading intel fallback for M1. Please contact GMLL's developer if this bugs out.",
         );
         for (const key of Object.keys(manifest[platform]))
           if (manifest[platform][key].length < 1)
@@ -600,7 +605,7 @@ export async function manifests() {
       });
       meta.manifests.getFile("fabric.json").write(result);
     } catch (e) {
-      console.error(getErr(e));
+      emit("debug.error", e);
     }
   }
   if (update.includes("legacy-fabric")) {
@@ -631,7 +636,7 @@ export async function manifests() {
       });
       meta.manifests.getFile("legacy-fabric.json").write(result);
     } catch (e) {
-      console.error(getErr(e));
+      emit("debug.error", e);
     }
   }
   if (update.includes("quilt")) {
@@ -658,7 +663,7 @@ export async function manifests() {
       });
       meta.manifests.getFile("quilt.json").write(result);
     } catch (e) {
-      console.error(getErr(e));
+      emit("debug.error", e);
     }
   }
   if (update.includes("runtime")) {
@@ -713,7 +718,6 @@ export function getAgentFile() {
 export async function encodeMRF(url: string, root: Dir, out: Dir) {
   const res: MojangResourceManifest = { files: {} };
   const packed = out.getDir("encoded").mkdir();
-  console.log("[GMLL]: Starting to encode as Mojang resource file");
   let tFiles = 0;
   let cFiles = 0;
   emit("encode.start");

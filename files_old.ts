@@ -39,7 +39,7 @@ function mklink(dest: string, path: string) {
 
     symlinkSync(dest, path, "junction");
   } catch (e) {
-    console.error(e, existsSync(path), path);
+    console.debug(e, existsSync(path), path);
     console.error("Could not create syslink between d:" + dest + "=>p:" + path);
     process.exit();
   }

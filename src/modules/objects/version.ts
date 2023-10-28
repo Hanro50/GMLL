@@ -5,6 +5,7 @@ import {
   getVersions,
   getMeta,
   getlibraries,
+  emit,
 } from "../config.js";
 import { assets, runtime, libraries } from "../downloader.js";
 import { getManifest, getJavaPath } from "../handler.js";
@@ -60,12 +61,13 @@ export default class Version {
 
     if (onUnsupportedArm && this.pre1d9 && platform() != "win32") {
       console.trace(manifest);
-      console.warn(
+      emit(
+        "debug.warn",
         "Only 1.19 and up is supported on arm based Linux devices atm. As there's no x86 fallback!",
       );
     }
     if (onUnsupportedArm && this.pre1d9) {
-      console.warn("Arm support is experimental!");
+      emit("debug.warn", "Arm support is experimental!");
     }
     this.json;
     this.name = this.manifest.base || this.manifest.id;
@@ -91,7 +93,7 @@ export default class Version {
       !this.file.exists() &&
       file_old.exists()
     ) {
-      console.log("[GMLL]: Cleaning up versions!");
+      emit("debug.info", "Cleaning up versions!");
       this.json = file_old.toJSON<VersionJson>();
       this.synced = !("synced" in this.json) || this.json.synced;
       if (this.synced) {
@@ -99,8 +101,9 @@ export default class Version {
         folder_old.rm();
       } else {
         try {
-          console.log(
-            "[GMLL]: Detected synced is false. Aborting sync attempted",
+          emit(
+            "debug.info",
+            "Detected synced is false. Aborting sync attempted",
           );
           const base = new Version(this.json.inheritsFrom);
           this.json = combine(await base.getJSON(), this.json);
@@ -108,7 +111,7 @@ export default class Version {
           this.folder = folder_old;
           this.file = file_old;
         } catch (e) {
-          console.warn("[GMLL]: Dependency merge failed.");
+          emit("debug.warn", "[GMLL]: Dependency merge failed.");
           this._mergeFailure = true;
         }
         if (onUnsupportedArm && !this.pre1d9) {
@@ -142,7 +145,7 @@ export default class Version {
         this.folder = base.folder;
         this.name = base.name;
       } catch (e) {
-        console.warn("[GMLL]: Dependency merge failed.");
+        emit("debug.warn", "[GMLL]: Dependency merge failed.");
         this._mergeFailure = true;
       }
     }
@@ -185,7 +188,7 @@ export default class Version {
   async install() {
     if (this._mergeFailure) {
       this._mergeFailure = false;
-      console.log("[GMLL]: Correcting earlier dependency merge failure.");
+      emit("debug.info", "Correcting earlier dependency merge failure.");
       delete this.json;
       this.json = await this.getJSON();
     }
@@ -216,8 +219,9 @@ export default class Version {
         : join("libraries", ...classPathResolver(lib.name).split("/"));
       const p2 = getlibraries().getDir("..").getFile(p);
       if (!p2.exists()) {
-        console.error(
-          `[GMLL]: ${p} does not exist. Removing to avoid possible error (${p2.sysPath()})`,
+        emit(
+          "debug.error",
+          `${p} does not exist. Removing to avoid possible error (${p2.sysPath()})`,
         );
       } else if (!cp.includes(p)) cp.push(p);
     });

@@ -48,14 +48,12 @@ export async function install(this: instance) {
   getlibraries().linkFrom(this.getDir().getDir("libraries"));
   getAssets().linkFrom(this.getDir().getDir("assets"));
   const version = await this.getVersion();
-  //     console.log(version.json)
   if (version.json.instance) {
     const chk = this.getDir().getFile(".installed.txt");
 
     if (version.mergeFailure()) chk.rm();
 
     let security = false;
-    //patch download files
     const instance = version.json.instance;
     for (let i = 0; i < instance.files.length; i++) {
       instance.files[i].path = [
@@ -113,7 +111,7 @@ export async function launch(
 ) {
   //const metaPaths = (await this.getMetaPaths());
   if (!token) {
-    console.warn("[GMLL]: No token detected. Launching game in demo mode!");
+    emit("debug.warn", "No token detected. Launching game in demo mode!");
     const demoFile = getMeta().index.getFile("demo.txt");
     if (!demoFile.exists()) demoFile.write(randomUUID());
 
@@ -233,7 +231,6 @@ export async function launch(
   });
   emit("jvm.start", "Minecraft", this.getDir().sysPath());
   const launchArgs = launchCom.trim().split("\x00");
-  console.log(launchCom.split("\x00"));
   if (launchArgs[0] == "") launchArgs.shift();
   const runningInstance = spawn(javaPath.sysPath(), launchArgs, {
     cwd: join(this.getDir().sysPath()),

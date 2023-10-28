@@ -1,0 +1,4 @@
+{
+  "entryPointStrategy": "resolve",
+  "entryPoints": ["src/index.ts", "src/modules/config.ts"]
+}

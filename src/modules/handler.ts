@@ -61,7 +61,7 @@ function findManifest(version: string, manifests: VersionManifest[]) {
     }
   }); //|| { id: version, type: "unknown" };
   if (!manifest) {
-    console.warn("[GMLL]: attempting to generate manifest files");
+    emit("debug.warn", "attempting to generate manifest files");
     const root = getMeta().manifests;
     const versionJson = getVersions().getFile(version, `${version}.json`);
     if (versionJson.exists()) {
@@ -79,11 +79,12 @@ function findManifest(version: string, manifests: VersionManifest[]) {
         };
         f.write(mf);
       } catch (e) {
-        console.error("[GMLL]: failed to compile manifest from version json");
+        emit("debug.error", "failed to compile manifest from version json");
       }
     } else {
-      console.warn(
-        `[GMLL]: no version json (at ${versionJson.sysPath()}) found, I hope you know what you are doing!`,
+      emit(
+        "debug.warn",
+        `no version json (at ${versionJson.sysPath()}) found, I hope you know what you are doing!`,
       );
     }
     manifest = { id: version, type: "unknown" };
@@ -215,7 +216,6 @@ export async function importLink(
       .manifests.getFile(manfile)
       .download(url + "/.meta/manifest.json", { sha1: v.sha })
   ).toJSON<VersionManifest>();
-  // console.log(manfile)
   if (!name) return manifest;
   return new Instance({ version: manifest.id, name: name }).save();
 }
