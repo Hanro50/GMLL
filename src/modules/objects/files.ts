@@ -292,11 +292,7 @@ export class File extends Dir {
               } else reject(res.status);
             }
             res.body.pipe(file, { end: true });
-            file.on("close", () => {
-              if (this.chkSelf(chk)) {
-                reject("mismatch!");
-              } else resolve;
-            });
+            file.on("close", resolve);
           })
           .catch(reject);
       });
