@@ -23,7 +23,7 @@ import {
   Artifact,
   MCJarTypeVal,
 } from "../../types";
-import { Dir, File } from "./files.js";
+import { Dir, File } from "gfsl";
 
 /**
  * Version data is unique. Each version of the game will generate an unique version object.

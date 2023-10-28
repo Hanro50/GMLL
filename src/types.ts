@@ -4,7 +4,7 @@
  * ---------------------------------------------------------------------------------------------
  */
 
-import type { Dir, File } from "./modules/objects/files";
+import type { Dir, File } from "gfsl";
 
 /**
  * The release type of a set version. Can be used to add filters to a version select field within a launcher so
@@ -405,7 +405,7 @@ export interface InstancePackConfig {
   /**The path to your forge installer jar */
   forgeInstallerPath?: File | string;
   /**Should the misc.zip archive be trimmed by avoiding normally unnecessary files */
-  trimMisc?: true;
+  trimMisc?: boolean;
 }
 /**
  * Used for world files and resource packs.

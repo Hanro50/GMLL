@@ -1,7 +1,7 @@
 /**
  * An NBT reader implement in JS.
  */
-import { Dir, File } from "./objects/files.js";
+import { Dir, File } from "gfsl";
 export enum tagTypes {
   "TAG_End" = 0,
   "TAG_Byte" = 1,

@@ -13,7 +13,7 @@ import type {
 } from "../../../types";
 import { join } from "path";
 import { readDat } from "../../nbt.js";
-import { Dir, File } from "../../objects/files.js";
+import { Dir, File } from "gfsl";
 import { emit } from "../../config.js";
 
 /**
@@ -38,7 +38,7 @@ export async function getMetaPaths(this: Instance): Promise<InstanceMetaPaths> {
 }
 async function getIcon(file: File, d: Dir, jarPath: string) {
   if (!jarPath || jarPath.length < 1) return null;
-  file.extract(d, [jarPath]);
+  file.unzip(d, { include: [jarPath] });
   const jarFile = jarPath.split("/");
   console.log(jarFile);
   const logoFile = d.getFile(...jarFile);
@@ -75,16 +75,18 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
       name = name.slice(0, name.lastIndexOf("."));
       const fname = prefix ? join(prefix, name) : name;
       const d = tmp.getDir(fname).mkdir();
-      await file.extract(d, [
-        "pack.mcmeta",
-        "mcmod.info",
-        "fabric.mod.json",
-        "litemod.json",
-        "riftmod.json",
-        "quilt.mod.json",
-        "META-INF/mods.toml",
-        "META-INF/MANIFEST.MF",
-      ]);
+      await file.unzip(d, {
+        include: [
+          "pack.mcmeta",
+          "mcmod.info",
+          "fabric.mod.json",
+          "litemod.json",
+          "riftmod.json",
+          "quilt.mod.json",
+          "META-INF/mods.toml",
+          "META-INF/MANIFEST.MF",
+        ]
+      });
       let metaFile: File;
 
       //Legacy forge
@@ -163,17 +165,17 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
             intermediate_mappings: string;
             depends?: [
               | {
-                  id: string;
-                  versions: string;
-                  optional?: boolean;
-                }
+                id: string;
+                versions: string;
+                optional?: boolean;
+              }
               | string,
             ];
             provides?: [
               | {
-                  id: string;
-                  versions: string;
-                }
+                id: string;
+                versions: string;
+              }
               | string,
             ];
             jars?: [string];
@@ -192,8 +194,8 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
         }
         const depends:
           | {
-              [key: string]: string;
-            }
+            [key: string]: string;
+          }
           | Array<ForgeDep | string> = [];
         if (metaInfo.quilt_loader.depends) {
           metaInfo.quilt_loader.depends.forEach((e) => {
@@ -558,7 +560,7 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
 
         try {
           icon = getIcon(file, d, "pack.png");
-        } catch {}
+        } catch { }
         mods.push({
           id: "unknown",
           authors: [],
@@ -750,7 +752,7 @@ export async function getResourcePacks(
       if (e instanceof File) {
         const name = e.getName();
         const d = tmp.getDir(name.slice(0, name.lastIndexOf(".")));
-        await e.unzip(d, ["*/*", "*/"]);
+        await e.unzip(d, { include: ["*/*", "*/"] });
         packs.push(readPackData(d, e));
       } else {
         packs.push(readPackData(e, e));

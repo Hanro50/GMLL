@@ -1,4 +1,4 @@
-import { ChildProcessWithoutNullStreams, spawn } from "child_process";
+import { spawn } from "child_process";
 import { randomUUID } from "crypto";
 
 import {
@@ -10,7 +10,7 @@ import {
   getlibraries,
   emit,
 } from "../../config.js";
-import { Dir, File } from "../../objects/files.js";
+import { Dir, File } from "gfsl";
 import type { Player, AssetIndex, LaunchArguments } from "../../../types";
 import { type, cpus } from "os";
 import { join } from "path";
@@ -104,13 +104,13 @@ export async function install(this: instance) {
  * This essentially does an integrity check.
  * @param token The player login token
  * @param resolution Optional information defining the game's resolution
- * @returns The game's child process
+ * @returns The process that was used to launch the game.
  */
 export async function launch(
   this: instance,
   token: Player,
   resolution?: { width: string; height: string },
-): Promise<ChildProcessWithoutNullStreams> {
+) {
   //const metaPaths = (await this.getMetaPaths());
   if (!token) {
     console.warn("[GMLL]: No token detected. Launching game in demo mode!");
@@ -235,13 +235,16 @@ export async function launch(
   const launchArgs = launchCom.trim().split("\x00");
   console.log(launchCom.split("\x00"));
   if (launchArgs[0] == "") launchArgs.shift();
-  const s = spawn(javaPath.sysPath(), launchArgs, {
+  const runningInstance = spawn(javaPath.sysPath(), launchArgs, {
     cwd: join(this.getDir().sysPath()),
     env: combine(process.env, this.env),
     detached: this.detach,
   });
-  s.stdout.on("data", (chunk) => emit("jvm.stdout", "Minecraft", chunk));
-  s.stderr.on("data", (chunk) => emit("jvm.stderr", "Minecraft", chunk));
-
-  return s;
+  runningInstance.stdout.on("data", (chunk) =>
+    emit("jvm.stdout", "Minecraft", chunk),
+  );
+  runningInstance.stderr.on("data", (chunk) =>
+    emit("jvm.stderr", "Minecraft", chunk),
+  );
+  return runningInstance;
 }

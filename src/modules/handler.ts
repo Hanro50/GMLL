@@ -13,7 +13,7 @@ import {
 import { getForgiac, runtime } from "./downloader.js";
 import { fsSanitizer, getOS } from "./internal/util.js";
 import { spawn } from "child_process";
-import { File } from "./objects/files.js";
+import { File } from "gfsl";
 import fetch from "node-fetch";
 import Instance from "./objects/instance.js";
 import type {

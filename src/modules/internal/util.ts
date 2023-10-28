@@ -1,8 +1,9 @@
 import { arch, networkInterfaces, platform, userInfo, version } from "os";
-import { Dir, stringify } from "../objects/files.js";
+
 import { getAssets, getMeta, isInitialized } from "../config.js";
 import { createHash, randomUUID } from "crypto";
 import type { CpuArchRuleVal, VersionJsonRules, AssetIndex } from "../../types";
+import { Dir, jsonEncode } from "gfsl";
 /**Gets the current operating system GMLL thinks it is running under */
 export function getOS() {
   const operatingSystem = platform();
@@ -142,13 +143,13 @@ export function getClientID(forceNew = false) {
   const path = getMeta().index.getFile("ClientID.txt");
   let data: string;
   if (!path.exists() || forceNew) {
-    data = stringify({
+    data = jsonEncode({
       Date: Date.now(),
       UUID: randomUUID(),
       network: createHash("sha256")
-        .update(stringify(networkInterfaces()))
+        .update(jsonEncode(networkInterfaces()))
         .digest("base64"),
-      user: createHash("sha256").update(stringify(userInfo())).digest("base64"),
+      user: createHash("sha256").update(jsonEncode(userInfo())).digest("base64"),
       provider: "GMLL",
     });
     data = createHash("sha512").update(data).digest("base64");
