@@ -727,14 +727,14 @@ export interface curseforgeModpack {
     ];
   };
   manifestType: "minecraftModpack";
-  manifestVersion: Number;
+  manifestVersion: number;
   name: string;
   version: string;
   author: string;
   files: [
     {
-      projectID: Number;
-      fileID: Number;
+      projectID: number;
+      fileID: number;
       downloadUrl?: string;
       required: boolean;
     },

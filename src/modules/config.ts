@@ -56,7 +56,7 @@ export type update = "runtime" | "agent" | "fabric" | "legacy-fabric" | "quilt";
  */
 export const onUnsupportedArm =
   (getCpuArch() == "arm64" || getCpuArch() == "arm") && type() != "Darwin";
-let repositories = {
+const repositories = {
   maven: "https://download.hanro50.net.za/maven",
   forge: "https://download.hanro50.net.za/fmllibs",
   armFix: "https://download.hanro50.net.za/java",
