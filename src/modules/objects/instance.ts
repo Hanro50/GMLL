@@ -1,4 +1,4 @@
-import { resolvePath, getMeta, getAssets, getVersions } from '../config.js';
+import { resolvePath, getMeta, getAssets } from '../config.js';
 import { getLatest } from '../handler.js';
 import {
 	fsSanitizer,
@@ -12,7 +12,6 @@ import type {
 	DownloadableFile,
 	LaunchArguments,
 	LaunchOptions,
-	VersionJson,
 	curseforgeModpack,
 } from '../../types';
 import { Dir, File } from './files.js';
@@ -302,7 +301,7 @@ export default class Instance {
 				const metaInf = tmp.getFile('manifest.json');
 				const installedFile = this.getDir().getFile('installed.txt');
 				const metaFile = getMeta().scratch.getFile('curse_meta.json');
-				let metaModData: {
+				const metaModData: {
 					[key: string]: {
 						id: string;
 						sha1?: string | string[];
@@ -311,7 +310,7 @@ export default class Instance {
 				} = metaFile.exists() ? metaFile.toJSON() : {};
 
 				if (installedFile.exists() && metaInf.exists()) {
-					let inf = metaInf.toJSON<curseforgeModpack>();
+					const inf = metaInf.toJSON<curseforgeModpack>();
 					this.version = 'curse.' + inf.name + '-' + inf.version;
 					console.log('Installed files found, assuming file was installed!');
 					return this;
@@ -327,12 +326,12 @@ export default class Instance {
 				console.log('Extracting achive');
 
 				await file.unzip(tmp);
-				let inf = metaInf.toJSON<curseforgeModpack>();
+				const inf = metaInf.toJSON<curseforgeModpack>();
 
 				console.log('Applying overides');
 				function copyFile(fToCopy: File | Dir, base: Dir) {
 					if (fToCopy instanceof File) {
-						let file = base.getFile(fToCopy.getName()).rm();
+						const file = base.getFile(fToCopy.getName()).rm();
 						fToCopy.moveTo(file);
 					} else {
 						fToCopy
@@ -355,7 +354,7 @@ export default class Instance {
 							'GMLL may not support multi modloader setups are currently not recommended!',
 						);
 
-					for (let e of inf.minecraft.modLoaders) {
+					for (const e of inf.minecraft.modLoaders) {
 						const data = e.id.split('-');
 						const type = data[0];
 						const version = data[1];
@@ -372,15 +371,15 @@ export default class Instance {
 					}
 				}
 				const mods = this.getDir().getDir('mods').mkdir();
-				let fileNames = [];
+				const fileNames = [];
 
-				let files: DownloadableFile[] = [];
+				const files: DownloadableFile[] = [];
 
 				inf.files.forEach((f) => {
 					const name = `${f.projectID}-${f.fileID}`;
 					fileNames.push(name);
 
-					let meta = metaModData[name];
+					const meta = metaModData[name];
 					let fname = name;
 					if (meta && meta.id && meta.sha1 && meta.size)
 						fname =
@@ -413,8 +412,8 @@ export default class Instance {
 								e.path.moveTo(err.getFile(e.path.getName()));
 							return;
 						}
-						let sha1 = e.path.getHash();
-						let size = e.path.getSize();
+						const sha1 = e.path.getHash();
+						const size = e.path.getSize();
 
 						metaModData[fileName] = {
 							sha1,
