@@ -2,6 +2,7 @@
  * An NBT reader implement in JS.
  */
 import { Dir, File } from "gfsl";
+import { emit } from "./config";
 export enum tagTypes {
   "TAG_End" = 0,
   "TAG_Byte" = 1,
@@ -123,14 +124,15 @@ export function readNBT<T>(raw: Buffer, typed?: true): T | typedNBT {
         return t;
       default:
         //Unknown flag. Due to how dat files are encoded. The decoder cannot continue if it hits an unknown flag
-        console.error(
+        emit(
+          "debug.error",
           "Unknown type",
           [String.fromCharCode(c), c],
           " at ",
           i,
           raw[i],
         );
-        console.error([raw.slice(3, i + 10).toString()]);
+        emit("debug.error", [raw.slice(3, i + 10).toString()]);
         throw "UNKNOWN TYPE";
     }
   }
@@ -146,7 +148,7 @@ export async function readDat<T>(
   typed?: true,
 ): Promise<T | typedNBT> {
   if (!path.sysPath().toLocaleLowerCase().endsWith(".dat"))
-    console.warn("Potentially unsupported file extention detected!");
+    emit("debug.warn", "Potentially unsupported file extention detected!");
   const p = Dir.tmpdir().getDir("gmll", path.getHash()).mkdir();
   //We need to decompress the dat file
   await path.unzip(p);

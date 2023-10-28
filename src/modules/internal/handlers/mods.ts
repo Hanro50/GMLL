@@ -1,4 +1,4 @@
-import { getAssets } from "../../config.js";
+import { emit, getAssets } from "../../config.js";
 import { installForge as _installForge } from "../../handler.js";
 import { Dir, File, packAsync } from "gfsl";
 import Instance from "../../objects/instance.js";
@@ -28,14 +28,19 @@ export async function getJarModPriority(this: Instance) {
  * @param trimMisc Gets rid of any unnecessary miscellaneous files
 
  */
-export async function pack(this: Instance, config: InstancePackConfig
-) {
-  const saveDir = (typeof config.outputDir == "string") ? new Dir(config.outputDir) : config.outputDir
+export async function pack(this: Instance, config: InstancePackConfig) {
+  const saveDir =
+    typeof config.outputDir == "string"
+      ? new Dir(config.outputDir)
+      : config.outputDir;
   const baseDownloadLink = config.baseDownloadLink;
   const trimMisc = config.trimMisc;
   let _forge = config.forgeInstallerPath;
   if (_forge) {
-    _forge = (config.forgeInstallerPath instanceof File) ? config.forgeInstallerPath : new File(config.forgeInstallerPath);
+    _forge =
+      config.forgeInstallerPath instanceof File
+        ? config.forgeInstallerPath
+        : new File(config.forgeInstallerPath);
   }
   const forge = _forge as File;
   const modpackName = config.modpackName || this.getName();
@@ -166,8 +171,9 @@ export async function pack(this: Instance, config: InstancePackConfig
       chk: { sha1: miscZip.getHash(), size: miscZip.getSize() },
     });
   } else {
-    console.warn(
-      "[GMLL]: No misc zip detected! If this is intended then please ignore",
+    emit(
+      "debug.warn",
+      "No misc zip detected! If this is intended then please ignore",
     );
   }
   const ver: Partial<VersionJson> = {
@@ -239,28 +245,28 @@ export async function pack(this: Instance, config: InstancePackConfig
   }
   read(saveDir);
   index += `</body></html>`;
-  console.log(index);
   saveDir.getFile("index.html").write(index);
   saveDir.getFile(`manifest_${fsSanitizer(modpackName)}.json`).write(manifest);
   return ver;
 }
 /**An version of the wrap function that takes an object as a variable instead of the mess the base function takes. */
-export function wrap(this: Instance,
+export function wrap(
+  this: Instance,
   baseUrl: string,
   save: Dir | string = new Dir(),
   modpackName: string = "custom_" + this.name,
   forge?: { jar: File | string } | File,
-  trimMisc = false) {
-  let forgeInstallerPath = ("jar" in forge) ? forge.jar : forge
+  trimMisc = false,
+) {
+  let forgeInstallerPath = "jar" in forge ? forge.jar : forge;
 
   return this.pack({
     baseDownloadLink: baseUrl,
     outputDir: save,
     forgeInstallerPath,
     modpackName,
-    trimMisc
-  }
-  );
+    trimMisc,
+  });
 }
 /**Install forge in this instance. */
 export async function installForge(this: Instance, forge?: File | string) {
@@ -286,10 +292,11 @@ export async function jarMod(
   if (!jarMods || !jarMods.exists()) return;
   const lst = jarMods.ls();
   if (lst.length < 1) return;
-  console.warn(
-    "[GMLL]: Jar modding is experimental atm.\nWe still don't have a way to order jars\nRecommended for modding legacy versions or mcp...",
+  emit(
+    "debug.warn",
+    "Jar modding is experimental atm.\nWe still don't have a way to order jars\nRecommended for modding legacy versions or mcp...",
   );
-  console.log("[GMLL]: Packing custom jar");
+  emit("debug.info", "Packing custom jar");
   const tmp = Dir.tmpdir().getDir("gmll", "tmp").rm().mkdir();
   const jar = version.folder.getFile(version.name + ".jar");
   if (!jar.exists()) return;
@@ -305,7 +312,7 @@ export async function jarMod(
     try {
       priority = pFile.toJSON();
     } catch (e) {
-      console.warn("[GMLL]: Failed to parse priorities file!");
+      emit("debug.warn", "Failed to parse priorities file!");
     }
   else fReset = true;
   lst.sort((aF, bF) => {
@@ -319,11 +326,10 @@ export async function jarMod(
     return a > b ? 1 : -1;
   });
 
-  console.log("[GMLL]: Running through files");
+  emit("debug.info", "Running through files");
   for (const e of lst) {
     if (e instanceof File) {
       const n = e.getName();
-      console.log(n);
       if (n.endsWith(".zip") || n.endsWith(".jar")) {
         if (!(n in priority)) {
           priority[n] = fReset ? (Object.keys(priority).length - 1) * 10 : 0;
@@ -333,7 +339,7 @@ export async function jarMod(
     }
   }
   pFile.write(priority);
-  console.log("[GMLL]: Packing jar");
+  emit("debug.info", "Packing jar");
   await packAsync(
     tmp.sysPath() + (platform() == "win32" ? "\\." : "/."),
     custom.sysPath(),

@@ -36,8 +36,6 @@ If your launcher is installed onto a drive which in of itself is not formatted a
 
 The reason why GMLL only works on a drive formatted as NTFS on Windows is due to it making use of junctions, whereas on Linux and Mac GMLL will use symlinks instead. While they behave functionally the same for our purposes, junctions are a filesystem specific feature that only works on NTFS. While Windows also supports symlinks, you require administrator privileges to create them.
 
-
-
 # Multithreaded downloading
 
 GMLL uses multiple threads by default to speed up downloads. This can be disabled however with the following bit of code

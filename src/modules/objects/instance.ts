@@ -1,4 +1,10 @@
-import { resolvePath, getMeta, getAssets, getVersions } from "../config.js";
+import {
+  resolvePath,
+  getMeta,
+  getAssets,
+  getVersions,
+  emit,
+} from "../config.js";
 import { getLatest } from "../handler.js";
 import {
   fsSanitizer,
@@ -99,8 +105,9 @@ export default class Instance {
     this.getDir().mkdir();
     const MESA = "MESA_GL_VERSION_OVERRIDE";
     if (!["x64", "arm64", "ppc64"].includes(getCpuArch()) && this.ram > 1.4) {
-      console.warn(
-        "[GMLL]: Setting ram limit to 1.4GB due to running on a 32-bit version of java!",
+      emit(
+        "debug.warn",
+        "Setting ram limit to 1.4GB due to running on a 32-bit version of java!",
       );
       this.ram = 1.4;
     }
@@ -130,7 +137,7 @@ export default class Instance {
    * @param name The name that should be used to identify the generated version files
    * @param forge The path to a forge installation jar
    * @param trimMisc Gets rid of any unnecessary miscellaneous files
- * @deprecated Use {@link pack} instead 
+   * @deprecated Use {@link pack} instead
    */
   public wrap = modsHandler.wrap;
   /**
@@ -295,9 +302,12 @@ export default class Instance {
   ) {
     switch (type) {
       case "curseforge":
-        console.warn("GMLL's support for curse modpacks is in an Alpha state!");
-        console.log("Use GMLLs native modpack api instead if you can");
-        console.log("Only fabric modpacks work properly atm.");
+        emit(
+          "debug.warn",
+          "GMLL's support for curse modpacks is in an Alpha state!",
+        );
+        emit("debug.warn", "Use GMLLs native modpack api instead if you can");
+        emit("debug.warn", "Only fabric modpacks work properly atm.");
         const tmp = getMeta().scratch.getDir("curse", this.name).mkdir();
         const metaInf = tmp.getFile("manifest.json");
         const installedFile = this.getDir().getFile("installed.txt");
@@ -313,7 +323,10 @@ export default class Instance {
         if (installedFile.exists() && metaInf.exists()) {
           let inf = metaInf.toJSON<curseforgeModpack>();
           this.version = "curse." + inf.name + "-" + inf.version;
-          console.log("Installed files found, assuming file was installed!");
+          emit(
+            "debug.info",
+            "Installed files found, assuming file was installed!",
+          );
           return this;
         }
         // await this.install();
@@ -324,12 +337,12 @@ export default class Instance {
         } else {
           file = urlorFile;
         }
-        console.log("Extracting achive");
+        emit("debug.info", "Extracting achive");
 
         await file.unzip(tmp);
         let inf = metaInf.toJSON<curseforgeModpack>();
 
-        console.log("Applying overides");
+        emit("debug.info", "Applying overides");
         function copyFile(fToCopy: File | Dir, base: Dir) {
           if (fToCopy instanceof File) {
             let file = base.getFile(fToCopy.getName()).rm();
@@ -351,7 +364,8 @@ export default class Instance {
           mcVersion = await this.installForge(forge);
         } else {
           if (inf.minecraft.modLoaders.length > 1)
-            console.warn(
+            emit(
+              "debug.warn",
               "GMLL may not support multi modloader setups are currently not recommended!",
             );
 
@@ -363,10 +377,11 @@ export default class Instance {
             if (["fabric", "quilt"].includes(type)) {
               mcVersion = `${type}-loader-${version}-${inf.minecraft.version}`;
             } else {
-              console.warn(
+              emit(
+                "debug.warn",
                 "Unsupported modloader type " +
-                e.id +
-                "\nIf this is forge then supply the forge jar yourself.\nGMLL is not natively compatible with the method Curse uses to install forge.",
+                  e.id +
+                  "\nIf this is forge then supply the forge jar yourself.\nGMLL is not natively compatible with the method Curse uses to install forge.",
               );
             }
           }
@@ -424,11 +439,11 @@ export default class Instance {
             const nfile = mods.getFile(
               fsSanitizer(
                 e.id +
-                "-" +
-                e.version +
-                "-" +
-                sha1.slice(0, 5) +
-                size.toString(36),
+                  "-" +
+                  e.version +
+                  "-" +
+                  sha1.slice(0, 5) +
+                  size.toString(36),
               ) + ".jar",
             );
             e.path.moveTo(nfile);
@@ -438,13 +453,14 @@ export default class Instance {
 
         break;
       case "gmll":
-        if (forge) console.warn("The forge property goes unused in this mode!");
+        if (forge)
+          emit("debug.warn", "The forge property goes unused in this mode!");
         if (typeof urlorFile == "string")
           this.version = (await importLink(urlorFile)).id;
-        else console.warn("Only URLS are supported");
+        else emit("debug.warn", "Only URLS are supported");
         break;
       default:
-        console.error("Unsupported modpack type!");
+        emit("debug.error", "Unsupported modpack type!");
     }
 
     return this;

@@ -149,7 +149,9 @@ export function getClientID(forceNew = false) {
       network: createHash("sha256")
         .update(jsonEncode(networkInterfaces()))
         .digest("base64"),
-      user: createHash("sha256").update(jsonEncode(userInfo())).digest("base64"),
+      user: createHash("sha256")
+        .update(jsonEncode(userInfo()))
+        .digest("base64"),
       provider: "GMLL",
     });
     data = createHash("sha512").update(data).digest("base64");

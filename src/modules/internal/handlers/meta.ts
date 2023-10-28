@@ -40,7 +40,6 @@ async function getIcon(file: File, d: Dir, jarPath: string) {
   if (!jarPath || jarPath.length < 1) return null;
   file.unzip(d, { include: [jarPath] });
   const jarFile = jarPath.split("/");
-  console.log(jarFile);
   const logoFile = d.getFile(...jarFile);
   if (logoFile.exists()) return `data:image/png;base64,${logoFile.toBase64()}`;
   return null;
@@ -85,7 +84,7 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
           "quilt.mod.json",
           "META-INF/mods.toml",
           "META-INF/MANIFEST.MF",
-        ]
+        ],
       });
       let metaFile: File;
 
@@ -165,17 +164,17 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
             intermediate_mappings: string;
             depends?: [
               | {
-                id: string;
-                versions: string;
-                optional?: boolean;
-              }
+                  id: string;
+                  versions: string;
+                  optional?: boolean;
+                }
               | string,
             ];
             provides?: [
               | {
-                id: string;
-                versions: string;
-              }
+                  id: string;
+                  versions: string;
+                }
               | string,
             ];
             jars?: [string];
@@ -194,8 +193,8 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
         }
         const depends:
           | {
-            [key: string]: string;
-          }
+              [key: string]: string;
+            }
           | Array<ForgeDep | string> = [];
         if (metaInfo.quilt_loader.depends) {
           metaInfo.quilt_loader.depends.forEach((e) => {
@@ -416,7 +415,6 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
             if (raw[1].startsWith('"')) raw[1] = raw[1].slice(1);
             if (raw[1].endsWith('"'))
               raw[1] = raw[1].slice(0, raw[1].length - 1);
-            //console.log(raw[1])
             raw[0] = raw[0].trim();
             if (state1Map.has(raw[0])) {
               await state1Map.get(raw[0])(raw[1]);
@@ -556,7 +554,7 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
 
         try {
           icon = getIcon(file, d, "pack.png");
-        } catch { }
+        } catch {}
         mods.push({
           id: "unknown",
           authors: [],
@@ -572,7 +570,6 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
         return;
       }
       emit("parser.fail", "mod", "Possibly missing mod data!", file);
-      // console.warn(`[GMLL]: Could not parse mod -> ${name}\n[GMLL]: Possibly missing mod data!`)
     } catch (err) {
       emit("parser.fail", "mod", err, file);
     }
@@ -618,7 +615,6 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
  */
 export async function getWorlds(this: Instance): Promise<MetaSave[]> {
   emit("parser.start", "save file", this);
-  console.log("[GMLL]: Getting level data. This may take a while.");
   const meta = await this.getMetaPaths();
   const saves: MetaSave[] = [];
   if (!meta.saves.exists()) return saves;
@@ -649,7 +645,7 @@ export async function getWorlds(this: Instance): Promise<MetaSave[]> {
               if (statefile.exists()) stats = statefile.toJSON<PlayerStats>();
               players[nm] = { data: PD, stats };
             } catch (e) {
-              console.warn("[GMLL]: Failed to parse player data!");
+              emit("debug.warn", "Failed to parse player data!");
             }
           }
         }
