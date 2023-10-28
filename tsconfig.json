@@ -1,11 +1,7 @@
-{ // Change this to match your project
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ],
+{
+  // Change this to match your project
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"],
   "compilerOptions": {
     "outDir": "dist",
     "moduleResolution": "node",
@@ -20,6 +16,6 @@
     "declarationDir": "types",
     "rootDir": "src/",
     "module": "CommonJS",
-    "baseUrl": "src", // this must be specified if "paths" is specified.
+    "baseUrl": "src" // this must be specified if "paths" is specified.
   }
 }
