@@ -1,13 +1,13 @@
 {
   // Change this to match your project
 
-  "exclude": ["node_modules", "dist","native"],
+  "exclude": ["node_modules", "dist"],
   "include": ["src/**/*"],
   "compilerOptions": {
     "outDir": "dist",
-    "moduleResolution": "node",
+    "moduleResolution": "Node16",
     "resolveJsonModule": true,
-    "target": "ESNext",
+    "target": "es2021",
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "importHelpers": true,
@@ -16,7 +16,7 @@
     "declaration": true,
     "declarationDir": "types",
     "rootDir": "src/",
-    "module": "CommonJS",
+    "module": "Node16",
     "baseUrl": "src" // this must be specified if "paths" is specified.
   }
 }

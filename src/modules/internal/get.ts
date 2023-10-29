@@ -2,13 +2,11 @@
 /*
  * This is the core of the download manager. No code from the main thread should interact with it!
  * If GMLL is unable to reach this library then it will use a slower fallback.
- *
  */
 
 import { Dir } from "gfsl";
 import { parentPort, workerData } from "worker_threads";
 import { processFile } from "./downloadable.js";
-
 
 export type getWorkerDate = {
   processCMD: string;
