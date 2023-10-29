@@ -8,7 +8,7 @@
 import { Dir } from "gfsl";
 import { parentPort, workerData } from "worker_threads";
 import { processFile } from "./downloadable.js";
-import { emit } from "modules/config.js";
+
 
 export type getWorkerDate = {
   processCMD: string;
@@ -38,7 +38,7 @@ async function load(a: any, retry = 0) {
       await load(a, retry);
       return;
     }
-    emit("debug.error", "procedural failure : " + new Dir(...o.path));
+    console.warn("procedural failure : " + new Dir(...o.path));
     parentPort.postMessage({
       cmd: failCMD,
       type: "system",

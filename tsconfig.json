@@ -1,7 +1,7 @@
 {
   // Change this to match your project
 
-  "exclude": ["node_modules", "dist"],
+  "exclude": ["node_modules", "dist","native"],
   "include": ["src/**/*"],
   "compilerOptions": {
     "outDir": "dist",

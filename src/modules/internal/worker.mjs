@@ -4,5 +4,5 @@ import { Worker, WorkerOptions } from "worker_threads";
  * @returns a fully created worker instance
  */
 export function makeWorker(options) {
-  return new Worker(new URL("./get.js", import.meta), options);
+  return new Worker(new URL("./get.js", import.meta.url), options);
 }

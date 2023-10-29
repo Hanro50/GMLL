@@ -8,19 +8,11 @@ import type { WorkerOptions, Worker } from "worker_threads";
 import { Dir, File } from "gfsl";
 
 let workerSpawner = async (options: WorkerOptions) => {
+  //@ts-ignore
   const makeWorker = (await import("./internal/worker.mjs")).makeWorker;
   return makeWorker(options);
 };
-/**Sets the worker spawner for the download manager.
- * in gmll this function looks like this
- *
- * import { Worker, WorkerOptions } from "worker_threads";
- * export function makeWorker(options) {
- *   return new Worker(new URL("./get.js", import.meta), options);
- * }
- *
- * where "./get.js" references this file src/modules/internal/get.js
- */
+/**Internal function. Used to set the spawner for the workers the downloader uses */
 export function setDownloadWorkerSpawner(
   func: (options: WorkerOptions) => Promise<Worker>,
 ) {
