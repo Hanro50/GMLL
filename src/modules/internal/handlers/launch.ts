@@ -95,6 +95,14 @@ export async function install(this: instance) {
     chk.write(Date.now().toString());
   }
   await version.install();
+  if (version.json.jarmods) {
+    for (const mod of version.json.jarmods) {
+      const file = (await this.getMetaPaths()).jarMods
+        .mkdir()
+        .getFile(mod.path);
+      await file.download(mod.url, { sha1: mod.sha1, size: mod.size });
+    }
+  }
   return version;
 }
 /**

@@ -293,6 +293,7 @@ export interface VersionJson {
   type: MCVersionType;
   synced?: boolean;
   inheritsFrom?: string;
+  jarmods?: [Partial<Artifact>];
   /**
    * The low level information GMLL's modpack api uses to download a set modpack
    */

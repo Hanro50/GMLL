@@ -22,6 +22,7 @@ import type {
   MCRuntimeVal,
   VersionJson,
 } from "../types";
+import Version from "./objects/version.js";
 /**
  * Compiles all manifest objects GMLL knows about into a giant array. This will include almost all fabric versions and any installed version of forge.
  * GMLL can still launch a version if it is not within this folder, although it is not recommended
@@ -231,4 +232,108 @@ export function getJavaPath(java: MCRuntimeVal = "jre-legacy") {
     if (f.exists()) return f;
     else getRuntimes().getFile(java, "bin", "java.exe");
   } else return getRuntimes().getFile(java, "bin", "java");
+}
+type ForgeVersion = {
+  type: "modern" | "old" | "ancient";
+  forge: string;
+  game: string;
+  install(): Promise<VersionManifest>;
+};
+/**
+ * The auto forge installer.
+ * To stop forge from breaking this,
+ * please add a link to donate to the forge project at https://www.patreon.com/LexManos
+ *
+ * I am not affiliated with forge in any way, I just want to support them. So they can keep making forge...and so they don't break this.
+ * - Hanro50
+ *
+ * @Warning They may break this at any time. I will try to keep this up to date, but I can't guarantee anything. So...yeah. Add a link to donate to them.
+ */
+export async function getForgeVersions() {
+  const data = await fetch(
+    "https://files.minecraftforge.net/net/minecraftforge/forge/maven-metadata.json",
+  );
+  const ancient = ["1.1", "1.2.3", "1.2.4", "1.2.5"];
+  const old = [
+    "1.3.2",
+    "1.4.0",
+    "1.4.1",
+    "1.4.2",
+    "1.4.3",
+    "1.4.5",
+    "1.4.6",
+    "1.4.7",
+    "1.5",
+    "1.5.1",
+    "1.5.2",
+  ];
+  const json = (await data.json()) as { [key: string]: Array<string> };
+
+  const results: Record<string, ForgeVersion[]> = {};
+
+  Object.entries(json).forEach((o) => {
+    const mc = o[0];
+    const forge = o[1];
+
+    let type: string;
+    if (ancient.includes(mc)) type = "ancient";
+    else if (old.includes(mc)) type = "old";
+    else type = "modern";
+    results[mc] = forge.map((version) => {
+      async function install() {
+        if (type == "modern") {
+          const path = getMeta().scratch.getDir("forge").mkdir();
+          const url = `https://maven.minecraftforge.net/net/minecraftforge/forge/${version}/forge-${version}-installer.jar`;
+          const installer = await path.getFile(version + ".jar").download(url);
+          return await installForge(installer);
+        }
+        const id = "forge-" + version;
+        const manifest: VersionManifest = {
+          id: "forge-" + version,
+          type: "forge",
+          base: mc,
+        };
+        getMeta()
+          .manifests.getFile(id + ".json")
+          .write(manifest);
+        const jarname = ancient.includes(mc)
+          ? `forge-${version}-client.zip`
+          : `forge-${version}-universal.zip`;
+        const shaRequest = await fetch(
+          `https://maven.minecraftforge.net/net/minecraftforge/forge/${version}/${jarname}.sha1`,
+        );
+        let sha1;
+        if (shaRequest.status == 200) sha1 = await shaRequest.text();
+        const versionJson: Partial<VersionJson> = {
+          id: id,
+          inheritsFrom: mc,
+          jarmods: [
+            {
+              sha1,
+              url: `https://maven.minecraftforge.net/net/minecraftforge/forge/${version}/${jarname}`,
+              id: `forge-${version}`,
+              path: `forge-${version}.jar`,
+            },
+          ],
+          type: "forge",
+        };
+        getVersions()
+          .getDir(mc)
+          .mkdir()
+          .getFile(id + ".json")
+          .write(versionJson);
+        return manifest;
+      }
+      return {
+        type,
+        forge: version,
+        game: mc,
+        install,
+      } as ForgeVersion;
+    });
+  });
+  console.log(
+    "[GMLL]: Please support the forge project by donating at https://www.patreon.com/LexManos",
+  );
+  return results;
 }

@@ -105,7 +105,9 @@ export default class Version {
             "debug.info",
             "Detected synced is false. Aborting sync attempted",
           );
-          const base = new Version(this.json.inheritsFrom);
+          const base = new Version(
+            this.json.inheritsFrom || this.manifest.base,
+          );
           this.json = combine(await base.getJSON(), this.json);
           this.name = this.json.id;
           this.folder = folder_old;
