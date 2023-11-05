@@ -1,6 +1,5 @@
 {
   // Change this to match your project
-
   "exclude": ["node_modules", "dist"],
   "include": ["src/**/*"],
   "compilerOptions": {
