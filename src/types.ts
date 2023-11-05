@@ -324,7 +324,7 @@ export interface VersionJson {
     /**
      * Used to locate the forge installer
      */
-    forge?: { installer: string[] };
+    forge?: { installer: string[] } | ForgeVersion;
   };
 }
 
@@ -403,6 +403,7 @@ export interface InstancePackConfig {
   outputDir: Dir | string;
   /**The name of your modpack */
   modpackName?: string;
+  forgeVersion?: ForgeVersion;
   /**The path to your forge installer jar */
   forgeInstallerPath?: File | string;
   /**Should the misc.zip archive be trimmed by avoiding normally unnecessary files */
@@ -773,4 +774,9 @@ export interface curseforgeModloader {
     mcGameVersionTypeStatus: number;
     installProfileJson: string;
   };
+}
+export interface ForgeVersion {
+  type: "modern" | "old" | "ancient";
+  forge: string;
+  game: string;
 }

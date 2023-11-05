@@ -1,5 +1,8 @@
 import { emit, getAssets } from "../../config.js";
-import { installForge as _installForge } from "../../handler.js";
+import {
+  installForge as _installForge,
+  getForgeVersions as _getForgeVersions,
+} from "../../handler.js";
 import { Dir, File, packAsync } from "gfsl";
 import Instance from "../../objects/instance.js";
 import Version from "../../objects/version.js";
@@ -10,6 +13,7 @@ import type {
   VersionManifest,
   InstancePackConfig,
   InstanceMetaPaths,
+  ForgeVersion,
 } from "../../../types";
 
 import { assetTag, fsSanitizer } from "../util.js";
@@ -29,12 +33,14 @@ export async function getJarModPriority(this: Instance) {
 
  */
 export async function pack(this: Instance, config: InstancePackConfig) {
+  let modpackVersion = 1;
   const saveDir =
     typeof config.outputDir == "string"
       ? new Dir(config.outputDir)
       : config.outputDir;
   const baseDownloadLink = config.baseDownloadLink;
   const trimMisc = config.trimMisc;
+
   let _forge = config.forgeInstallerPath;
   if (_forge) {
     _forge =
@@ -188,7 +194,12 @@ export async function pack(this: Instance, config: InstancePackConfig) {
   };
   const versionFile = saveDir.getDir(".meta").mkdir().getFile("version.json");
   let finalVersion = this.version;
-  if (forge) {
+  if (config.forgeVersion) {
+    if (modpackVersion == 1) modpackVersion = 2;
+    const forge = _installForge(config.forgeVersion);
+    finalVersion = forge.id;
+    ver.instance.forge = config.forgeVersion;
+  } else if (forge) {
     const path = saveDir.getDir(".forgiac").rm().mkdir();
     const _manifest = await _installForge(forge, [
       "--.minecraft",
@@ -269,11 +280,24 @@ export function wrap(
   });
 }
 /**Install forge in this instance. */
-export async function installForge(this: Instance, forge?: File | string) {
+export async function installForge(
+  this: Instance,
+  forge: File | string | ForgeVersion,
+) {
   const manifest = await _installForge(forge);
   this.version = manifest.id;
   return this.version;
 }
+
+export async function getForgeVersions(this: Instance) {
+  const data = (await _getForgeVersions())[this.version] as any[];
+  return data.map((e) => {
+    const forge = e as any;
+    forge.install = () => this.installForge(forge);
+    return forge as { install: () => Promise<String> & ForgeVersion };
+  });
+}
+
 /**
  * Used to modify minecraft's jar file (Low level)
 

@@ -85,11 +85,15 @@ export async function install(this: instance) {
       if (instance.meta) this.meta = combine(this.meta, instance.meta);
       if (instance.assets) this.assets = combine(instance.assets, this.assets);
       if (instance.forge) {
-        const fFile = this.getDir().getFile(...instance.forge.installer);
-        if (!fFile.exists()) {
-          throw "Cannot find forge installer";
+        if ("installer" in instance.forge) {
+          const fFile = this.getDir().getFile(...instance.forge.installer);
+          if (!fFile.exists()) {
+            throw "Cannot find forge installer";
+          }
+          await this.installForge(fFile);
+        } else {
+          await this.installForge(instance.forge);
         }
-        await this.installForge(fFile);
       }
     }
     chk.write(Date.now().toString());

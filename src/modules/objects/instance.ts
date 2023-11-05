@@ -7,20 +7,13 @@ import {
   assetTag,
 } from "../internal/util.js";
 import { join } from "path";
-import type {
-  AssetIndex,
-  DownloadableFile,
-  LaunchArguments,
-  LaunchOptions,
-  curseforgeModpack,
-} from "../../types";
+import type { AssetIndex, LaunchArguments, LaunchOptions } from "../../types";
 import { Dir, File } from "gfsl";
 import Version from "./version.js";
 import * as metaHandler from "../internal/handlers/meta.js";
 import * as modsHandler from "../internal/handlers/mods.js";
 import * as launchHandler from "../internal/handlers/launch.js";
-import { importLink } from "../handler.js";
-import { download } from "../downloader.js";
+import { importModpack } from "modules/internal/handlers/modpacks.js";
 /**
  * An instance is what the name entails. An instance of the game Minecraft containing Minecraft specific data.
  * This information on where the game is stored and the like. The mods installed and what not.
@@ -115,6 +108,7 @@ export default class Instance {
   public getJarModPriority = modsHandler.getJarModPriority;
   /**Install forge in this instance. */
   public installForge = modsHandler.installForge;
+  public getForgeVersions = modsHandler.getForgeVersions;
   /**
    * Used to modify minecraft's jar file (Low level)
    * @param metaPaths
@@ -279,7 +273,7 @@ export default class Instance {
   }
 
   //https://www.curseforge.com/api/v1/mods/829758/files/4661651/download
-
+  public import = importModpack;
   static async import(
     name: string,
     urlorFile: string | File,
@@ -287,176 +281,5 @@ export default class Instance {
     forge?: string | File,
   ) {
     return new this({ name }).import(urlorFile, type, forge);
-  }
-
-  async import(
-    urlorFile: string | File,
-    type: "curseforge" | "gmll",
-    forge?: string | File,
-  ) {
-    switch (type) {
-      case "curseforge":
-        emit(
-          "debug.warn",
-          "GMLL's support for curse modpacks is in an Alpha state!",
-        );
-        emit("debug.warn", "Use GMLLs native modpack api instead if you can");
-        emit("debug.warn", "Only fabric modpacks work properly atm.");
-        const tmp = getMeta().scratch.getDir("curse", this.name).mkdir();
-        const metaInf = tmp.getFile("manifest.json");
-        const installedFile = this.getDir().getFile("installed.txt");
-        const metaFile = getMeta().scratch.getFile("curse_meta.json");
-        const metaModData: {
-          [key: string]: {
-            id: string;
-            sha1?: string | string[];
-            size?: number;
-          };
-        } = metaFile.exists() ? metaFile.toJSON() : {};
-
-        if (installedFile.exists() && metaInf.exists()) {
-          const inf = metaInf.toJSON<curseforgeModpack>();
-          this.version = "curse." + inf.name + "-" + inf.version;
-          emit(
-            "debug.info",
-            "Installed files found, assuming file was installed!",
-          );
-          return this;
-        }
-        // await this.install();
-        let file: File;
-        if (typeof urlorFile == "string") {
-          file = this.getDir().getFile("modpack.zip");
-          await file.download(urlorFile);
-        } else {
-          file = urlorFile;
-        }
-        emit("debug.info", "Extracting achive");
-
-        await file.unzip(tmp);
-        const inf = metaInf.toJSON<curseforgeModpack>();
-
-        emit("debug.info", "Applying overides");
-        function copyFile(fToCopy: File | Dir, base: Dir) {
-          if (fToCopy instanceof File) {
-            const file = base.getFile(fToCopy.getName()).rm();
-            fToCopy.moveTo(file);
-          } else {
-            fToCopy
-              .ls()
-              .forEach((e) => copyFile(e, base.getDir(fToCopy.getName())));
-          }
-        }
-        tmp
-          .getDir(inf.overrides)
-          .ls()
-          .forEach((e) => copyFile(e, this.getDir()));
-
-        let mcVersion = inf.minecraft.version;
-
-        if (forge) {
-          mcVersion = await this.installForge(forge);
-        } else {
-          if (inf.minecraft.modLoaders.length > 1)
-            emit(
-              "debug.warn",
-              "GMLL may not support multi modloader setups are currently not recommended!",
-            );
-
-          for (const e of inf.minecraft.modLoaders) {
-            const data = e.id.split("-");
-            const type = data[0];
-            const version = data[1];
-
-            if (["fabric", "quilt"].includes(type)) {
-              mcVersion = `${type}-loader-${version}-${inf.minecraft.version}`;
-            } else {
-              emit(
-                "debug.warn",
-                "Unsupported modloader type " +
-                  e.id +
-                  "\nIf this is forge then supply the forge jar yourself.\nGMLL is not natively compatible with the method Curse uses to install forge.",
-              );
-            }
-          }
-        }
-        const mods = this.getDir().getDir("mods").mkdir();
-        const fileNames = [];
-
-        const files: DownloadableFile[] = [];
-
-        inf.files.forEach((f) => {
-          const name = `${f.projectID}-${f.fileID}`;
-          fileNames.push(name);
-
-          const meta = metaModData[name];
-          let fname = name;
-          if (meta && meta.id && meta.sha1 && meta.size)
-            fname =
-              meta.id + "-" + meta.sha1.slice(0, 5) + meta.size.toString(36);
-
-          files.push({
-            name: fname + ".jar",
-            path: [this.getDir().sysPath(), "mods"],
-            url:
-              f.downloadUrl ||
-              `https://www.curseforge.com/api/v1/mods/${f.projectID}/files/${f.fileID}/download`,
-            key: meta?.id || name,
-            chk: meta || {},
-          });
-        });
-
-        await download(files);
-
-        this.version = mcVersion;
-        const err = (await this.getMetaPaths()).mods
-          .getDir("unparsable")
-          .mkdir();
-
-        (await this.getMods()).forEach((e) => {
-          const fileName = e.path.getName();
-
-          if (fileNames.includes(fileName)) {
-            if (e.error) {
-              if (e.loader == "unknown")
-                e.path.moveTo(err.getFile(e.path.getName()));
-              return;
-            }
-            const sha1 = e.path.getHash();
-            const size = e.path.getSize();
-
-            metaModData[fileName] = {
-              sha1,
-              size,
-              id: e.id + "-" + e.version,
-            };
-            const nfile = mods.getFile(
-              fsSanitizer(
-                e.id +
-                  "-" +
-                  e.version +
-                  "-" +
-                  sha1.slice(0, 5) +
-                  size.toString(36),
-              ) + ".jar",
-            );
-            e.path.moveTo(nfile);
-          }
-        });
-        metaFile.write(metaModData);
-
-        break;
-      case "gmll":
-        if (forge)
-          emit("debug.warn", "The forge property goes unused in this mode!");
-        if (typeof urlorFile == "string")
-          this.version = (await importLink(urlorFile)).id;
-        else emit("debug.warn", "Only URLS are supported");
-        break;
-      default:
-        emit("debug.error", "Unsupported modpack type!");
-    }
-
-    return this;
   }
 }

@@ -11,23 +11,17 @@ import {
   onUnsupportedArm,
 } from "./config.js";
 import { getForgiac, runtime } from "./downloader.js";
-import { fsSanitizer, getOS } from "./internal/util.js";
+import { getOS } from "./internal/util.js";
 import { spawn } from "child_process";
 import { File } from "gfsl";
 import fetch from "node-fetch";
-import Instance from "./objects/instance.js";
 import type {
-  ModPackApiInfo,
   VersionManifest,
   MCRuntimeVal,
   VersionJson,
+  ForgeVersion,
 } from "../types";
-import Version from "./objects/version.js";
-/**
- * Compiles all manifest objects GMLL knows about into a giant array. This will include almost all fabric versions and any installed version of forge.
- * GMLL can still launch a version if it is not within this folder, although it is not recommended
- * @returns a list of Manifest files GMLL knows definitely exist.
- */
+
 export function getManifests(): VersionManifest[] {
   isInitialized();
   const versionManifest = [];
@@ -131,13 +125,61 @@ export function getLatest(): { release: string; snapshot: string } {
 }
 
 export async function installForge(
-  forgeInstallerJar?: string | File,
+  forgeInstaller: string | File | ForgeVersion,
   forgiacArgs: string[] = ["--virtual", getVersions().sysPath()],
 ) {
+  if (forgeInstaller instanceof Object && !(forgeInstaller instanceof File)) {
+    const { type, forge, game } = forgeInstaller;
+    if (type == "modern") {
+      const path = getMeta().scratch.getDir("forge").mkdir();
+      const url = `https://maven.minecraftforge.net/net/minecraftforge/forge/${forge}/forge-${forge}-installer.jar`;
+      const installer = await path.getFile(forge + ".jar").download(url);
+      return await installForge(installer, forgiacArgs);
+    }
+    const id = "forge-" + forge;
+    const manifest: VersionManifest = {
+      id: "forge-" + forge,
+      type: "forge",
+      base: game,
+    };
+    getMeta()
+      .manifests.getFile(id + ".json")
+      .write(manifest);
+    const jarname =
+      type == "ancient"
+        ? `forge-${forge}-client.zip`
+        : `forge-${forge}-universal.zip`;
+    const shaRequest = await fetch(
+      `https://maven.minecraftforge.net/net/minecraftforge/forge/${forge}/${jarname}.sha1`,
+    );
+    let sha1;
+    if (shaRequest.status == 200) sha1 = await shaRequest.text();
+    const versionJson: Partial<VersionJson> = {
+      id: id,
+      inheritsFrom: game,
+      jarmods: [
+        {
+          sha1,
+          url: `https://maven.minecraftforge.net/net/minecraftforge/forge/${forge}/${jarname}`,
+          id: `forge-${forge}`,
+          path: `forge-${forge}.jar`,
+        },
+      ],
+      type: "forge",
+    };
+    getVersions()
+      .getDir(game)
+      .mkdir()
+      .getFile(id + ".json")
+      .write(versionJson);
+
+    return manifest;
+  }
+
   const path = getInstances().getDir(".forgiac");
   const manifest = path.getDir(".manifest_" + Date.now()).mkdir();
-  if (typeof forgeInstallerJar == "string")
-    forgeInstallerJar = new File(forgeInstallerJar);
+  if (typeof forgeInstaller == "string")
+    forgeInstaller = new File(forgeInstaller);
   const fRun: MCRuntimeVal = onUnsupportedArm
     ? "java-runtime-arm"
     : "java-runtime-gamma";
@@ -155,8 +197,8 @@ export async function installForge(
     "--mk_manifest",
     manifest.sysPath(),
   ];
-  if (forgeInstallerJar) {
-    args.push("--installer", forgeInstallerJar.sysPath());
+  if (forgeInstaller) {
+    args.push("--installer", forgeInstaller.sysPath());
   }
   path.mkdir();
   emit("jvm.start", "Forgiac", path.sysPath());
@@ -195,33 +237,6 @@ export async function installForge(
 }
 
 /**
- * Imports a modpack off the internet compatible with GMLL via a link.
- * See the {@link Instance.wrap()  wrapper function} to generate the files to upload to your web server to make this work
- * @param url the aforementioned link.
- */
-export async function importLink(url: string): Promise<VersionManifest>;
-export async function importLink(url: string, name: string): Promise<Instance>;
-export async function importLink(
-  url: string,
-  name?: string,
-): Promise<Instance | VersionManifest> {
-  const r = await fetch(url + "/.meta/api.json");
-  if (!r.ok) throw "Could not find the api doc";
-  const v = (await r.json()) as ModPackApiInfo;
-  if (v.version != 1) {
-    throw "Incompatible version ID detected";
-  }
-  const manfile = fsSanitizer(v.name) + ".json";
-  const manifest = (
-    await getMeta()
-      .manifests.getFile(manfile)
-      .download(url + "/.meta/manifest.json", { sha1: v.sha })
-  ).toJSON<VersionManifest>();
-  if (!name) return manifest;
-  return new Instance({ version: manifest.id, name: name }).save();
-}
-
-/**
  * Gets the path to an installed version of Java. GMLL manages these versions and they're not provided by the system.
  * @param java the name of the Java runtime. Based on the names Mojang gave them.
  * @returns The location of the have executable.
@@ -233,12 +248,7 @@ export function getJavaPath(java: MCRuntimeVal = "jre-legacy") {
     else getRuntimes().getFile(java, "bin", "java.exe");
   } else return getRuntimes().getFile(java, "bin", "java");
 }
-type ForgeVersion = {
-  type: "modern" | "old" | "ancient";
-  forge: string;
-  game: string;
-  install(): Promise<VersionManifest>;
-};
+
 /**
  * The auto forge installer.
  * To stop forge from breaking this,
@@ -253,6 +263,13 @@ export async function getForgeVersions() {
   const data = await fetch(
     "https://files.minecraftforge.net/net/minecraftforge/forge/maven-metadata.json",
   );
+
+  const json = (await data.json()) as { [key: string]: Array<string> };
+
+  const results: Record<
+    string,
+    (ForgeVersion & { install: () => Promise<VersionManifest> })[]
+  > = {};
   const ancient = ["1.1", "1.2.3", "1.2.4", "1.2.5"];
   const old = [
     "1.3.2",
@@ -267,69 +284,21 @@ export async function getForgeVersions() {
     "1.5.1",
     "1.5.2",
   ];
-  const json = (await data.json()) as { [key: string]: Array<string> };
-
-  const results: Record<string, ForgeVersion[]> = {};
-
   Object.entries(json).forEach((o) => {
     const mc = o[0];
     const forge = o[1];
 
-    let type: string;
+    let type: "ancient" | "old" | "modern";
     if (ancient.includes(mc)) type = "ancient";
     else if (old.includes(mc)) type = "old";
     else type = "modern";
     results[mc] = forge.map((version) => {
-      async function install() {
-        if (type == "modern") {
-          const path = getMeta().scratch.getDir("forge").mkdir();
-          const url = `https://maven.minecraftforge.net/net/minecraftforge/forge/${version}/forge-${version}-installer.jar`;
-          const installer = await path.getFile(version + ".jar").download(url);
-          return await installForge(installer);
-        }
-        const id = "forge-" + version;
-        const manifest: VersionManifest = {
-          id: "forge-" + version,
-          type: "forge",
-          base: mc,
-        };
-        getMeta()
-          .manifests.getFile(id + ".json")
-          .write(manifest);
-        const jarname = ancient.includes(mc)
-          ? `forge-${version}-client.zip`
-          : `forge-${version}-universal.zip`;
-        const shaRequest = await fetch(
-          `https://maven.minecraftforge.net/net/minecraftforge/forge/${version}/${jarname}.sha1`,
-        );
-        let sha1;
-        if (shaRequest.status == 200) sha1 = await shaRequest.text();
-        const versionJson: Partial<VersionJson> = {
-          id: id,
-          inheritsFrom: mc,
-          jarmods: [
-            {
-              sha1,
-              url: `https://maven.minecraftforge.net/net/minecraftforge/forge/${version}/${jarname}`,
-              id: `forge-${version}`,
-              path: `forge-${version}.jar`,
-            },
-          ],
-          type: "forge",
-        };
-        getVersions()
-          .getDir(mc)
-          .mkdir()
-          .getFile(id + ".json")
-          .write(versionJson);
-        return manifest;
-      }
       return {
         type,
         forge: version,
         game: mc,
-        install,
-      } as ForgeVersion;
+        install: () => installForge({ type, forge: version, game: mc }),
+      };
     });
   });
   console.log(
