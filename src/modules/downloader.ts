@@ -512,12 +512,12 @@ export async function getRuntimeIndexes(manifest: RuntimeManifest) {
 
 export async function getForgiac() {
   const forgiacURL =
-    getRepositories().maven + "za/net/hanro50/forgiac/basic/1.9/basic-1.9.jar";
+    getRepositories().maven + "za/net/hanro50/forgiac/basic/1.9.1/basic-1.9.1.jar";
   const forgiacSHA = forgiacURL + ".sha1";
   const libsFolder = getlibraries()
-    .getDir("za", "net", "hanro50", "forgiac", "basic", "1.9")
+    .getDir("za", "net", "hanro50", "forgiac", "basic", "1.9.1")
     .mkdir()
-    .getFile("basic-1.9.jar");
+    .getFile("basic-1.9.1.jar");
   const rURL2 = await fetch(forgiacSHA);
   if (rURL2.status == 200) {
     await libsFolder.download(forgiacURL, { sha1: await rURL2.text() });
@@ -552,7 +552,7 @@ export async function manifests() {
   const armPatch = repositories.armFix + "/arm-patch.json";
 
   const agentaURL =
-    repositories.maven + "za/net/hanro50/agenta/1.6.2/agenta-1.6.2.jar";
+    repositories.maven + "za/net/hanro50/agenta/1.8.5/agenta-1.8.5.jar";
 
   const update = getUpdateConfig();
   const meta = getMeta();

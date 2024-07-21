@@ -13,7 +13,7 @@ import Version from "./version.js";
 import * as metaHandler from "../internal/handlers/meta.js";
 import * as modsHandler from "../internal/handlers/mods.js";
 import * as launchHandler from "../internal/handlers/launch.js";
-import { importModpack } from "modules/internal/handlers/modpacks.js";
+import { importModpack } from "../internal/handlers/modpacks.js";
 /**
  * An instance is what the name entails. An instance of the game Minecraft containing Minecraft specific data.
  * This information on where the game is stored and the like. The mods installed and what not.

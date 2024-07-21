@@ -21,6 +21,7 @@ import type {
   VersionJson,
   ForgeVersion,
 } from "../types";
+import Instance from "./objects/instance.js";
 
 export function getManifests(): VersionManifest[] {
   isInitialized();
@@ -131,10 +132,7 @@ export async function installForge(
   if (forgeInstaller instanceof Object && !(forgeInstaller instanceof File)) {
     const { type, forge, game } = forgeInstaller;
     if (type == "modern") {
-      const path = getMeta().scratch.getDir("forge").mkdir();
-      const url = `https://maven.minecraftforge.net/net/minecraftforge/forge/${forge}/forge-${forge}-installer.jar`;
-      const installer = await path.getFile(forge + ".jar").download(url);
-      return await installForge(installer, forgiacArgs);
+      return await installModernForge(forge);
     }
     const id = "forge-" + forge;
     const manifest: VersionManifest = {
@@ -182,7 +180,7 @@ export async function installForge(
     forgeInstaller = new File(forgeInstaller);
   const fRun: MCRuntimeVal = onUnsupportedArm
     ? "java-runtime-arm"
-    : "java-runtime-gamma";
+    : "java-runtime-delta";
   await runtime(fRun);
 
   const javaPath = getJavaPath(fRun);
@@ -305,4 +303,52 @@ export async function getForgeVersions() {
     "[GMLL]: Please support the forge project by donating at https://www.patreon.com/LexManos",
   );
   return results;
+}
+export async function installModernForge(
+  version: string,
+) {
+  const path = getMeta().scratch.getDir("forge").mkdir();
+  const url = `https://maven.minecraftforge.net/net/minecraftforge/forge/${version}/forge-${version}-installer.jar`;
+  const installer = await path.getFile(version + ".jar").download(url);
+  return await installForge(installer);
+}
+
+
+export async function installNeoForge(
+  version: string,
+) {
+  const path = getMeta().scratch.getDir("neo-forge").mkdir();
+  const url = `https://maven.neoforged.net/releases/net/neoforged/neoforge/${version}/neoforge-${version}-installer.jar`;
+  const installer = await path.getFile(version + ".jar").download(url);
+  return await installForge(installer);
+}
+
+/**The auto neoforge installer.*/
+export async function getNeoForgeVersions(version?: string) {
+  let data: fetch.Response
+  if (version?.startsWith("1.")) {
+    version = version.substring(2);
+    data = await fetch(
+      "https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge?filter=" + version,
+    );
+  }
+  else {
+    data = await fetch(
+      "https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge",
+    );
+  }
+
+  const json = (await data.json()) as { [key: string]: Array<string> };
+
+  const results: Record<
+    string,
+    (ForgeVersion & { install: () => Promise<VersionManifest> })[]
+  > = {};
+
+  return json.versions.map((neoforge) => {
+    return {
+      version: neoforge,
+      install: () => installNeoForge(neoforge),
+    };
+  });
 }

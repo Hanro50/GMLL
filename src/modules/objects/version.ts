@@ -213,12 +213,12 @@ export default class Version {
         return;
       }
 
-      const p = lib.natives
+      const p = (lib.natives
         ? join(
-            "libraries",
-            ...classPathResolver(lib.name, lib.natives[getOS()]).split("/"),
-          )
-        : join("libraries", ...classPathResolver(lib.name).split("/"));
+          "libraries",
+          ...classPathResolver(lib.name, lib.natives[getOS()]).split("/"),
+        )
+        : join("libraries", ...classPathResolver(lib.name).split("/"))).replaceAll("@jar", "");
       const p2 = getlibraries().getDir("..").getFile(p);
       if (!p2.exists()) {
         emit(

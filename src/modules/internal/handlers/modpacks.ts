@@ -1,4 +1,4 @@
-import { Instance } from "index";
+import { Instance } from "../../../index";
 import { emit, getMeta } from "../../config.js";
 import {
   VersionManifest,

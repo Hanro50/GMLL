@@ -16,7 +16,7 @@ export type MCVersionType =
   | "old_beta"
   | "release"
   | "snapshot"
-  | "custom"
+  | "custom" | "neoforge"
   | "unknown"
   | Loader;
 /**
@@ -43,7 +43,8 @@ export type MCRuntimeVal =
   | "java-runtime-arm"
   | "java-runtime-gamma"
   | "java-runtime-alpha"
-  | "java-runtime-beta"
+  | "java-runtime-beta" 
+  | "java-runtime-delta"
   | "jre-legacy"
   | "minecraft-java-exe";
 /**
@@ -144,21 +145,21 @@ export type RuntimeManifestEntry = {
 };
 export type RuntimeManifest = {
   [key in
-    | "gamecore"
-    | "linux"
-    | "linux-i386"
-    | "mac-os"
-    | "windows-x64"
-    | "windows-x86"
-    | "linux-arm64"
-    | "linux-arm32"
-    | "windows-arm64"]: {
+  | "gamecore"
+  | "linux"
+  | "linux-i386"
+  | "mac-os"
+  | "windows-x64"
+  | "windows-x86"
+  | "linux-arm64"
+  | "linux-arm32"
+  | "windows-arm64"]: {
     [key in
-      | "java-runtime-beta"
-      | "java-runtime-alpha"
-      | "jre-legacy"
-      | "minecraft-java-exe"
-      | "java-runtime-arm"]: Array<RuntimeManifestEntry>;
+    | "java-runtime-beta"
+    | "java-runtime-alpha"
+    | "jre-legacy"
+    | "minecraft-java-exe"
+    | "java-runtime-arm"]: Array<RuntimeManifestEntry>;
   };
 };
 
@@ -502,10 +503,10 @@ export interface PlayerDat {
   DataVersion?: number;
   DeathTime: number;
   Dimension:
-    | number
-    | "minecraft:overworld"
-    | "minecraft:the_nether"
-    | "minecraft:the_end";
+  | number
+  | "minecraft:overworld"
+  | "minecraft:the_nether"
+  | "minecraft:the_end";
   EnderItems: [];
   FallDistance: number;
   FallFlying?: number;
@@ -601,33 +602,33 @@ export interface LevelDat {
     }>;
     Player: PlayerDat;
     Version?:
-      | number
-      | { Snapshot: number; Series: string; Id: number; Name: string };
+    | number
+    | { Snapshot: number; Series: string; Id: number; Name: string };
     version?: number;
     WorldGenSettings?: Partial<{
       dimensions: {
         [Key in
-          | "minecraft:overworld"
-          | "minecraft:the_nether"
-          | "minecraft:the_end"]: {
+        | "minecraft:overworld"
+        | "minecraft:the_nether"
+        | "minecraft:the_end"]: {
           generator: {
             settings:
-              | "minecraft:overworld"
-              | "minecraft:nether"
-              | "minecraft:end";
+            | "minecraft:overworld"
+            | "minecraft:nether"
+            | "minecraft:end";
             biome_source: {
               preset?: string;
               type:
-                | "minecraft:multi_noise"
-                | "minecraft:noise"
-                | "minecraft:fixed";
+              | "minecraft:multi_noise"
+              | "minecraft:noise"
+              | "minecraft:fixed";
             };
             type: "minecraft:noise";
           };
           type:
-            | "minecraft:overworld"
-            | "minecraft:the_nether"
-            | "minecraft:the_end";
+          | "minecraft:overworld"
+          | "minecraft:the_nether"
+          | "minecraft:the_end";
         };
       };
       bonus_chest: number;
@@ -694,10 +695,10 @@ export interface ModInfo extends MetaObj {
   version: string;
   loader: Loader;
   depends?:
-    | {
-        [key: string]: string;
-      }
-    | Array<ForgeDep | string>;
+  | {
+    [key: string]: string;
+  }
+  | Array<ForgeDep | string>;
   bugReportURL?: string;
   description?: string;
   mcversion?: string;

@@ -7,9 +7,9 @@ import { Auth } from "msmc";
 await init();
 
 
-const forge = await handler.getForgeVersions();
+const forge = await handler.getNeoForgeVersions("1.20.6")
 
-const v = await forge["1.20.2"].find((item) => item.forge === "1.20.2-48.0.34").install();
+const v = await forge[0].install();
 
 
 var int = new Instance({ ram: 8, version: v.id });
