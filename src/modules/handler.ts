@@ -21,7 +21,6 @@ import type {
   VersionJson,
   ForgeVersion,
 } from "../types";
-import Instance from "./objects/instance.js";
 
 export function getManifests(): VersionManifest[] {
   isInitialized();
@@ -240,11 +239,21 @@ export async function installForge(
  * @returns The location of the have executable.
  */
 export function getJavaPath(java: MCRuntimeVal = "jre-legacy") {
+  if (getOS() == "osx") {
+    return getRuntimes().getFile(
+      java,
+      "jre.bundle",
+      "Contents",
+      "Home",
+      "bin",
+      "java",
+    );
+  }
   if (getOS() == "windows") {
     const f = getRuntimes().getFile(java, "bin", "javaw.exe");
-    if (f.exists()) return f;
-    else getRuntimes().getFile(java, "bin", "java.exe");
-  } else return getRuntimes().getFile(java, "bin", "java");
+    return f.exists() ? f : getRuntimes().getFile(java, "bin", "java.exe");
+  }
+  return getRuntimes().getFile(java, "bin", "java");
 }
 
 /**
@@ -304,19 +313,14 @@ export async function getForgeVersions() {
   );
   return results;
 }
-export async function installModernForge(
-  version: string,
-) {
+export async function installModernForge(version: string) {
   const path = getMeta().scratch.getDir("forge").mkdir();
   const url = `https://maven.minecraftforge.net/net/minecraftforge/forge/${version}/forge-${version}-installer.jar`;
   const installer = await path.getFile(version + ".jar").download(url);
   return await installForge(installer);
 }
 
-
-export async function installNeoForge(
-  version: string,
-) {
+export async function installNeoForge(version: string) {
   const path = getMeta().scratch.getDir("neo-forge").mkdir();
   const url = `https://maven.neoforged.net/releases/net/neoforged/neoforge/${version}/neoforge-${version}-installer.jar`;
   const installer = await path.getFile(version + ".jar").download(url);
@@ -325,25 +329,20 @@ export async function installNeoForge(
 
 /**The auto neoforge installer.*/
 export async function getNeoForgeVersions(version?: string) {
-  let data: fetch.Response
+  let data: fetch.Response;
   if (version?.startsWith("1.")) {
     version = version.substring(2);
     data = await fetch(
-      "https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge?filter=" + version,
+      "https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge?filter=" +
+        version,
     );
-  }
-  else {
+  } else {
     data = await fetch(
       "https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge",
     );
   }
 
   const json = (await data.json()) as { [key: string]: Array<string> };
-
-  const results: Record<
-    string,
-    (ForgeVersion & { install: () => Promise<VersionManifest> })[]
-  > = {};
 
   return json.versions.map((neoforge) => {
     return {

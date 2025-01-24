@@ -6,11 +6,21 @@ import { type } from "os";
 import type Instance from "./objects/instance.js";
 import type { WorkerOptions, Worker } from "worker_threads";
 import { Dir, File } from "gfsl";
-
 let workerSpawner = async (options: WorkerOptions) => {
-  //@ts-ignore
-  const makeWorker = (await import("./internal/worker.mjs")).makeWorker;
-  return makeWorker(options);
+  try {
+    return (await import("./internal/worker.mjs")).makeWorker(options);
+  } catch (e) {
+    emit(
+      "debug.warn",
+      "Falling back to commonjs worker. Run 'forceCommonJsWorker()' beforehand to silence this warning",
+    );
+    workerSpawner = cjsWokerSpawner;
+    return cjsWokerSpawner(options);
+  }
+};
+const cjsWokerSpawner = async (options: WorkerOptions) => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  return require("./internal/worker.cjs").makeWorker(options);
 };
 /**Internal function. Used to set the spawner for the workers the downloader uses */
 export function setDownloadWorkerSpawner(
@@ -540,4 +550,8 @@ export function setLauncherVersion(_version = "0.0.0") {
  */
 export function getLauncherVersion() {
   return version || "0.0.0";
+}
+
+export function forceCommonJsWorker() {
+  workerSpawner = cjsWokerSpawner;
 }
