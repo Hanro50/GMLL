@@ -56,10 +56,7 @@ export default class Instance {
   ];
   /**Do not mess with unless you know what you're doing. Some older versions may not launch if information from this file is missing. */
   public static defJVM: LaunchArguments = [
-    {
-      rules: [{ action: "allow", os: { name: "osx" } }],
-      value: ["-XstartOnFirstThread"],
-    },
+ 
     {
       rules: [{ action: "allow", os: { name: "windows" } }],
       value:
