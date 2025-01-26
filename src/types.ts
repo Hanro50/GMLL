@@ -154,7 +154,6 @@ export type RuntimeManifest = {
     | "mac-os-arm64"
     | "windows-x64"
     | "windows-x86"
-    | "windows-arm64"
     | "windows-arm64"]: {
     [key in MCRuntimeVal]: Array<RuntimeManifestEntry>;
   };
