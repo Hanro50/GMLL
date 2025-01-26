@@ -8,7 +8,6 @@ import {
   getRuntimes,
   getVersions,
   isInitialized,
-  onUnsupportedArm,
 } from "./config.js";
 import { getForgiac, runtime } from "./downloader.js";
 import { getOS } from "./internal/util.js";
@@ -65,9 +64,14 @@ function findManifest(version: string, manifests: VersionManifest[]) {
       while (f.exists()) f = root.getFile(`${version}_${i++}.json`);
       try {
         const vj = versionJson.toJSON<Partial<VersionJson>>();
+        let base = vj.inheritsFrom;
+        if (base) {
+          const baseManifest = findManifest(base, manifests);
+          base = baseManifest.base || baseManifest.id;
+        }
         const mf: VersionManifest = {
           id: vj.id || versionJson.name.split(".")[0],
-          base: vj.inheritsFrom,
+          base: base,
           releaseTime: vj.releaseTime,
           time: vj.time,
           type: vj.type || "generated",
@@ -177,9 +181,7 @@ export async function installForge(
   const manifest = path.getDir(".manifest_" + Date.now()).mkdir();
   if (typeof forgeInstaller == "string")
     forgeInstaller = new File(forgeInstaller);
-  const fRun: MCRuntimeVal = onUnsupportedArm
-    ? "java-runtime-arm"
-    : "java-runtime-delta";
+  const fRun: MCRuntimeVal = "java-runtime-delta";
   await runtime(fRun);
 
   const javaPath = getJavaPath(fRun);

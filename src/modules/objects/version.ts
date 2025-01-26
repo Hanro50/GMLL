@@ -1,9 +1,7 @@
 import { copyFileSync } from "fs";
 import {
   isInitialized,
-  onUnsupportedArm,
   getVersions,
-  getMeta,
   getlibraries,
   emit,
 } from "../config.js";
@@ -16,7 +14,6 @@ import {
   classPathResolver,
   getOS,
 } from "../internal/util.js";
-import { platform } from "os";
 import { join } from "path";
 import {
   VersionJson,
@@ -58,17 +55,6 @@ export default class Version {
     this.pre1d9 =
       Date.parse(this.manifest.releaseTime) <
       Date.parse("2022-05-12T15:36:11+00:00");
-
-    if (onUnsupportedArm && this.pre1d9 && platform() != "win32") {
-      console.trace(manifest);
-      emit(
-        "debug.warn",
-        "Only 1.19 and up is supported on arm based Linux devices atm. As there's no x86 fallback!",
-      );
-    }
-    if (onUnsupportedArm && this.pre1d9) {
-      emit("debug.warn", "Arm support is experimental!");
-    }
     this.json;
     this.name = this.manifest.base || this.manifest.id;
     this.folder = getVersions().getDir(this.name);
@@ -116,12 +102,7 @@ export default class Version {
           emit("debug.warn", "[GMLL]: Dependency merge failed.");
           this._mergeFailure = true;
         }
-        if (onUnsupportedArm && !this.pre1d9) {
-          this.json = combine(
-            this.json,
-            getMeta().index.getFile("arm-patch.json").toJSON(),
-          );
-        }
+       
         return this.json;
       }
     }
@@ -151,12 +132,7 @@ export default class Version {
         this._mergeFailure = true;
       }
     }
-    if (onUnsupportedArm && !this.pre1d9) {
-      this.json = combine(
-        this.json,
-        getMeta().index.getFile("arm-patch.json").toJSON(),
-      );
-    }
+   
     return this.json;
   }
   /**

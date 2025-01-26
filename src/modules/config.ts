@@ -2,7 +2,6 @@ import { EventEmitter } from "events";
 import { manifests } from "./downloader.js";
 
 import { getCpuArch, getErr, getOS, throwErr } from "./internal/util.js";
-import { type } from "os";
 import type Instance from "./objects/instance.js";
 import type { WorkerOptions, Worker } from "worker_threads";
 import { Dir, File } from "gfsl";
@@ -52,13 +51,6 @@ export function spawnDownloadWorker(options: WorkerOptions) {
  * * {@link getUpdateConfig}
  */
 export type update = "runtime" | "agent" | "fabric" | "legacy-fabric" | "quilt";
-/**
- * Check if we are running under Windows/Linux on arm
- *
- * Apple silicon is actually officially supported as per 1.19
- */
-export const onUnsupportedArm =
-  (getCpuArch() == "arm64" || getCpuArch() == "arm") && type() != "Darwin";
 const repositories = {
   maven: "https://download.hanro50.net.za/maven",
   forge: "https://download.hanro50.net.za/fmllibs",
@@ -111,11 +103,6 @@ export function setArmfixRepo(armFix: string) {
 /**The location serving 7zip binaries*/
 export function set7zipRepo(z7Repo: string) {
   repositories.z7Repo = z7Repo;
-}
-if (onUnsupportedArm) {
-  console.warn(
-    "[GMLL:system]: Running on an non M1 Arm platform! We are desperate for dedicated testers!",
-  );
 }
 let initialized = false;
 

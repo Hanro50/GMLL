@@ -9,8 +9,6 @@ Features include forge, fabric and quilt support. An instance manager, a metadat
 
 A simple modpack api capable of partial updates. The capability to easily create modPacks and wrap them in the required format the modpack API expects. An installer for 3rd party instances of forge and a robust version.json parser that should be able to handle anything the vanilla launcher can handle. The ability to change out some game sounds and assets easily is also provided.
 
-Limited support for unsupported windows and linux arm devices (1.19+). A built in runtime manager meaning you do not even need to have java installed to run GMLL. Limited support for M1 macs. Support for Windows (Vista and newer), MacOS and Linux.
-
 See [MSMC](https://github.com/Hanro50/MSMC) if you need an authentication library
 
 # Support

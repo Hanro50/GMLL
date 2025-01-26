@@ -40,11 +40,11 @@ export type MCJarTypeVal =
  * and legacy is a version of java 8
  */
 export type MCRuntimeVal =
-  | "java-runtime-arm"
   | "java-runtime-gamma"
   | "java-runtime-alpha"
   | "java-runtime-beta" 
   | "java-runtime-delta"
+    | "java-runtime-delta"
   | "jre-legacy"
   | "minecraft-java-exe";
 /**
@@ -391,9 +391,21 @@ export interface LaunchOptions {
    * @warning It is recommended to let GMLL handle this for you. It is solely changeable to achieve parody with the vanilla launcher.
    * Changing this can easily break older versions of forge, cause graphical corruption, crash legacy versions of minecraft, cause issues with arm Macs and a whole host of random BS.
    * If brought up in the support channels for GMLL, you'll be asked to set this to it's default value if we see that you have changed it.
+   * 
+   * You can create a version.json file following the following format if you want to override the default version of java GMLL uses for that version.
+   * 
+   * versions/\<my-version>/\<my-version>.json
+   * @example 
+   * {
+   *  "javaVersion": {
+   *    "component": "<runtime-version>",
+   *    "majorVersion": "<java-version-of-runtime>"
+   *  }
+   *  "inheritsFrom": "<version you want to extend>"
+   * }
    */
   javaPath?: "default" | string;
-  /**By default GMLL spins up a proxy server when launching Minecraft 1.5.2 and older to reroute some requests that no longer work*/
+  /**By default, GMLL includes Agenta to fix issues with legacy version of the game. Making this false forces GMLL not to use Agenta.*/
   noLegacyFix?: boolean;
 }
 /** Used internally for modpack handling */

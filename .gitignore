@@ -123,3 +123,6 @@ types
 
 /webpage/docs
 /tsdocData.json
+
+# MAC
+.DS_Store

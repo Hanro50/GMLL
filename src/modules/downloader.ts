@@ -6,7 +6,6 @@ import {
   classPathResolver,
   processAssets,
   getCpuArch,
-  combine,
 } from "./internal/util.js";
 import { resolve } from "path";
 import {
@@ -18,7 +17,6 @@ import {
   getRepositories,
   getRuntimes,
   getUpdateConfig,
-  onUnsupportedArm,
   getMultiCoreMode,
   spawnDownloadWorker,
 } from "./config.js";
@@ -457,32 +455,37 @@ export async function getRuntimeIndexes(manifest: RuntimeManifest) {
     | "linux-arm32"
     | "windows-arm64";
   switch (getOS()) {
-    case "windows":
-      if (onUnsupportedArm && "windows-arm64" in manifest) {
-        platform = "windows-arm64";
+    case "linux":
+      if (getCpuArch() == "arm64") {
+        platform = "linux-arm64";
+        //Intel fallback for windows-arm
         emit(
           "debug.warn",
-
-          "Loading intel fallback for Windows on arm. Please contact GMLL's developer if this bugs out.",
+          "Loading intel fallback for ARM64 Linux. Please contact GMLL's developer if this bugs out.\nPlease make sure box64 is installed!",
         );
         for (const key of Object.keys(manifest[platform]))
           if (manifest[platform][key].length < 1)
-            manifest[platform][key] = manifest["windows-x86"][key];
-        break;
+            manifest[platform][key] = manifest["linux-x64"][key];
+      } else {
+        platform = getCpuArch() == "x64" ? "linux" : "linux-i386";
       }
-      platform = getCpuArch() == "x64" ? "windows-x64" : "windows-x86";
-      break;
-    case "linux":
-      if (
-        onUnsupportedArm &&
-        ("linux-arm32" in manifest || "linux-arm64" in manifest)
-      ) {
-        platform = getCpuArch() == "arm" ? "linux-arm32" : "linux-arm64";
-        break;
-      }
-      platform = getCpuArch() == "x64" ? "linux" : "linux-i386";
-      break;
 
+      break;
+    case "windows":
+      if (getCpuArch() == "arm64") {
+        platform = "windows-arm64";
+        //Intel fallback for windows-arm
+        emit(
+          "debug.warn",
+          "Loading intel fallback for ARM64 Windows. Please contact GMLL's developer if this bugs out.",
+        );
+        for (const key of Object.keys(manifest[platform]))
+          if (manifest[platform][key].length < 1)
+            manifest[platform][key] = manifest["windows-x64"][key];
+      } else {
+        platform = getCpuArch() == "x64" ? "windows-x64" : "windows-x86";
+      }
+      break;
     case "osx":
       if (getCpuArch() == "arm64") {
         platform = "mac-os-arm64";
@@ -512,7 +515,8 @@ export async function getRuntimeIndexes(manifest: RuntimeManifest) {
 
 export async function getForgiac() {
   const forgiacURL =
-    getRepositories().maven + "za/net/hanro50/forgiac/basic/1.9.1/basic-1.9.1.jar";
+    getRepositories().maven +
+    "za/net/hanro50/forgiac/basic/1.9.1/basic-1.9.1.jar";
   const forgiacSHA = forgiacURL + ".sha1";
   const libsFolder = getlibraries()
     .getDir("za", "net", "hanro50", "forgiac", "basic", "1.9.1")
@@ -548,9 +552,6 @@ export async function manifests() {
   const mcVersionManifest =
     "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json";
 
-  const armRuntimes = repositories.armFix + "index.json";
-  const armPatch = repositories.armFix + "/arm-patch.json";
-
   const agentaURL =
     repositories.maven + "za/net/hanro50/agenta/1.8.5/agenta-1.8.5.jar";
 
@@ -566,9 +567,6 @@ export async function manifests() {
   interface JSGameInf {
     version: string;
     stable: boolean;
-  }
-  if (onUnsupportedArm) {
-    await meta.index.getFile("arm-patch.json").download(armPatch);
   }
 
   const r = await nFetch(mcVersionManifest);
@@ -663,17 +661,9 @@ export async function manifests() {
     }
   }
   if (update.includes("runtime")) {
-    let indexes = (
+    const indexes = (
       await meta.index.getFile("runtime.json").download(mcRuntimes)
     ).toJSON<RuntimeManifest>();
-    if (onUnsupportedArm) {
-      indexes = combine(
-        indexes,
-        (
-          await meta.index.getFile("runtime-Arm.json").download(armRuntimes)
-        ).toJSON<RuntimeManifest>(),
-      );
-    }
     getRuntimeIndexes(indexes);
   }
   if (update.includes("agent")) {
