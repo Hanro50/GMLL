@@ -1,28 +1,29 @@
 import { spawn } from "child_process";
 import { randomUUID } from "crypto";
 
+import { Dir, File } from "gfsl";
+import { cpus, platform, type } from "os";
+import { join } from "path";
+import type { AssetIndex, LaunchArguments, Player } from "../../../types";
 import {
-  getMeta,
+  emit,
   getAssets,
-  getNatives,
   getLauncherName,
   getLauncherVersion,
   getlibraries,
-  emit,
+  getMeta,
+  getNatives,
 } from "../../config.js";
-import { Dir, File } from "gfsl";
-import type { Player, AssetIndex, LaunchArguments } from "../../../types";
-import { type, cpus } from "os";
-import { join } from "path";
-import {
-  combine,
-  fsSanitizer,
-  processAssets,
-  getClientID,
-  lawyer,
-} from "../util.js";
 import { download, getAgentFile } from "../../downloader.js";
 import instance from "../../objects/instance.js";
+import {
+  assetTag,
+  combine,
+  fsSanitizer,
+  getClientID,
+  lawyer,
+  processAssets,
+} from "../util.js";
 
 /**
  * For internal use only
@@ -157,7 +158,13 @@ export async function launch(
       .write(AssetIndex);
     processAssets(AssetIndex);
   }
-
+  let mac_icon = "";
+  if (platform() === "darwin") {
+    const obj = AssetIndex.objects["icons/minecraft.icns"];
+    mac_icon = assetTag(assetRoot.getDir("objects"), obj.hash)
+      .getFile(obj.hash)
+      .sysPath();
+  }
   if (AssetIndex.virtual || AssetIndex.map_to_resources) {
     assetRoot = getAssets().getDir(
       "legacy",
@@ -202,14 +209,17 @@ export async function launch(
     classpath_separator: classpath_separator,
     library_directory: getlibraries(),
     user_properties: JSON.stringify(token.profile.properties || {}),
-
+    game_jar: version.getJarPath().sysPath(),
     port: 0,
+
+    mac_icon,
+    mac_name: "Minecraft",
   };
   const javaPath =
     this.javaPath == "default"
       ? version.getJavaPath()
       : new File(this.javaPath);
-  const rawJvmArgs: LaunchArguments = instance.defaultGameArguments;
+  const rawJvmArgs: LaunchArguments = [...instance.defaultGameArguments];
   rawJvmArgs.push(...(versionJson.arguments?.jvm || instance.defJVM));
 
   const agentFile = getAgentFile();
@@ -249,9 +259,15 @@ export async function launch(
     env: combine(process.env, this.env),
     detached: this.detach,
   });
-  runningInstance.stdout.on("data", (chunk) =>
-    emit("jvm.stdout", "Minecraft", chunk, this),
-  );
+  runningInstance.stdout.on("data", (chunk) => {
+    if (chunk.includes(token.access_token))
+      chunk = chunk
+        .toString()
+        .replace(token.access_token, "*".repeat(token.access_token.length))
+        .replace(token.profile.id, "*".repeat(token.profile.id.length));
+
+    emit("jvm.stdout", "Minecraft", chunk, this);
+  });
   runningInstance.stderr.on("data", (chunk) =>
     emit("jvm.stderr", "Minecraft", chunk, this),
   );

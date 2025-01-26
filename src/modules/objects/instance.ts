@@ -1,19 +1,19 @@
-import { resolvePath, getMeta, getAssets, emit } from "../config.js";
+import { Dir, File } from "gfsl";
+import { join } from "path";
+import type { AssetIndex, LaunchArguments, LaunchOptions } from "../../types";
+import { emit, getAssets, getMeta, resolvePath } from "../config.js";
 import { getLatest } from "../handler.js";
+import * as launchHandler from "../internal/handlers/launch.js";
+import * as metaHandler from "../internal/handlers/meta.js";
+import { importModpack } from "../internal/handlers/modpacks.js";
+import * as modsHandler from "../internal/handlers/mods.js";
 import {
+  assetTag,
   fsSanitizer,
   getCpuArch,
   throwErr,
-  assetTag,
 } from "../internal/util.js";
-import { join } from "path";
-import type { AssetIndex, LaunchArguments, LaunchOptions } from "../../types";
-import { Dir, File } from "gfsl";
 import Version from "./version.js";
-import * as metaHandler from "../internal/handlers/meta.js";
-import * as modsHandler from "../internal/handlers/mods.js";
-import * as launchHandler from "../internal/handlers/launch.js";
-import { importModpack } from "../internal/handlers/modpacks.js";
 /**
  * An instance is what the name entails. An instance of the game Minecraft containing Minecraft specific data.
  * This information on where the game is stored and the like. The mods installed and what not.
@@ -44,7 +44,6 @@ export default class Instance {
 
   /**The default game arguments, don't mess with these unless you know what you are doing */
   public static defaultGameArguments = [
-    "-Xms${ram}M",
     "-Xmx${ram}M",
     "-XX:+UnlockExperimentalVMOptions",
     "-XX:+UseG1GC",
@@ -69,8 +68,13 @@ export default class Instance {
     "-Djava.library.path=${natives_directory}",
     "-Dminecraft.launcher.brand=${launcher_name}",
     "-Dminecraft.launcher.version=${launcher_version}",
+    "-Dminecraft.client.jar=${game_jar}",
     "-cp",
     "${classpath}",
+    {
+      rules: [{ action: "allow", os: { name: "osx" } }],
+      value: ["-Xdock:name=${mac_name}", "-Xdock:icon=${mac_icon}"],
+    },
   ];
 
   constructor(opt: LaunchOptions = {}) {

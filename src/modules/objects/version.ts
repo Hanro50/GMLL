@@ -158,6 +158,9 @@ export default class Version {
       }
     }
   }
+  getJarPath() {
+    return this.folder.getFile(this.name + ".jar");
+  }
   async install() {
     if (this._mergeFailure) {
       this._mergeFailure = false;
