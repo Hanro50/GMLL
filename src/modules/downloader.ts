@@ -1,48 +1,48 @@
-import {
-  lawyer,
-  getOS,
-  assetTag,
-  throwErr,
-  classPathResolver,
-  processAssets,
-  getCpuArch,
-} from "./internal/util.js";
+import { readlinkSync } from "fs";
+import { Dir, download7zip, File, packAsync } from "gfsl";
+import nFetch from "node-fetch";
+import { cpus } from "os";
 import { resolve } from "path";
+import { Worker } from "worker_threads";
+import type {
+  Artifact,
+  AssetIndex,
+  DownloadableFile,
+  MCRuntimeVal,
+  MojangResourceFile,
+  MojangResourceManifest,
+  RuntimeManifest,
+  RuntimeManifestEntry,
+  VanillaManifestJson,
+  VersionJson,
+} from "../types";
 import {
   emit,
   getAssets,
   getlibraries,
   getMeta,
+  getMultiCoreMode,
   getNatives,
   getRepositories,
   getRuntimes,
   getUpdateConfig,
-  getMultiCoreMode,
   spawnDownloadWorker,
 } from "./config.js";
-import { cpus } from "os";
-import nFetch from "node-fetch";
-import { Dir, download7zip, File, packAsync } from "gfsl";
-import { readlinkSync } from "fs";
-import type {
-  DownloadableFile,
-  RuntimeManifestEntry,
-  RuntimeManifest,
-  MCRuntimeVal,
-  VersionJson,
-  AssetIndex,
-  Artifact,
-  MojangResourceManifest,
-  MojangResourceFile,
-  VanillaManifestJson,
-} from "../types";
-import { Worker } from "worker_threads";
 import {
   check,
   expand,
   processFile,
   toDownloadable,
 } from "./internal/downloadable.js";
+import {
+  assetTag,
+  classPathResolver,
+  getCpuArch,
+  getOS,
+  lawyer,
+  processAssets,
+  throwErr,
+} from "./internal/util.js";
 const assetURL = "https://resources.download.minecraft.net/";
 const processCMD = "download.progress";
 const failCMD = "download.fail";
@@ -458,6 +458,7 @@ export async function getRuntimeIndexes(manifest: RuntimeManifest) {
     case "linux":
       if (getCpuArch() == "arm64") {
         platform = "linux-arm64";
+        if (!manifest[platform]) manifest[platform] = manifest.gamecore;
         //Intel fallback for windows-arm
         emit(
           "debug.warn",

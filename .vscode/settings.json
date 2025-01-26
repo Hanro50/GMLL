@@ -59,5 +59,13 @@
     "xuid"
   ],
   "java.configuration.updateBuildConfiguration": "automatic",
-  "java.project.resourceFilters": ["node_modules", "\\.git"]
+  "java.project.resourceFilters": ["node_modules", "\\.git"],
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
 }

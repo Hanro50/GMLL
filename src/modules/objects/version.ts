@@ -1,27 +1,22 @@
 import { copyFileSync } from "fs";
-import {
-  isInitialized,
-  getVersions,
-  getlibraries,
-  emit,
-} from "../config.js";
-import { assets, runtime, libraries } from "../downloader.js";
-import { getManifest, getJavaPath } from "../handler.js";
-import {
-  combine,
-  throwErr,
-  lawyer,
-  classPathResolver,
-  getOS,
-} from "../internal/util.js";
+import { Dir, File } from "gfsl";
 import { join } from "path";
 import {
-  VersionJson,
-  VersionManifest,
   Artifact,
   MCJarTypeVal,
+  VersionJson,
+  VersionManifest,
 } from "../../types";
-import { Dir, File } from "gfsl";
+import { emit, getVersions, getlibraries, isInitialized } from "../config.js";
+import { assets, libraries, runtime } from "../downloader.js";
+import { getJavaPath, getManifest } from "../handler.js";
+import {
+  classPathResolver,
+  combine,
+  getOS,
+  lawyer,
+  throwErr,
+} from "../internal/util.js";
 
 /**
  * Version data is unique. Each version of the game will generate an unique version object.
@@ -102,7 +97,7 @@ export default class Version {
           emit("debug.warn", "[GMLL]: Dependency merge failed.");
           this._mergeFailure = true;
         }
-       
+
         return this.json;
       }
     }
@@ -132,7 +127,7 @@ export default class Version {
         this._mergeFailure = true;
       }
     }
-   
+
     return this.json;
   }
   /**
@@ -189,12 +184,14 @@ export default class Version {
         return;
       }
 
-      const p = (lib.natives
-        ? join(
-          "libraries",
-          ...classPathResolver(lib.name, lib.natives[getOS()]).split("/"),
-        )
-        : join("libraries", ...classPathResolver(lib.name).split("/"))).replaceAll("@jar", "");
+      const p = (
+        lib.natives
+          ? join(
+              "libraries",
+              ...classPathResolver(lib.name, lib.natives[getOS()]).split("/"),
+            )
+          : join("libraries", ...classPathResolver(lib.name).split("/"))
+      ).replaceAll("@jar", "");
       const p2 = getlibraries().getDir("..").getFile(p);
       if (!p2.exists()) {
         emit(

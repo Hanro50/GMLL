@@ -16,7 +16,8 @@ export type MCVersionType =
   | "old_beta"
   | "release"
   | "snapshot"
-  | "custom" | "neoforge"
+  | "custom"
+  | "neoforge"
   | "unknown"
   | Loader;
 /**
@@ -40,11 +41,11 @@ export type MCJarTypeVal =
  * and legacy is a version of java 8
  */
 export type MCRuntimeVal =
-  | "java-runtime-gamma"
   | "java-runtime-alpha"
-  | "java-runtime-beta" 
+  | "java-runtime-beta"
   | "java-runtime-delta"
-    | "java-runtime-delta"
+  | "java-runtime-gamma"
+  | "java-runtime-gamma-snapshot"
   | "jre-legacy"
   | "minecraft-java-exe";
 /**
@@ -145,21 +146,17 @@ export type RuntimeManifestEntry = {
 };
 export type RuntimeManifest = {
   [key in
-  | "gamecore"
-  | "linux"
-  | "linux-i386"
-  | "mac-os"
-  | "windows-x64"
-  | "windows-x86"
-  | "linux-arm64"
-  | "linux-arm32"
-  | "windows-arm64"]: {
-    [key in
-    | "java-runtime-beta"
-    | "java-runtime-alpha"
-    | "jre-legacy"
-    | "minecraft-java-exe"
-    | "java-runtime-arm"]: Array<RuntimeManifestEntry>;
+    | "gamecore"
+    | "linux"
+    | "linux-i386"
+    | "linux-arm64"
+    | "mac-os"
+    | "mac-os-arm64"
+    | "windows-x64"
+    | "windows-x86"
+    | "windows-arm64"
+    | "windows-arm64"]: {
+    [key in MCRuntimeVal]: Array<RuntimeManifestEntry>;
   };
 };
 
@@ -391,11 +388,11 @@ export interface LaunchOptions {
    * @warning It is recommended to let GMLL handle this for you. It is solely changeable to achieve parody with the vanilla launcher.
    * Changing this can easily break older versions of forge, cause graphical corruption, crash legacy versions of minecraft, cause issues with arm Macs and a whole host of random BS.
    * If brought up in the support channels for GMLL, you'll be asked to set this to it's default value if we see that you have changed it.
-   * 
+   *
    * You can create a version.json file following the following format if you want to override the default version of java GMLL uses for that version.
-   * 
+   *
    * versions/\<my-version>/\<my-version>.json
-   * @example 
+   * @example
    * {
    *  "javaVersion": {
    *    "component": "<runtime-version>",
@@ -515,10 +512,10 @@ export interface PlayerDat {
   DataVersion?: number;
   DeathTime: number;
   Dimension:
-  | number
-  | "minecraft:overworld"
-  | "minecraft:the_nether"
-  | "minecraft:the_end";
+    | number
+    | "minecraft:overworld"
+    | "minecraft:the_nether"
+    | "minecraft:the_end";
   EnderItems: [];
   FallDistance: number;
   FallFlying?: number;
@@ -614,33 +611,33 @@ export interface LevelDat {
     }>;
     Player: PlayerDat;
     Version?:
-    | number
-    | { Snapshot: number; Series: string; Id: number; Name: string };
+      | number
+      | { Snapshot: number; Series: string; Id: number; Name: string };
     version?: number;
     WorldGenSettings?: Partial<{
       dimensions: {
         [Key in
-        | "minecraft:overworld"
-        | "minecraft:the_nether"
-        | "minecraft:the_end"]: {
+          | "minecraft:overworld"
+          | "minecraft:the_nether"
+          | "minecraft:the_end"]: {
           generator: {
             settings:
-            | "minecraft:overworld"
-            | "minecraft:nether"
-            | "minecraft:end";
+              | "minecraft:overworld"
+              | "minecraft:nether"
+              | "minecraft:end";
             biome_source: {
               preset?: string;
               type:
-              | "minecraft:multi_noise"
-              | "minecraft:noise"
-              | "minecraft:fixed";
+                | "minecraft:multi_noise"
+                | "minecraft:noise"
+                | "minecraft:fixed";
             };
             type: "minecraft:noise";
           };
           type:
-          | "minecraft:overworld"
-          | "minecraft:the_nether"
-          | "minecraft:the_end";
+            | "minecraft:overworld"
+            | "minecraft:the_nether"
+            | "minecraft:the_end";
         };
       };
       bonus_chest: number;
@@ -707,10 +704,10 @@ export interface ModInfo extends MetaObj {
   version: string;
   loader: Loader;
   depends?:
-  | {
-    [key: string]: string;
-  }
-  | Array<ForgeDep | string>;
+    | {
+        [key: string]: string;
+      }
+    | Array<ForgeDep | string>;
   bugReportURL?: string;
   description?: string;
   mcversion?: string;

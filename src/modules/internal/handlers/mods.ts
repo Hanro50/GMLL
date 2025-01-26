@@ -1,20 +1,20 @@
-import { emit, getAssets } from "../../config.js";
-import {
-  installForge as _installForge,
-  getForgeVersions as _getForgeVersions,
-} from "../../handler.js";
 import { Dir, File, packAsync } from "gfsl";
-import Instance from "../../objects/instance.js";
-import Version from "../../objects/version.js";
 import { platform } from "os";
 import type {
   DownloadableFile,
+  ForgeVersion,
+  InstanceMetaPaths,
+  InstancePackConfig,
   VersionJson,
   VersionManifest,
-  InstancePackConfig,
-  InstanceMetaPaths,
-  ForgeVersion,
 } from "../../../types";
+import { emit, getAssets } from "../../config.js";
+import {
+  getForgeVersions as _getForgeVersions,
+  installForge as _installForge,
+} from "../../handler.js";
+import Instance from "../../objects/instance.js";
+import Version from "../../objects/version.js";
 
 import { assetTag, fsSanitizer } from "../util.js";
 /**Gets the load order of minecraft jars in jar mod loader. */
@@ -286,15 +286,15 @@ export async function installForge(
 ) {
   const manifest = await _installForge(forge);
   this.version = manifest.id;
-  return this.version;
+  return manifest;
 }
 
 export async function getForgeVersions(this: Instance) {
-  const data = (await _getForgeVersions())[this.version] as any[];
+  const data = (await _getForgeVersions())[this.version];
   return data.map((e) => {
-    const forge = e as any;
+    const forge = e;
     forge.install = () => this.installForge(forge);
-    return forge as { install: () => Promise<String> & ForgeVersion };
+    return forge;
   });
 }
 
