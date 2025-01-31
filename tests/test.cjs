@@ -9,7 +9,7 @@ const { Auth } = require("msmc");
 gmll.init().then(async () => {
   //Create a new auth manager
   var int = new gmll.Instance({
-    version: "b1.7.3",
+    version: "1.8.9",
   });
 
   const authManager = new Auth("select_account");

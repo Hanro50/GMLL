@@ -1,10 +1,10 @@
 import { EventEmitter } from "events";
 import { manifests } from "./downloader.js";
 
+import { Dir, File } from "gfsl";
+import type { Worker, WorkerOptions } from "worker_threads";
 import { getCpuArch, getErr, getOS, throwErr } from "./internal/util.js";
 import type Instance from "./objects/instance.js";
-import type { WorkerOptions, Worker } from "worker_threads";
-import { Dir, File } from "gfsl";
 let workerSpawner = async (options: WorkerOptions) => {
   try {
     return (await import("./internal/worker.mjs")).makeWorker(options);
@@ -319,7 +319,7 @@ export function setRoot(_root: Dir | string) {
     launcher: _root.getDir("launcher"),
     _platform: platform,
     runtimes: platform.getDir("runtimes"),
-    natives: Dir.tmpdir().getDir("gmll", "natives", getOS(), getCpuArch()),
+    natives: platform.getDir("natives"),
   };
 }
 
@@ -529,14 +529,14 @@ export function getLauncherName() {
  * Used to set the reported launcher version reported by GMLL to Minecraft
  * @param _version Any version string
  */
-export function setLauncherVersion(_version = "0.0.0") {
+export function setLauncherVersion(_version = "4.0.0") {
   version = _version;
 }
 /**
  * Used to get the currently reported launcher version reported by GMLL to Minecraft
  */
 export function getLauncherVersion() {
-  return version || "0.0.0";
+  return version || "4.0.0";
 }
 
 export function forceCommonJsWorker() {

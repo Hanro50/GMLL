@@ -13,7 +13,6 @@ import { getJavaPath, getManifest } from "../handler.js";
 import {
   classPathResolver,
   combine,
-  getOS,
   lawyer,
   throwErr,
 } from "../internal/util.js";
@@ -186,15 +185,12 @@ export default class Version {
       if (lib.rules && !lawyer(lib.rules)) {
         return;
       }
+      let path = lib?.downloads?.artifact?.path;
+      if (!path)
+        if (!lib?.downloads?.classifiers) path = classPathResolver(lib.name);
+        else return;
 
-      const p = (
-        lib.natives
-          ? join(
-              "libraries",
-              ...classPathResolver(lib.name, lib.natives[getOS()]).split("/"),
-            )
-          : join("libraries", ...classPathResolver(lib.name).split("/"))
-      ).replaceAll("@jar", "");
+      const p = join("libraries", ...path.split("/")).replaceAll("@jar", "");
       const p2 = getlibraries().getDir("..").getFile(p);
       if (!p2.exists()) {
         emit(
