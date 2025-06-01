@@ -1,9 +1,9 @@
 import { arch, networkInterfaces, platform, userInfo, version } from "os";
 
-import { getAssets, getMeta, isInitialized } from "../config.js";
 import { createHash, randomUUID } from "crypto";
-import type { CpuArchRuleVal, VersionJsonRules, AssetIndex } from "../../types";
 import { Dir, jsonEncode } from "gfsl";
+import type { AssetIndex, CpuArchRuleVal, VersionJsonRules } from "../../types";
+import { getAssets, getMeta, isInitialized } from "../config.js";
 /**Gets the current operating system GMLL thinks it is running under */
 export function getOS() {
   const operatingSystem = platform();
@@ -92,6 +92,14 @@ export function classPathResolver(name: string, sub = "") {
   }-${namespec[2]}${namespec[3] ? "-" + namespec[3].replace(/:/g, "-") : ""}${
     sub.length > 0 ? "-" + sub : ""
   }.jar`;
+}
+
+/**Used to remove duplicate packages during initialization phase */
+export function classPackageResolver(name: string, sub = "") {
+  const namespec = name.split(":", 4);
+  return `${namespec[0]}.${namespec[1]}${namespec[3] ? ":" + namespec[3] : ""}${
+    sub.length > 0 ? ":" + sub : ""
+  }`;
 }
 
 /**Takes two different version.json files and combines them */

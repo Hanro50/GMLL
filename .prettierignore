@@ -2,5 +2,5 @@ webpage/docs
 dist
 node_modules
 types
-tests
+tests/.minecraft
 *.md

@@ -554,7 +554,7 @@ export async function manifests() {
     "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json";
 
   const agentaURL =
-    repositories.maven + "za/net/hanro50/agenta/1.8.5/agenta-1.8.5.jar";
+    repositories.maven + "za/net/hanro50/agenta/1.8.6/agenta-1.8.6.jar";
 
   const update = getUpdateConfig();
   const meta = getMeta();
@@ -693,9 +693,9 @@ export async function manifests() {
 }
 export function getAgentFile() {
   return getlibraries()
-    .getDir("za", "net", "hanro50", "agenta", "1.6.1")
+    .getDir("za", "net", "hanro50", "agenta", "1.8.6")
     .mkdir()
-    .getFile("agenta-1.6.1.jar");
+    .getFile("agenta-1.8.6.jar");
 }
 /**
  * Used for runtime management.

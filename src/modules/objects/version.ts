@@ -11,6 +11,7 @@ import { emit, getVersions, getlibraries, isInitialized } from "../config.js";
 import { assets, libraries, runtime } from "../downloader.js";
 import { getJavaPath, getManifest } from "../handler.js";
 import {
+  classPackageResolver,
   classPathResolver,
   combine,
   getOS,
@@ -180,12 +181,22 @@ export default class Version {
   }
   getClassPath(mode: "client" | "server" = "client", jarpath?: File) {
     const cp: string[] = [];
+    const loadedPackages = [];
     this.json.libraries.forEach((lib) => {
       if (mode == "client" && "clientreq" in lib && !lib.clientreq) return;
-      else if (mode == "server" && !lib.serverreq && "clientreq" in lib) return;
-      if (lib.rules && !lawyer(lib.rules)) {
+      if (mode == "server" && !lib.serverreq && "clientreq" in lib) return;
+      if (lib.rules && !lawyer(lib.rules)) return;
+
+      /**Neoforge for 1.21.5 broke this since it tried to load a newer version of asm then the one bundled with MC */
+      const packageName = lib.natives
+        ? classPackageResolver(lib.name, lib.natives[getOS()])
+        : classPackageResolver(lib.name);
+
+      if (loadedPackages.includes(packageName)) {
+        emit("debug.error", `${packageName} is already included! Ignoring`);
         return;
       }
+      loadedPackages.push(packageName);
 
       const p = (
         lib.natives
@@ -195,18 +206,24 @@ export default class Version {
             )
           : join("libraries", ...classPathResolver(lib.name).split("/"))
       ).replaceAll("@jar", "");
+
       const p2 = getlibraries().getDir("..").getFile(p);
+
       if (!p2.exists()) {
         emit(
           "debug.error",
           `${p} does not exist. Removing to avoid possible error (${p2.sysPath()})`,
         );
-      } else if (!cp.includes(p)) cp.push(p);
+        return;
+      }
+
+      const p3 = p2.sysPath();
+      if (!cp.includes(p3)) cp.push(p3);
     });
+
     const jar = jarpath || this.folder.getFile(this.name + ".jar");
-    if (jar.exists()) {
-      cp.push(jar.sysPath());
-    }
+    if (jar.exists()) cp.push(jar.sysPath());
+
     return cp;
   }
 }

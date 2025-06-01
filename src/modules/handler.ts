@@ -1,5 +1,14 @@
 /**The internal java and version manifest handler for GMLL */
 
+import { spawn } from "child_process";
+import { File } from "gfsl";
+import fetch from "node-fetch";
+import type {
+  ForgeVersion,
+  MCRuntimeVal,
+  VersionJson,
+  VersionManifest,
+} from "../types";
 import {
   emit,
   getInstances,
@@ -11,15 +20,6 @@ import {
 } from "./config.js";
 import { getForgiac, runtime } from "./downloader.js";
 import { getOS } from "./internal/util.js";
-import { spawn } from "child_process";
-import { File } from "gfsl";
-import fetch from "node-fetch";
-import type {
-  VersionManifest,
-  MCRuntimeVal,
-  VersionJson,
-  ForgeVersion,
-} from "../types";
 
 export function getManifests(): VersionManifest[] {
   isInitialized();
@@ -258,27 +258,8 @@ export function getJavaPath(java: MCRuntimeVal = "jre-legacy") {
   return getRuntimes().getFile(java, "bin", "java");
 }
 
-/**
- * The auto forge installer.
- * To stop forge from breaking this,
- * please add a link to donate to the forge project at https://www.patreon.com/LexManos
- *
- * I am not affiliated with forge in any way, I just want to support them. So they can keep making forge...and so they don't break this.
- * - Hanro50
- *
- * @Warning They may break this at any time. I will try to keep this up to date, but I can't guarantee anything. So...yeah. Add a link to donate to them.
- */
-export async function getForgeVersions() {
-  const data = await fetch(
-    "https://files.minecraftforge.net/net/minecraftforge/forge/maven-metadata.json",
-  );
-
-  const json = (await data.json()) as { [key: string]: Array<string> };
-
-  const results: Record<
-    string,
-    (ForgeVersion & { install: () => Promise<VersionManifest> })[]
-  > = {};
+/**Used to parse forge versions for the installer functions */
+function parseForge(forges: string[], mc: string) {
   const ancient = ["1.1", "1.2.3", "1.2.4", "1.2.5"];
   const old = [
     "1.3.2",
@@ -293,22 +274,59 @@ export async function getForgeVersions() {
     "1.5.1",
     "1.5.2",
   ];
+
+  let type: "ancient" | "old" | "modern";
+
+  if (ancient.includes(mc)) type = "ancient";
+  else if (old.includes(mc)) type = "old";
+  else type = "modern";
+
+  return forges.map((forge) => {
+    return {
+      type,
+      forge,
+      game: mc,
+      install: () => installForge({ type, forge, game: mc }),
+    };
+  });
+}
+
+/**
+ * The auto forge installer.
+ * To stop forge from breaking this,
+ * please add a link to donate to the forge project at https://www.patreon.com/LexManos
+ *
+ * I am not affiliated with forge in any way, I just want to support them. So they can keep making forge...and so they don't break this.
+ * - Hanro50
+ *
+ * @Warning They may break this at any time. I will try to keep this up to date, but I can't guarantee anything. So...yeah. Add a link to donate to them.
+ */
+
+export async function getForgeVersions(): Promise<
+  Record<string, (ForgeVersion & { install: () => Promise<VersionManifest> })[]>
+>;
+export async function getForgeVersions(
+  version: string,
+): Promise<[ForgeVersion & { install: () => Promise<VersionManifest> }]>;
+export async function getForgeVersions(version?: string) {
+  const data = await fetch(
+    "https://files.minecraftforge.net/net/minecraftforge/forge/maven-metadata.json",
+  );
+
+  const json = (await data.json()) as { [key: string]: Array<string> };
+
+  if (version) return parseForge(json[version], version);
+
+  const results: Record<
+    string,
+    (ForgeVersion & { install: () => Promise<VersionManifest> })[]
+  > = {};
+
   Object.entries(json).forEach((o) => {
     const mc = o[0];
-    const forge = o[1];
+    const forges = o[1];
 
-    let type: "ancient" | "old" | "modern";
-    if (ancient.includes(mc)) type = "ancient";
-    else if (old.includes(mc)) type = "old";
-    else type = "modern";
-    results[mc] = forge.map((version) => {
-      return {
-        type,
-        forge: version,
-        game: mc,
-        install: () => installForge({ type, forge: version, game: mc }),
-      };
-    });
+    results[mc] = parseForge(forges, mc);
   });
   console.log(
     "[GMLL]: Please support the forge project by donating at https://www.patreon.com/LexManos",
