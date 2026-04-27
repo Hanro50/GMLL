@@ -50,6 +50,8 @@ const processCMD = "download.progress";
 const failCMD = "download.fail";
 const getCMD = "download.get";
 const postCMD = "download.post";
+
+const agentaVersion = "1.9.1";
 /**
  * Download function. Can be used for downloading modpacks and launcher updates.
  * Checks sha1 hashes and can use multiple cores to download files rapidly.
@@ -567,8 +569,7 @@ export async function manifests() {
   const mcVersionManifest =
     "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json";
 
-  const agentaURL =
-    repositories.maven + "za/net/hanro50/agenta/1.8.6/agenta-1.8.6.jar";
+  const agentaURL = `${repositories.maven}za/net/hanro50/agenta/${agentaVersion}/agenta-${agentaVersion}.jar`;
 
   const update = getUpdateConfig();
   const meta = getMeta();
@@ -708,9 +709,9 @@ export async function manifests() {
 }
 export function getAgentFile() {
   return getlibraries()
-    .getDir("za", "net", "hanro50", "agenta", "1.8.6")
+    .getDir("za", "net", "hanro50", "agenta", agentaVersion)
     .mkdir()
-    .getFile("agenta-1.8.6.jar");
+    .getFile(`agenta-${agentaVersion}.jar`);
 }
 /**
  * Used for runtime management.
