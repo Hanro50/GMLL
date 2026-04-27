@@ -6,6 +6,7 @@ import type {
   InstanceMetaPaths,
   InstancePackConfig,
   VersionJson,
+  VersionJsonInstance,
   VersionManifest,
 } from "../../../types";
 import { emit, getAssets } from "../../config.js";
@@ -41,14 +42,10 @@ export async function pack(this: Instance, config: InstancePackConfig) {
   const baseDownloadLink = config.baseDownloadLink;
   const trimMisc = config.trimMisc;
 
-  let _forge = config.forgeInstallerPath;
-  if (_forge) {
-    _forge =
-      config.forgeInstallerPath instanceof File
-        ? config.forgeInstallerPath
-        : new File(config.forgeInstallerPath);
-  }
-  const forge = _forge as File;
+  let forge = config.forgeInstallerPath;
+  if (forge) forge = forge instanceof File ? forge : new File(forge);
+  else throw "forgeInstallerPath is invalid";
+
   const modpackName = config.modpackName || this.getName();
 
   await this.install();
@@ -182,9 +179,12 @@ export async function pack(this: Instance, config: InstancePackConfig) {
       "No misc zip detected! If this is intended then please ignore",
     );
   }
-  const ver: Partial<VersionJson> = {
+  const ver: {
+    instance: VersionJsonInstance;
+    id: VersionJson["id"];
+    inheritsFrom?: VersionJson["inheritsFrom"];
+  } = {
     instance: {
-      //      restart_Multiplier: 1,
       files: resources,
       assets: this.assets,
       meta: this.meta,
@@ -196,7 +196,7 @@ export async function pack(this: Instance, config: InstancePackConfig) {
   let finalVersion = this.version;
   if (config.forgeVersion) {
     if (modpackVersion == 1) modpackVersion = 2;
-    const forge = _installForge(config.forgeVersion);
+    const forge = await _installForge(config.forgeVersion);
     finalVersion = forge.id;
     ver.instance.forge = config.forgeVersion;
   } else if (forge) {
@@ -241,7 +241,7 @@ export async function pack(this: Instance, config: InstancePackConfig) {
 
   let index = `<!DOCTYPE html><html><!--This is just a place holder! GMLL doesn't check this. It is merely here to look nice and serve as a directory listing-->`;
   index += `<head><link rel="stylesheet" href="https://styles.hanro50.net.za/v1/main"><title>${modpackName}</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="A GMLL minecraft modpack"></head><body><h1>${modpackName}</h1><h2>Copy the link to this page into gmll to import this modpack!</h2><h2>File list</h2>`;
-  function read(f: Dir, directory = []) {
+  function read(f: Dir, directory: string[] = []) {
     f.ls().forEach((e) => {
       if (
         e.getName() == "index.html" ||
@@ -269,7 +269,11 @@ export function wrap(
   forge?: { jar: File | string } | File,
   trimMisc = false,
 ) {
-  const forgeInstallerPath = "jar" in forge ? forge.jar : forge;
+  const forgeInstallerPath = !forge
+    ? undefined
+    : "jar" in forge
+      ? forge.jar
+      : forge;
 
   return this.pack({
     baseDownloadLink: baseUrl,
@@ -308,7 +312,7 @@ export async function getForgeVersions(this: Instance) {
 export async function jarMod(
   metaPaths: InstanceMetaPaths,
   version: Version,
-): Promise<File> {
+): Promise<File | undefined> {
   const jarMods = metaPaths.jarMods;
   const bin = Dir.tmpdir().getDir("gmll", "bin").rm().mkdir();
   const custom = bin.getFile(`${version.name}.jar`);
@@ -326,7 +330,8 @@ export async function jarMod(
   if (!jar.exists()) return;
   await jar.unzip(tmp, { exclude: ["META-INF/*"] });
 
-  let priority = {
+  let priority: Record<string, number> = {
+    //@ts-ignore
     _comment:
       "0 is the default, the lower the priority. The sooner a mod will be loaded. Deleting this file resets it",
   };

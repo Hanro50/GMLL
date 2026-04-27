@@ -1,15 +1,15 @@
+import { Dir, File } from "gfsl";
 import { Instance } from "../../../index";
-import { emit, getMeta } from "../../config.js";
 import {
-  VersionManifest,
-  ModPackApiInfo,
   curseforgeModpack,
   DownloadableFile,
+  ModPackApiInfo,
+  VersionManifest,
 } from "../../../types";
-import { fsSanitizer } from "../util.js";
-import { Dir, File } from "gfsl";
+import { emit, getMeta } from "../../config.js";
 import { download } from "../../downloader.js";
 import { getForgeVersions } from "../../handler.js";
+import { fsSanitizer } from "../util.js";
 
 export async function importGmllLink(url: string): Promise<VersionManifest>;
 export async function importGmllLink(
@@ -88,10 +88,11 @@ export async function importCurseForge(
     .ls()
     .forEach((e) => copyFile(e, instance.getDir()));
 
-  let mcVersion = inf.minecraft.version;
+  const mcVersion: string = inf.minecraft.version;
+  let result: VersionManifest | string;
 
   if (forge) {
-    mcVersion = await instance.installForge(forge);
+    result = await instance.installForge(forge);
   } else {
     if (inf.minecraft.modLoaders.length > 1)
       emit(
@@ -105,7 +106,7 @@ export async function importCurseForge(
       const version = data[1];
 
       if (["fabric", "quilt"].includes(type)) {
-        mcVersion = `${type}-loader-${version}-${inf.minecraft.version}`;
+        result = `${type}-loader-${version}-${inf.minecraft.version}`;
       } else if ("forge" == type) {
         const forgeVersions = await getForgeVersions();
         const forgeVersion = forgeVersions[mcVersion].find((e) =>
@@ -113,7 +114,7 @@ export async function importCurseForge(
         );
         if (!forgeVersion) throw "Forge version not found!";
         await forgeVersion.install();
-        mcVersion = forgeVersion.game;
+        result = forgeVersion.game;
       } else {
         emit(
           "debug.warn",
@@ -125,7 +126,7 @@ export async function importCurseForge(
     }
   }
   const mods = instance.getDir().getDir("mods").mkdir();
-  const fileNames = [];
+  const fileNames: string[] = [];
 
   const files: DownloadableFile[] = [];
 
@@ -155,6 +156,7 @@ export async function importCurseForge(
   const err = (await instance.getMetaPaths()).mods.getDir("unparsable").mkdir();
 
   (await instance.getMods()).forEach((e) => {
+    if (!e.path) return;
     const fileName = e.path.getName();
 
     if (fileNames.includes(fileName)) {

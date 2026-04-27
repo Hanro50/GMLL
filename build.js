@@ -9,7 +9,7 @@ rmSync("types", { force: true, recursive: true });
 console.log("[build]: Resolving dependencies!");
 console.log(execSync("npm i").toString());
 console.log("[build]: Building GMLL!");
-console.log(execSync("tsc").toString());
+//console.log(execSync("tsc").toString());
 // console.log("[build]: Copying files ");
 // copyFileSync(join("src", "modules", "internal", "worker.mjs"), join("dist", "modules", "internal", "worker.mjs"));
 //console.log("[build]: Copying types file");

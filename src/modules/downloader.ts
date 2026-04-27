@@ -11,10 +11,12 @@ import type {
   MCRuntimeVal,
   MojangResourceFile,
   MojangResourceManifest,
+  platforms,
   RuntimeManifest,
   RuntimeManifestEntry,
   VanillaManifestJson,
   VersionJson,
+  VersionManifest,
 } from "../types";
 import {
   emit,
@@ -60,11 +62,14 @@ const postCMD = "download.post";
 export function download(obj: Partial<DownloadableFile>[]): Promise<void> {
   emit("download.started");
   obj.sort((a, b) => {
-    return (b.chk.size || Number.MAX_VALUE) - (a.chk.size || Number.MAX_VALUE);
+    return (
+      (b.chk?.size || Number.MAX_VALUE) - (a.chk?.size || Number.MAX_VALUE)
+    );
   });
-  const temp = {};
-  const unzip: { [key: string]: Partial<DownloadableFile> } = {};
+  const temp: Record<string, Partial<DownloadableFile>> = {};
+  const unzip: Record<string, Partial<DownloadableFile>> = {};
   obj.forEach((e) => {
+    if (!e || !e.key) return;
     switch (check(e)) {
       case 0:
         temp[e.key] = e;
@@ -77,6 +82,7 @@ export function download(obj: Partial<DownloadableFile>[]): Promise<void> {
   const totalItems = Object.values(temp).length;
   const _zips: Promise<void>[] = [];
   Object.values(unzip).forEach((json) => {
+    if (!json.path || !json.name) return;
     _zips.push(expand(new File(...json.path, json.name), json, getMeta().bin));
   });
 
@@ -110,36 +116,39 @@ export function download(obj: Partial<DownloadableFile>[]): Promise<void> {
             },
           });
           workers.push(w);
-          w.on("message", (msg) => {
-            switch (msg.cmd) {
-              case processCMD: {
-                done++;
-                delete temp[msg.key];
-                const left = Object.values(temp).length;
-                emit("download.progress", msg.key, done, totalItems, left);
+          w.on(
+            "message",
+            (msg: { cmd: string; key: string; type: string; err: string }) => {
+              switch (msg.cmd) {
+                case processCMD: {
+                  done++;
+                  delete temp[msg.key];
+                  const left = Object.values(temp).length;
+                  emit("download.progress", msg.key, done, totalItems, left);
 
-                if (left < 1) {
-                  //   active = false;
-                  //     clearTimeout(to);
-                  emit("download.done");
-                  fire();
-                  return res();
+                  if (left < 1) {
+                    //   active = false;
+                    //     clearTimeout(to);
+                    emit("download.done");
+                    fire();
+                    return res();
+                  }
                 }
+                case getCMD:
+                  w.postMessage({
+                    cmd: postCMD,
+                    data: data[todo],
+                  });
+                  todo++;
+                  break;
+                case failCMD:
+                  emit(msg.cmd, msg.key, msg.type, msg.err);
+                  break;
+                default:
+                  return;
               }
-              case getCMD:
-                w.postMessage({
-                  cmd: postCMD,
-                  data: data[todo],
-                });
-                todo++;
-                break;
-              case failCMD:
-                emit(msg.cmd, msg.key, msg.type, msg.err);
-                break;
-              default:
-                return;
-            }
-          });
+            },
+          );
         }
 
         return;
@@ -165,11 +174,13 @@ export function download(obj: Partial<DownloadableFile>[]): Promise<void> {
         console.trace(e);
         if (retry <= 3) {
           retry++;
+          //@ts-ignore
           emit(failCMD, o.key, "retry", e.err);
           await fallback(o, retry);
           return o;
         }
         emit("debug.error", "procedural failure : " + new Dir(...o.path));
+        //@ts-ignore
         emit(failCMD, o.key, "system", e.err);
       }
       return o;
@@ -229,7 +240,7 @@ export function mojangRFDownloader(
 
   lzma.mkdir();
   const json = file.files;
-  const arr = [];
+  const arr: DownloadableFile[] = [];
 
   Object.keys(json).forEach((key) => {
     const obj = json[key];
@@ -246,6 +257,12 @@ export function mojangRFDownloader(
           executable?: boolean | string;
           unzip?: { file: Dir; exclude?: string[] };
         } = { executable: obj.executable };
+        if (!obj.downloads) {
+          console.warn(
+            "Mojang resource file without a downloadable element?...",
+          );
+          return;
+        }
         if (obj.downloads.lzma) {
           opt.unzip = { file: _file.dir() };
           opt.executable = _file.javaPath();
@@ -294,13 +311,8 @@ export async function assets(index: Artifact) {
     assetURL + obj.hash.substring(0, 2) + "/" + obj.hash;
 
   if (assetIndex.map_to_resources) {
-    const addIn = (
-      path: string | number,
-      sck: { hash: string; size: number },
-    ) => {
-      if (!assetIndex[path]) {
-        assetIndex.objects[path] = sck;
-      }
+    const addIn = (path: string, sck: { hash: string; size: number }) => {
+      if (!assetIndex.objects[path]) assetIndex.objects[path] = sck;
     };
     addIn("icons/icon_16x16.png", {
       hash: "bdf48ef6b5d0d23bbb02e17d04865216179f510a",
@@ -419,7 +431,7 @@ export async function libraries(version: VersionJson) {
       if (!e.url) e.url = "https://libraries.minecraft.net/";
       const path = classPathResolver(e.name);
       const file = getlibraries().getFile(path);
-      let sha1: string | string[];
+      let sha1: string | string[] | undefined = undefined;
 
       //Maven repo
       for (let i = 0; i < 3; i++) {
@@ -436,41 +448,43 @@ export async function libraries(version: VersionJson) {
           emit("debug.error", e);
         }
       }
-      arr.push(toDownloadable(file, e.url + path, path, { sha1: sha1 }));
+      arr.push(toDownloadable(file, e.url + path, path, { sha1 }));
     }
   }
   return await download(arr);
 }
 export async function getRuntimeIndexes(manifest: RuntimeManifest) {
   const runtimes = getMeta().runtimes.mkdir();
+
+  type _m = (keyof (typeof manifest)[platforms])[];
   let platform:
     | "gamecore"
     | "linux"
     | "linux-i386"
+    | "linux-arm64"
     | "mac-os"
     | "mac-os-arm64"
     | "windows-x64"
     | "windows-x86"
-    | "linux-arm64"
-    | "linux-arm32"
     | "windows-arm64";
   switch (getOS()) {
     case "linux":
-      if (getCpuArch() == "arm64") {
-        platform = "linux-arm64";
-        if (!manifest[platform]) manifest[platform] = manifest.gamecore;
-        //Intel fallback for windows-arm
-        emit(
-          "debug.warn",
-          "Loading intel fallback for ARM64 Linux. Please contact GMLL's developer if this bugs out.\nPlease make sure box64 is installed!",
-        );
-        for (const key of Object.keys(manifest[platform]))
-          if (manifest[platform][key].length < 1)
-            manifest[platform][key] = manifest["linux-x64"][key];
-      } else {
-        platform = getCpuArch() == "x64" ? "linux" : "linux-i386";
+      switch (getCpuArch()) {
+        case "x86":
+          platform = "linux-i386";
+          break;
+        case "x64":
+          platform = "linux";
+          break;
+        case "arm":
+          throw "UNSUPPORTED CPU ARCH!!";
+        case "arm64":
+          console.warn(
+            "Mojang doesn't officially support arm on Linux as of writing this. Things may go wrong.",
+          );
+          platform = "linux-arm64";
+          break;
       }
-
       break;
     case "windows":
       if (getCpuArch() == "arm64") {
@@ -480,7 +494,7 @@ export async function getRuntimeIndexes(manifest: RuntimeManifest) {
           "debug.warn",
           "Loading intel fallback for ARM64 Windows. Please contact GMLL's developer if this bugs out.",
         );
-        for (const key of Object.keys(manifest[platform]))
+        for (const key of Object.keys(manifest[platform]) as _m)
           if (manifest[platform][key].length < 1)
             manifest[platform][key] = manifest["windows-x64"][key];
       } else {
@@ -495,7 +509,7 @@ export async function getRuntimeIndexes(manifest: RuntimeManifest) {
           "debug.warn",
           "Loading intel fallback for M1. Please contact GMLL's developer if this bugs out.",
         );
-        for (const key of Object.keys(manifest[platform]))
+        for (const key of Object.keys(manifest[platform]) as _m)
           if (manifest[platform][key].length < 1)
             manifest[platform][key] = manifest["mac-os"][key];
       } else {
@@ -505,7 +519,7 @@ export async function getRuntimeIndexes(manifest: RuntimeManifest) {
     default:
       throw "Unsupported operating system";
   }
-  for (const key of Object.keys(manifest[platform])) {
+  for (const key of Object.keys(manifest[platform]) as _m) {
     if (manifest[platform][key].length < 1) continue;
     const obj = manifest[platform][key][0] as RuntimeManifestEntry;
     await runtimes
@@ -574,7 +588,8 @@ export async function manifests() {
   if (r.status == 200) {
     const json: VanillaManifestJson = await r.json();
     meta.index.getFile("latest.json").write(json.latest);
-    meta.manifests.getFile("vanilla.json").write(json.versions);
+    if (json.versions)
+      meta.manifests.getFile("vanilla.json").write(json.versions);
   }
 
   if (update.includes("fabric")) {
@@ -585,7 +600,7 @@ export async function manifests() {
       const jsLoader = (
         await meta.index.getFile("fabric_loader.json").download(fabricLoader)
       ).toJSON<[JSLoaderInf]>();
-      const result = [];
+      const result: VersionManifest[] = [];
       jsGame.forEach((game) => {
         const version = game.version;
         jsLoader.forEach((l) => {
@@ -615,7 +630,7 @@ export async function manifests() {
           .getFile("legacy_fabric_loader.json")
           .download(legacyFabricLoader)
       ).toJSON<[JSLoaderInf]>();
-      const result = [];
+      const result: VersionManifest[] = [];
       jsGame.forEach((game) => {
         const version = game.version;
         jsLoader.forEach((l) => {
@@ -642,7 +657,7 @@ export async function manifests() {
       const jsLoader = (
         await meta.index.getFile("quilt_loader.json").download(quiltLoader)
       ).toJSON<[JSLoaderInf]>();
-      const result = [];
+      const result: VersionManifest[] = [];
       jsGame.forEach((game) => {
         const version = game.version;
         jsLoader.forEach((l) => {
@@ -743,6 +758,7 @@ export async function encodeMRF(url: string, root: Dir, out: Dir) {
         };
         if (zip.getSize() < e.getSize()) {
           zip = zip.moveTo(packed.getFile(zHash, e.name).mkdir());
+          // @ts-ignore
           downloadable.downloads.lzma = {
             sha1: zHash,
             size: zip.getSize(),

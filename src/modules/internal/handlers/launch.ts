@@ -49,13 +49,15 @@ export async function install(this: instance) {
   getlibraries().linkFrom(this.getDir().getDir("libraries"));
   getAssets().linkFrom(this.getDir().getDir("assets"));
   const version = await this.getVersion();
-  if (version.json.instance) {
+  const _json = await version.getJSON();
+
+  if (_json.instance) {
     const chk = this.getDir().getFile(".installed.txt");
 
     if (version.mergeFailure()) chk.rm();
 
     let security = false;
-    const instance = version.json.instance;
+    const instance = _json.instance;
     for (let i = 0; i < instance.files.length; i++) {
       instance.files[i].path = [
         this.getDir().sysPath(),
@@ -65,12 +67,8 @@ export async function install(this: instance) {
         if (e.includes("..")) security = true;
       });
       new Dir(...instance.files[i].path).mkdir();
-      if (instance.files[i].unzip) {
-        instance.files[i].unzip.file = [
-          this.getDir().sysPath(),
-          ...instance.files[i].unzip.file,
-        ];
-      }
+      const _unzip = instance.files[i].unzip;
+      if (_unzip) _unzip.file = [this.getDir().sysPath(), ..._unzip.file];
     }
     if (security) {
       /**DO NOT REMOVE.
@@ -100,8 +98,12 @@ export async function install(this: instance) {
     chk.write(Date.now().toString());
   }
   await version.install();
-  if (version.json.jarmods) {
-    for (const mod of version.json.jarmods) {
+  if (_json.jarmods) {
+    for (const mod of _json.jarmods) {
+      if (!mod.path || !mod.url) {
+        console.warn("Invalid mod file?");
+        return;
+      }
       const file = (await this.getMetaPaths()).jarMods
         .mkdir()
         .getFile(mod.path);
@@ -138,6 +140,8 @@ export async function launch(
     };
   }
   const version = await this.install();
+
+  if (!version) throw "Could not install minecraft";
   const jarModded = await instance.jarMod(await this.getMetaPaths(), version);
   const cp: string[] = version.getClassPath(undefined, jarModded);
 
@@ -249,6 +253,7 @@ export async function launch(
     gameArgs;
   Object.keys(args).forEach((key) => {
     const regex = new RegExp(`\\$\{${key}}`, "g");
+    //@ts-ignore
     launchCom = launchCom.replace(regex, args[key]);
   });
   emit("jvm.start", "Minecraft", this.getDir().sysPath(), this);
@@ -263,7 +268,10 @@ export async function launch(
     if (chunk.includes(token.access_token))
       chunk = chunk
         .toString()
-        .replace(token.access_token, "*".repeat(token.access_token.length))
+        .replace(
+          token.access_token,
+          "*".repeat(token.access_token?.length || 0),
+        )
         .replace(token.profile.id, "*".repeat(token.profile.id.length));
 
     emit("jvm.stdout", "Minecraft", chunk, this);

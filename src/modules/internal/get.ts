@@ -19,6 +19,9 @@ export type getWorkerDate = {
 const { processCMD, failCMD, getCMD, postCMD, zipDir }: getWorkerDate =
   workerData;
 async function load(a: any, retry = 0) {
+  if (parentPort == null) {
+    throw "Parent port is null?";
+  }
   const o = a.data;
   try {
     await processFile(o, new Dir(...zipDir));
@@ -46,8 +49,9 @@ async function load(a: any, retry = 0) {
     parentPort.postMessage({ cmd: processCMD, key: o.key });
   }
 }
-
-parentPort.on("message", async (a) => {
-  if (a.data && a.cmd == postCMD) await load(a);
-});
-parentPort.postMessage({ cmd: getCMD, type: "system" });
+if (parentPort != null) {
+  parentPort.on("message", async (a) => {
+    if (a.data && a.cmd == postCMD) await load(a);
+  });
+  parentPort.postMessage({ cmd: getCMD, type: "system" });
+}

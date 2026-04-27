@@ -1,7 +1,11 @@
-import type { DownloadableFile } from "types";
 import { Dir, File } from "gfsl";
+import type { DownloadableFile } from "../../types";
 
 export function check(json: Partial<DownloadableFile>) {
+  if (!json.path || !json.name) {
+    console.warn("Check function was passed invalid file?");
+    return;
+  }
   const f = new File(...json.path, json.name);
   let i = 2;
   if (json.dynamic && f.exists()) return 2;

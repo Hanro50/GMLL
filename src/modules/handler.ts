@@ -23,19 +23,19 @@ import { getOS } from "./internal/util.js";
 
 export function getManifests(): VersionManifest[] {
   isInitialized();
-  const versionManifest = [];
+  let versionManifest: VersionManifest[] = [];
   const root = getMeta().manifests;
   root.ls().forEach((e) => {
     if (e.sysPath().endsWith("json") && e instanceof File) {
       const v = e.toJSON<VersionManifest | VersionManifest[]>();
-      if (v instanceof Array) versionManifest.push(...v);
+      if (v instanceof Array) versionManifest = versionManifest.concat(v);
       else versionManifest.push(v);
     }
   });
   return versionManifest;
 }
 
-const forgiacCodes = {
+const forgiacCodes: Record<number, String> = {
   100: "Could not create virtual folder",
   101: "Could not create junction link",
   102: "Please use Windows Vista or later",
@@ -131,7 +131,7 @@ export function getLatest(): { release: string; snapshot: string } {
 export async function installForge(
   forgeInstaller: string | File | ForgeVersion,
   forgiacArgs: string[] = ["--virtual", getVersions().sysPath()],
-) {
+): Promise<VersionManifest> {
   if (forgeInstaller instanceof Object && !(forgeInstaller instanceof File)) {
     const { type, forge, game } = forgeInstaller;
     if (type == "modern") {

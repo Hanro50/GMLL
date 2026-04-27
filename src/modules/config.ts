@@ -1,10 +1,10 @@
 import { EventEmitter } from "events";
 import { manifests } from "./downloader.js";
 
+import { Dir, File } from "gfsl";
+import type { Worker, WorkerOptions } from "worker_threads";
 import { getCpuArch, getErr, getOS, throwErr } from "./internal/util.js";
 import type Instance from "./objects/instance.js";
-import type { WorkerOptions, Worker } from "worker_threads";
-import { Dir, File } from "gfsl";
 let workerSpawner = async (options: WorkerOptions) => {
   try {
     return (await import("./internal/worker.mjs")).makeWorker(options);
@@ -54,7 +54,6 @@ export type update = "runtime" | "agent" | "fabric" | "legacy-fabric" | "quilt";
 const repositories = {
   maven: "https://download.hanro50.net.za/maven",
   forge: "https://download.hanro50.net.za/fmllibs",
-  armFix: "https://download.hanro50.net.za/java",
   z7Repo: "https://download.hanro50.net.za/7-zip",
 };
 let multiCoreMode = true;
@@ -76,11 +75,11 @@ export function setMultiCoreMode(enabled: boolean) {
  * #### More information:
  * * maven => ({@link setMavenRepo}) The maven repo GMLL should pull Agenta and forgiac from
  * * forge => ({@link setForgeRepo}) The forge archive GMLL should redirect requests to https://files.minecraftforge.net/fmllibs towards
- * * armFix => ({@link setArmfixRepo}) The location serving the resources needed for the arm fix to function
  * * z7Repo => ({@link set7zipRepo}) The location serving a local version of 7zip
  */
 export function getRepositories(): typeof repositories {
   Object.keys(repositories).forEach((key) => {
+    //@ts-ignore
     if (!repositories[key].endsWith("/")) repositories[key] += "/";
   });
   return JSON.parse(JSON.stringify(repositories));
@@ -92,12 +91,6 @@ export function setMavenRepo(maven: string) {
 /**The forge archive GMLL should redirect requests to https://files.minecraftforge.net/fmllibs towards*/
 export function setForgeRepo(forge: string) {
   repositories.forge = forge;
-}
-/**The location serving the resources needed for the arm fix to function
- * (allows for running Minecraft on arm on non mac platforms)
- */
-export function setArmfixRepo(armFix: string) {
-  repositories.armFix = armFix;
 }
 
 /**The location serving 7zip binaries*/

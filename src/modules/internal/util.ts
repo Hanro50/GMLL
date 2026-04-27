@@ -2,7 +2,12 @@ import { arch, networkInterfaces, platform, userInfo, version } from "os";
 
 import { createHash, randomUUID } from "crypto";
 import { Dir, jsonEncode } from "gfsl";
-import type { AssetIndex, CpuArchRuleVal, VersionJsonRules } from "../../types";
+import type {
+  AssetIndex,
+  CpuArchRuleVal,
+  LaunchOptions,
+  VersionJsonRules,
+} from "../../types";
 import { getAssets, getMeta, isInitialized } from "../config.js";
 /**Gets the current operating system GMLL thinks it is running under */
 export function getOS() {
@@ -35,23 +40,26 @@ const archX = getCpuArch();
 /**The processor that handles the rules set out in the version.json for a set version.*/
 export function lawyer(
   rules: VersionJsonRules,
-  properties: { [key: string]: boolean | string | number } = {},
+  properties: Record<string, boolean | string | number> = {},
 ): boolean {
   let end = true,
     end2 = false;
   for (let i = 0; i < rules.length; i++) {
-    if (rules[i].features)
-      Object.keys(rules[i].features).forEach((e) => {
-        if (rules[i].features[e] && !properties[e]) end = false;
+    const rule = rules[i];
+    if (rule.features)
+      Object.keys(rule.features).forEach((e) => {
+        //@ts-ignore
+        if (rule.features[e as keyof LaunchOptions] && !properties[e])
+          end = false;
       });
     const os =
-      !rules[i].os ||
-      ((!rules[i].os.name || rules[i].os.name == OS) &&
-        (!rules[i].os.version || version().match(rules[i].os.version)) &&
-        (!rules[i].os.arch || rules[i].os.arch == archX));
-    if (rules[i].action == "disallow" && os) {
+      !rule.os ||
+      ((!rule.os.name || rule.os.name == OS) &&
+        (!rule.os.version || version().match(rule.os.version)) &&
+        (!rule.os.arch || rule.os.arch == archX));
+    if (rule.action == "disallow" && os) {
       end = false;
-    } else if (rules[i].action == "allow" && os) {
+    } else if (rule.action == "allow" && os) {
       // end = true && end;
       end2 = true;
     }
@@ -104,19 +112,21 @@ export function classPackageResolver(name: string, sub = "") {
 
 /**Takes two different version.json files and combines them */
 export function combine<T, T2>(ob1: T, ob2: T2): T & T2 {
-  Object.keys(ob2).forEach((e) => {
-    if (!ob1[e]) {
-      ob1[e] = ob2[e];
-    } else if (typeof ob1[e] == typeof ob2[e]) {
-      if (ob1[e] instanceof Array) {
-        ob1[e] = [...ob2[e], ...ob1[e]];
-      } else if (typeof ob1[e] == "string") {
-        ob1[e] = ob2[e];
-      } else if (ob1[e] instanceof Object) {
-        ob1[e] = combine(ob1[e], ob2[e]);
+  const target = ob1 as any;
+  const source = ob2 as any;
+  Object.keys(source).forEach((e) => {
+    if (!target[e]) {
+      target[e] = source[e];
+    } else if (typeof target[e] == typeof source[e]) {
+      if (target[e] instanceof Array) {
+        target[e] = [...source[e], ...target[e]];
+      } else if (typeof target[e] == "string") {
+        target[e] = source[e];
+      } else if (target[e] instanceof Object) {
+        target[e] = combine(target[e], source[e]);
       }
     } else {
-      ob1[e] = ob2[e];
+      target[e] = source[e];
     }
   });
   return ob1 as T & T2;

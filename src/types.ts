@@ -19,6 +19,7 @@ export type MCVersionType =
   | "custom"
   | "neoforge"
   | "unknown"
+  | "link"
   | Loader;
 /**
  * The type of user profiles. Can be used to keep older versions of forge from trying to dynamically refresh your user object.
@@ -36,34 +37,21 @@ export type MCJarTypeVal =
   | "server_mappings"
   | "windows_server";
 /**
- * The version of the java runtime a set release uses internally. The 'java-runtime-arm' can be ignored unless you have GMLL
- * booted up on something like the raspberry pi. Otherwise gamma and beta are different versions of java 17, alpha is java 16
- * and legacy is a version of java 8
+ * The version of the java runtime a set release uses internally.
  */
 export type MCRuntimeVal =
   | "java-runtime-alpha"
   | "java-runtime-beta"
   | "java-runtime-delta"
+  | "java-runtime-epsilon"
   | "java-runtime-gamma"
   | "java-runtime-gamma-snapshot"
   | "jre-legacy"
   | "minecraft-java-exe";
 /**
- * Potential architectures. Only x86, x64 and arm64 are fixed values at this stage and are technically supported.
- * Use the others for stuff at your own risk since GMLL might be forced to change this if mojang suddenly chooses
- * to support one of the other architectures
+ * CPU architectures
  */
-export type CpuArchRuleVal =
-  | "x86"
-  | "x64"
-  | "arm"
-  | "arm64"
-  | "mips"
-  | "mipsel"
-  | "ppc"
-  | "ppc64"
-  | "s390"
-  | "s390x";
+export type CpuArchRuleVal = "x86" | "x64" | "arm" | "arm64";
 /**
  * ---------------------------------------------------------------------------------------------
  * Downloader
@@ -103,9 +91,7 @@ export interface UrlFile {
  * The format of the asset index file minecraft uses
  */
 export interface AssetIndex {
-  objects: {
-    [key: string]: { hash: string; size: number; ignore?: boolean };
-  };
+  objects: Record<string, { hash: string; size: number; ignore?: boolean }>;
   map_to_resources?: boolean;
   virtual?: boolean;
 }
@@ -144,20 +130,22 @@ export type RuntimeManifestEntry = {
     released: string;
   };
 };
-export type RuntimeManifest = {
-  [key in
-    | "gamecore"
-    | "linux"
-    | "linux-i386"
-    | "linux-arm64"
-    | "mac-os"
-    | "mac-os-arm64"
-    | "windows-x64"
-    | "windows-x86"
-    | "windows-arm64"]: {
-    [key in MCRuntimeVal]: Array<RuntimeManifestEntry>;
-  };
-};
+
+export type platforms =
+  | "gamecore"
+  | "linux"
+  | "linux-i386"
+  | "linux-arm64"
+  | "mac-os"
+  | "mac-os-arm64"
+  | "windows-x64"
+  | "windows-x86"
+  | "windows-arm64";
+
+export type RuntimeManifest = Record<
+  platforms,
+  Record<MCRuntimeVal, Array<RuntimeManifestEntry>>
+>;
 
 /**
  * ---------------------------------------------------------------------------------------------
@@ -191,6 +179,8 @@ export interface VersionManifest {
   /**From the fabric manifest files, always false for some reason */
   stable?: boolean;
   _comment?: string;
+  /**Inline override */
+  json?: VersionJson;
 }
 
 /**
@@ -250,6 +240,36 @@ export interface Library {
   serverreq?: boolean;
   clientreq?: boolean;
 }
+
+export interface VersionJsonInstance {
+  /**
+   * Determines how long to wait before restarting the download.
+   * Lower = better for many smaller files. Higher is better for fewer larger files.
+   * Formula restart_Multiplier x 15 seconds = amount of time before assuming crash.
+   * Timer is reset every time GMLL downloads and saves a file successfully
+   *
+   * @deprecated No longer used by the new downloader
+   */
+  restart_Multiplier?: number;
+  /**
+   * The files that need to be download for a set instance
+   */
+  files: DownloadableFile[];
+  /**
+   * Assets to inject into any instance made with this version file.
+   */
+  assets: Partial<AssetIndex>;
+  /**
+   * Custom meta data. Here to be used by launcher developers, GMLL won't interact with this!
+   * Usefull for providing more info about a modpack
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  meta: any;
+  /**
+   * Used to locate the forge installer
+   */
+  forge?: { installer: string[] } | ForgeVersion;
+}
 /**
  * The general format of a version.json file.
  * Do note that GMLL adds extensions to this interface to allow some of GMLL's more complex features to function.
@@ -294,35 +314,7 @@ export interface VersionJson {
   /**
    * The low level information GMLL's modpack api uses to download a set modpack
    */
-  instance?: {
-    /**
-     * Determines how long to wait before restarting the download.
-     * Lower = better for many smaller files. Higher is better for fewer larger files.
-     * Formula restart_Multiplier x 15 seconds = amount of time before assuming crash.
-     * Timer is reset every time GMLL downloads and saves a file successfully
-     *
-     * @deprecated No longer used by the new downloader
-     */
-    restart_Multiplier?: number;
-    /**
-     * The files that need to be download for a set instance
-     */
-    files: DownloadableFile[];
-    /**
-     * Assets to inject into any instance made with this version file.
-     */
-    assets: Partial<AssetIndex>;
-    /**
-     * Custom meta data. Here to be used by launcher developers, GMLL won't interact with this!
-     * Usefull for providing more info about a modpack
-     */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    meta: any;
-    /**
-     * Used to locate the forge installer
-     */
-    forge?: { installer: string[] } | ForgeVersion;
-  };
+  instance?: VersionJsonInstance;
 }
 
 /**
@@ -695,7 +687,9 @@ export type Loader =
   | "liteLoader"
   | "riftMod"
   | "unknown"
-  | "quilt";
+  | "quilt"
+  | "ornithemc"
+  | "legacy-fabric";
 
 export interface ModInfo extends MetaObj {
   id: string;

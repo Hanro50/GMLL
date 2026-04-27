@@ -25,15 +25,15 @@ import {
  * If forge still works, but you cannot find the file connected to it...this is why.
  */
 export default class Version {
-  json: VersionJson;
   manifest: VersionManifest;
   name: string;
   folder: Dir;
   file: File;
   synced: boolean;
   override?: Artifact;
-  private pre1d9: boolean;
-  private _mergeFailure: boolean;
+
+  private json: VersionJson | undefined;
+  private _mergeFailure: boolean | undefined;
   /**Gets a set version based on a given manifest or version string. Either do not have to be contained within the manifest database. */
   static async get(manifest: string | VersionManifest): Promise<Version> {
     isInitialized();
@@ -48,10 +48,7 @@ export default class Version {
   private constructor(manifest: string | VersionManifest) {
     this.manifest =
       typeof manifest == "string" ? getManifest(manifest) : manifest;
-    this.pre1d9 =
-      Date.parse(this.manifest.releaseTime) <
-      Date.parse("2022-05-12T15:36:11+00:00");
-    this.json;
+
     this.name = this.manifest.base || this.manifest.id;
     this.folder = getVersions().getDir(this.name);
     this.file = this.folder.getFile(this.manifest.id + ".json");
@@ -77,7 +74,7 @@ export default class Version {
     ) {
       emit("debug.info", "Cleaning up versions!");
       this.json = file_old.toJSON<VersionJson>();
-      this.synced = !("synced" in this.json) || this.json.synced;
+      this.synced = !("synced" in this.json) || this.json.synced || false;
       if (this.synced) {
         copyFileSync(file_old.sysPath(), this.file.sysPath());
         folder_old.rm();
@@ -87,9 +84,10 @@ export default class Version {
             "debug.info",
             "Detected synced is false. Aborting sync attempted",
           );
-          const base = new Version(
-            this.json.inheritsFrom || this.manifest.base,
-          );
+          const _parent = this.json.inheritsFrom || this.manifest.base;
+          if (!_parent) throw "Missing required meta data";
+
+          const base = new Version(_parent);
           this.json = combine(await base.getJSON(), this.json);
           this.name = this.json.id;
           this.folder = folder_old;
@@ -117,9 +115,12 @@ export default class Version {
           : "Version json is missing for this version!",
       );
     }
-    if (this.json.inheritsFrom || this.manifest.base) {
+    if (this.json && (this.json.inheritsFrom || this.manifest.base)) {
       try {
-        const base = new Version(this.json.inheritsFrom || this.manifest.base);
+        const _parent = this.json.inheritsFrom || this.manifest.base;
+        if (!_parent) throw "Missing required meta data";
+
+        const base = new Version(_parent);
         this.json = combine(await base.getJSON(), this.json);
         this.folder = base.folder;
         this.name = base.name;
@@ -129,12 +130,15 @@ export default class Version {
       }
     }
 
+    if (!this.json) throw "Could not construct version JSON";
+
     return this.json;
   }
   /**
    * Installs the asset files for a set version
    */
   async getAssets() {
+    if (!this.json) throw "Version object not initialized";
     if (!this.json.assetIndex) {
       const base = await new Version("1.0").getJSON();
       this.json.assetIndex = base.assetIndex;
@@ -142,6 +146,7 @@ export default class Version {
     await assets(this.json.assetIndex);
   }
   async getRuntime() {
+    if (!this.json) throw "Version object not initialized";
     const jre = this.json.javaVersion
       ? this.json.javaVersion.component
       : "jre-legacy";
@@ -149,15 +154,21 @@ export default class Version {
     return jre;
   }
   async getLibs() {
-    await libraries(this.json);
+    await libraries(this.json || (await this.getJSON()));
   }
   async getJar(type: MCJarTypeVal, jarFile: File) {
+    if (!this.json) this.json = await this.getJSON();
     if (this.synced && "downloads" in this.json) {
       const download = this.json.downloads[type];
-      if (!jarFile.sha1(download.sha1) || !jarFile.size(download.size)) {
+      if (
+        download &&
+        (!jarFile.sha1(download.sha1) || !jarFile.size(download.size))
+      ) {
         return await jarFile.download(download.url);
       }
     }
+
+    return this.getJarPath();
   }
   getJarPath() {
     return this.folder.getFile(this.name + ".jar");
@@ -175,13 +186,15 @@ export default class Version {
     await this.getRuntime();
   }
   getJavaPath() {
+    if (!this.json) throw "Version object not initialized";
     return getJavaPath(
       this.json.javaVersion ? this.json.javaVersion.component : "jre-legacy",
     );
   }
   getClassPath(mode: "client" | "server" = "client", jarpath?: File) {
+    if (!this.json) throw "Version object not initialized";
     const cp: string[] = [];
-    const loadedPackages = [];
+    const loadedPackages: string[] = [];
     this.json.libraries.forEach((lib) => {
       if (mode == "client" && "clientreq" in lib && !lib.clientreq) return;
       if (mode == "server" && !lib.serverreq && "clientreq" in lib) return;

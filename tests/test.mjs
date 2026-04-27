@@ -5,7 +5,7 @@ import { Auth } from "msmc";
 
 await init();
 
-const forge = await handler.getForgeVersions("1.2.5");
+const forge = await handler.getNeoForgeVersions("26.1.2");
 console.log(forge, forge[0].install);
 
 try {
@@ -30,3 +30,5 @@ try {
   console.log("ERROR");
   console.error(e);
 }
+
+int.save();

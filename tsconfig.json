@@ -15,7 +15,6 @@
     "declaration": true,
     "declarationDir": "types",
     "rootDir": "src/",
-    "module": "Node16",
-    "baseUrl": "src" // this must be specified if "paths" is specified.
+    "module": "Node16"
   }
 }

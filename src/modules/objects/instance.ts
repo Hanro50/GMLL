@@ -20,7 +20,6 @@ import Version from "./version.js";
  */
 export default class Instance {
   protected assets: Partial<AssetIndex>;
-  protected id: string;
   path: string;
   version: string;
   name: string;
@@ -100,9 +99,6 @@ export default class Instance {
     if (!(MESA in this.env) && process.platform == "linux") {
       this.env[MESA] = "4.6";
     }
-  }
-  getID() {
-    return this.id;
   }
   /**Gets the load order of minecraft jars in jar mod loader. */
   public getJarModPriority = modsHandler.getJarModPriority;
@@ -186,7 +182,7 @@ export default class Instance {
       .forEach((e) => {
         if (e instanceof File && e.getName().endsWith(".json")) {
           const profile = e.toJSON<LaunchOptions>();
-          profiles.set(profile.name, {
+          profiles.set(profile.name || "MISSINGNO", {
             ...profile,
             get: () => this.get(e.getName()),
           });
@@ -217,7 +213,7 @@ export default class Instance {
    * @returns
    */
   rmSelf() {
-    return Instance.rm(this.getID());
+    return Instance.rm(this.name);
   }
 
   /**
@@ -239,6 +235,7 @@ export default class Instance {
   }
   /**Injects a set selection of images into the asset files and sets them as the icon for this instance */
   setIcon(x32?: string | File, x16?: string | File, mac?: string | File) {
+    if (!this.assets.objects) this.assets.objects = {};
     if (x32) {
       const x32Icon = this.injectAsset("icons/icon_32x32.png", x32);
       this.assets.objects["minecraft/icons/icon_32x32.png"] = x32Icon;

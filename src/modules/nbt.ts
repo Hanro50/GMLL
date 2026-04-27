@@ -93,7 +93,7 @@ export function readNBT<T>(raw: Buffer, typed?: true): T | typedNBT {
     return typed ? { tag: tagTypes[index], list: arr } : arr;
   }
 
-  function decode(c: number) {
+  function decode(c: number): any {
     switch (c) {
       case 0:
         return; //end-flag
@@ -121,7 +121,7 @@ export function readNBT<T>(raw: Buffer, typed?: true): T | typedNBT {
         return arrType(4); //long int array
       case 10:
         //Compound tag flag
-        const t = {};
+        const t: any = {};
         while ((c = raw[i++]) != 0) {
           t[getString()] = typed
             ? { tag: tagTypes[c], value: decode(c) }
@@ -162,5 +162,6 @@ export async function readDat<T>(
   //We'll be working with a buffer here
   const raw = file.readRaw();
   p.rm();
+  //@ts-ignore
   return readNBT(raw, typed);
 }

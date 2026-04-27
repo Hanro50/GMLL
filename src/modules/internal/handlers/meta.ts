@@ -1,34 +1,34 @@
 import { createHash, randomInt } from "crypto";
 import Instance from "../../objects/instance.js";
 
+import { Dir, File } from "gfsl";
+import { join } from "path";
 import type {
-  ModInfo,
   ForgeDep,
+  InstanceMetaPaths,
+  LevelDat,
+  MetaResourcePack,
+  MetaSave,
+  ModInfo,
   PlayerDat,
   PlayerStats,
-  LevelDat,
-  MetaSave,
-  InstanceMetaPaths,
-  MetaResourcePack,
 } from "../../../types";
-import { join } from "path";
-import { readDat } from "../../nbt.js";
-import { Dir, File } from "gfsl";
 import { emit } from "../../config.js";
+import { readDat } from "../../nbt.js";
 
 /**
  * @returns Some low level meta paths used to obtain some key files of this instance.
  */
 export async function getMetaPaths(this: Instance): Promise<InstanceMetaPaths> {
   const version = await this.getVersion();
+  const _json = await version.getJSON();
   const p = this.getDir();
   return {
     mods: p.getDir("mods"),
     jarMods: p.getDir("jarmods"),
     saves: p.getDir("saves"),
     resourcePacks: p.getDir(
-      Date.parse(version.json.releaseTime) >=
-        Date.parse("2013-06-13T15:32:23+00:00")
+      Date.parse(_json.releaseTime) >= Date.parse("2013-06-13T15:32:23+00:00")
         ? "resourcepacks"
         : "texturepacks",
     ),
@@ -37,12 +37,12 @@ export async function getMetaPaths(this: Instance): Promise<InstanceMetaPaths> {
   };
 }
 async function getIcon(file: File, d: Dir, jarPath: string) {
-  if (!jarPath || jarPath.length < 1) return null;
+  if (!jarPath || jarPath.length < 1) return undefined;
   file.unzip(d, { include: [jarPath] });
   const jarFile = jarPath.split("/");
   const logoFile = d.getFile(...jarFile);
   if (logoFile.exists()) return `data:image/png;base64,${logoFile.toBase64()}`;
-  return null;
+  return undefined;
 }
 /**
  * Gets information about mods in this instance. This includes the loader version plus some general
@@ -50,10 +50,10 @@ async function getIcon(file: File, d: Dir, jarPath: string) {
  *
  * Works with Legacy forge, forge, fabric, riftLoader and liteLoader
  */
-export async function getMods(this: Instance): Promise<ModInfo[]> {
+export async function getMods(this: Instance): Promise<Partial<ModInfo>[]> {
   emit("parser.start", "mod", this);
   const meta = await this.getMetaPaths();
-  const mods: ModInfo[] = [];
+  const mods: Partial<ModInfo>[] = [];
 
   const tmp = Dir.tmpdir()
     .getDir(
@@ -132,7 +132,7 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
             description: mcInfoVal.description,
             credits: mcInfoVal.credits,
             mcversion: mcInfoVal.mcversion,
-            icon,
+            icon: icon || undefined,
             type,
           });
         }
@@ -181,8 +181,8 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
           };
         };
         const metaInfo = metaFile.toJSON<quiltMod>();
-        let icon: string;
-        if (metaInfo.quilt_loader.metadata.icon)
+        let icon: string | undefined;
+        if (metaInfo.quilt_loader.metadata?.icon)
           icon = await getIcon(file, d, metaInfo.quilt_loader.metadata.icon);
 
         const authors = [];
@@ -557,7 +557,7 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
         }
 
         try {
-          icon = getIcon(file, d, "pack.png");
+          icon = await getIcon(file, d, "pack.png");
         } catch {}
         mods.push({
           id: "unknown",
@@ -591,11 +591,12 @@ export async function getMods(this: Instance): Promise<ModInfo[]> {
   }
   let c = 0;
   let n = 0;
+  const parent = this;
   async function loop(d: Dir, type: "mod" | "coremod" | "jarmod") {
     const l = d.ls();
     c += l.length;
     for (const e of l) {
-      emit("parser.progress", e.sysPath(), ++n, c, c - n, this);
+      emit("parser.progress", e.sysPath(), ++n, c, c - n, parent);
       if (!(e instanceof File)) {
         for (const e2 of e.ls())
           if (e2 instanceof File) await readMod(e2, type);
@@ -628,13 +629,13 @@ export async function getWorlds(this: Instance): Promise<MetaSave[]> {
   for (const e of l) {
     try {
       emit("parser.progress", e.sysPath(), ++n, c, c - n, this);
-      if (e instanceof File) return;
+      if (e instanceof File) continue;
       const DAT = e.getFile("level.dat");
       const IMG = e.getFile("icon.png");
       const PLAYERDATA = e.getDir("playerdata");
       const PLAYERSTATS = e.getDir("stats");
       let icon = undefined;
-      if (!DAT.exists()) return;
+      if (!DAT.exists()) continue;
       if (IMG.exists()) icon = IMG.sysPath();
       const level = await readDat<LevelDat>(DAT);
       const players: MetaSave["players"] = {};
@@ -694,7 +695,7 @@ export async function getResourcePacks(
     .rm()
     .mkdir();
   function readPackData(d: Dir, source: File | Dir): MetaResourcePack {
-    let icon = null;
+    let icon = undefined;
     const i = d.getFile("pack.png");
     if (i.exists()) {
       icon = `data:image/png;base64,${i.toBase64()}`;
@@ -704,7 +705,7 @@ export async function getResourcePacks(
       .getName()
       .replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>{}[\]\\/]/gi, " ");
     let description = "A Minecraft resourcePack/texturePack";
-    let format = null;
+    let format = undefined;
     if (!pack.exists()) pack = d.getFile("pack.txt");
     if (pack.exists()) {
       try {
@@ -726,9 +727,9 @@ export async function getResourcePacks(
     let licenseFile = d.getFile("licence.txt");
     if (!licenseFile.exists()) licenseFile = d.getFile("license.txt");
     if (!licenseFile.exists()) licenseFile = d.getFile("terms of use.txt");
-    const license = licenseFile.exists() ? licenseFile.read() : null;
+    const license = licenseFile.exists() ? licenseFile.read() : undefined;
     const creditsFile = d.getFile("credits.txt");
-    const credits = creditsFile.exists() ? creditsFile.read() : null;
+    const credits = creditsFile.exists() ? creditsFile.read() : undefined;
 
     return {
       credits,

@@ -9,9 +9,14 @@ const { Auth } = require("msmc");
 gmll
   .init()
   .then(async () => {
+    console.log(
+      gmll.handler.getManifests().filter((m) => m.type === "ornithemc"),
+    );
     //Create a new auth manager
     var int = new gmll.Instance({
-      version: "1.2",
+      version: "26.2-snapshot-4",
+      //  noLegacyFix: true,
+      name: "test",
     });
 
     const authManager = new Auth("select_account");
